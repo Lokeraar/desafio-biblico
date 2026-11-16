@@ -1143,11 +1143,20 @@ body.tv .opcion { font-size: var(--t-xl); }
   flex: 0 0 auto;
   white-space: nowrap;
 }
-/* en pantallas angostas los botones bajan de línea en vez de encogerse */
+/* Los tres botones van en una fila de columnas iguales: antes se
+   apilaban a todo el ancho y «Borrar» quedaba solo y más estrecho, como
+   si se hubiera salido de la tarjeta. */
 .tema-fila .fila {
-  flex: 1 1 auto;
-  flex-wrap: wrap;
-  justify-content: flex-start;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: .35rem;
+  flex: 1 1 100%;
+  width: 100%;
+}
+.tema-fila .fila .boton {
+  width: 100%;
+  padding-inline: .3em;
+  white-space: nowrap;
 }
 
 /* Ficha de pregunta dentro de la lista */
