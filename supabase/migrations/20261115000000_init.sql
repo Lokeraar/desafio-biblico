@@ -11,7 +11,9 @@
 --     quedan cerradas: RLS activo y sin políticas.
 -- =====================================================================
 
-create extension if not exists pgcrypto;
+-- pgcrypto: en Supabase vive en el esquema `extensions`. Se califica la
+-- llamada (abajo) para no depender del search_path de cada sesión.
+create extension if not exists pgcrypto with schema extensions;
 
 -- ---------------------------------------------------------------------
 -- Catálogo de juegos (el menú tiene tres; este es el primero)
@@ -62,9 +64,9 @@ create table public.rooms (
   code      text not null unique,          -- código corto para unirse
   game_slug text not null references public.games(slug),
   -- secreto del presentador: nunca se entrega a un jugador
-  host_token text not null default encode(gen_random_bytes(24), 'hex'),
+  host_token text not null default encode(extensions.gen_random_bytes(24), 'hex'),
   -- canal de difusión privado del presentador (derivado, no el token)
-  host_channel text not null default encode(gen_random_bytes(16), 'hex'),
+  host_channel text not null default encode(extensions.gen_random_bytes(16), 'hex'),
   status    text not null default 'lobby'
             check (status in ('lobby','question','reveal','ceremony','closed')),
   paused    boolean not null default false,
@@ -97,7 +99,7 @@ $$;
 create table public.players (
   id          uuid primary key default gen_random_uuid(),
   room_id     uuid not null references public.rooms(id) on delete cascade,
-  player_token text not null default encode(gen_random_bytes(24), 'hex'),
+  player_token text not null default encode(extensions.gen_random_bytes(24), 'hex'),
   display_name text not null check (length(btrim(display_name)) between 2 and 40),
   joined_at   timestamptz not null default clock_timestamp(),
   score       int not null default 0,
