@@ -1,0 +1,16 @@
+# dependencias y artefactos
+node_modules/
+dist/
+
+# registros y capturas locales (no son parte del juego)
+.logs/
+.shots/
+
+# credenciales y secretos: nunca se versionan
+secrets/
+*.secrets
+config.local.js
+
+# sistema
+.DS_Store
+Thumbs.db
