@@ -1061,3 +1061,175 @@ body.tv .opcion { font-size: var(--t-xl); }
   font-size: var(--t-xs);
   color: var(--tinta-suave);
 }
+
+/* =====================================================================
+   Controles de administración (temas, preguntas y clave maestra)
+   ---------------------------------------------------------------------
+   Las clases que emite src/lib/admin-ui.js. Solo usan las variables y
+   los rgba de blanco ya establecidos en el resto de la hoja.
+   Mobile-first: los controles se tocan con el dedo.
+   ===================================================================== */
+
+/* El alto del <select> vecino: 1.5em de línea + 1.6em de relleno + 4px
+   de borde. El botón lo iguala para quedar a la misma altura. */
+.boton-icono {
+  flex: 0 0 auto;
+  width: calc(3.1em + 4px);
+  min-width: calc(3.1em + 4px);
+  height: calc(3.1em + 4px);
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  line-height: 1;
+  font-size: inherit;
+}
+
+/* Botón corto de las filas de temas y preguntas: se sigue tocando bien */
+.boton-mini {
+  flex: 0 0 auto;
+  padding: .4em .75em;
+  min-height: 2.5rem;
+  font-size: var(--t-xs);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+/* Modal con más ancho para las listas de temas y preguntas */
+.modal-ancho { max-width: 560px; }
+
+/* Lista de administración: sin viñetas, con aire entre filas */
+.lista-admin {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  min-width: 0;
+}
+
+/* Fila de tema: nombre a la izquierda (se recorta), botones a la derecha */
+.tema-fila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .6rem;
+  padding: .45em .7em;
+  border-radius: var(--radio-sm);
+  background: rgba(255, 255, 255, .04);
+  min-width: 0;
+}
+.tema-fila > span:first-child {
+  display: flex;
+  align-items: baseline;
+  gap: .2rem;
+  min-width: 0;
+  overflow: hidden;
+}
+.tema-fila strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tema-fila .chico {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+/* en pantallas angostas los botones bajan de línea en vez de encogerse */
+.tema-fila .fila {
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* Ficha de pregunta dentro de la lista */
+.pregunta-fila {
+  list-style: none;
+  padding: .7em .85em;
+  border-radius: var(--radio-sm);
+  background: rgba(255, 255, 255, .06);
+  border: 1px solid rgba(110, 227, 238, .16);
+  min-width: 0;
+}
+.pregunta-fila p {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Fila de respuesta: radio fijo, texto que ocupa lo que queda */
+.opcion-fila {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  min-width: 0;
+}
+.opcion-fila + .opcion-fila { margin-top: .45rem; }
+/* el radio no se encoge nunca; el punto interior va como degradado radial
+   porque los input no aceptan ::after en todos los navegadores */
+.opcion-fila input[type="radio"] {
+  flex: 0 0 auto;
+  width: 1.6rem;
+  min-width: 1.6rem;
+  height: 1.6rem;
+  margin: 0;
+  padding: 0;
+  border: 2px solid rgba(110, 227, 238, .45);
+  border-radius: 50%;
+  background: rgba(0, 0, 0, .28);
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+.opcion-fila input[type="radio"]:checked {
+  border-color: var(--tu-300);
+  background:
+    radial-gradient(circle at 50% 50%, var(--tu-100) 0 .32rem, transparent .34rem),
+    rgba(0, 0, 0, .28);
+}
+.opcion-fila input[type="text"] {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Tarjeta de configuración, como el resto de las tarjetas */
+.tarjeta-config {
+  padding: clamp(.9rem, 3vw, 1.3rem);
+  border-radius: var(--radio);
+  background: rgba(255, 255, 255, .05);
+  border: 1px solid rgba(110, 227, 238, .18);
+  text-align: left;
+}
+
+/* Foco visible en los controles nuevos */
+.boton-icono:focus-visible,
+.boton-mini:focus-visible,
+.opcion-fila input[type="radio"]:focus-visible {
+  outline: 3px solid var(--tu-100);
+  outline-offset: 2px;
+}
+
+/* En el televisor crecen como el resto de la interfaz.
+   .boton-icono ya está en em: hereda el font-size de body.tv y crece solo. */
+body.tv .boton-mini {
+  min-height: 3rem;
+  padding: .5em .9em;
+  font-size: var(--t-sm);
+}
+body.tv .modal-ancho { max-width: 820px; }
+body.tv .lista-admin { gap: .75rem; }
+body.tv .tema-fila { padding: .65em .9em; }
+body.tv .pregunta-fila { padding: .9em 1.1em; }
+body.tv .opcion-fila { gap: 1rem; }
+body.tv .opcion-fila input[type="radio"] {
+  width: 2rem;
+  min-width: 2rem;
+  height: 2rem;
+}
+body.tv .opcion-fila input[type="radio"]:checked {
+  background:
+    radial-gradient(circle at 50% 50%, var(--tu-100) 0 .45rem, transparent .47rem),
+    rgba(0, 0, 0, .28);
+}
+body.tv .tarjeta-config { padding: 1.4rem; }
+
