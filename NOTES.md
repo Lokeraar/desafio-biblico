@@ -219,10 +219,18 @@ aplica hojas de estilo: con él todo se ve sin estilos y no es un defecto.
 
 ---
 
+## Publicado
+
+**https://lokeraar.github.io/desafio-biblico/** — verificado con HTTP 200 y
+captura real del menú cargado desde la URL pública.
+
 ## Pendiente
 
-- Flujo de cuenta regresiva con arranque manual del presentador.
-- Cierre automático al llegar a cero; el botón pasa a "Revelar respuesta".
-- Verificar visualmente la tabla de clasificación.
-- Correr el smoke test del SQL completo.
-- Crear el proyecto de Supabase y publicar en GitHub Pages.
+- **Modo nube con Supabase.** Hoy solo funciona el modo local: varias pestañas
+  del MISMO dispositivo. Para que varios teléfonos se conecten hace falta crear
+  el proyecto, aplicar `supabase/migrations/*.sql` y añadir el cliente.
+- **Probar con puntos reales.** Las capturas de la ceremonia muestran 0 pts en
+  todos porque en la prueba nadie respondió: no se jugó ninguna ronda. Falta
+  una partida de verdad donde alguien acierte y sume 10.
+- **README**, al cerrar el proyecto.
+- Una sola pestaña de presentador a la vez (ver lección 10).
