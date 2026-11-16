@@ -287,6 +287,17 @@ export function crearHostNube({ topicId, onEstado, gameSlug = 'seleccion-simple'
     repetir: () => accion('host_repeat_question'),
     deshacer: () => accion('host_undo'),
     terminar: () => accion('host_end_game'),
+    /**
+     * Cierra la sala antes de tiempo (el presentador se va). No hay podio:
+     * el servidor la pasa a 'closed' y los jugadores dejan de poder entrar.
+     * Se detiene el sondeo pase lo que pase: si la llamada falla, seguir
+     * consultando una sala que ya nadie dirige no arregla nada.
+     */
+    cerrarSala: async () => {
+      const r = await accion('host_close_room');
+      parar();
+      return r;
+    },
     expulsar: (id) => accion('host_remove_player', { p_player: id }),
     admitir: (id) => accion('host_admit_player', { p_player: id }),
 

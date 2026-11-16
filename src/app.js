@@ -67,7 +67,9 @@ const app = {
   yo: null,          // { playerId, name, roomCode }
   revision: 0,       // para evitar renders redundantes
   aviso: null,       // { tipo, texto }
-  cerrarConfirm: false,
+  // Confirmación abierta: null, 'terminar' (cerrar la partida con podio) o
+  // 'sala' (abandonar la sala). Un solo sitio decide qué modal se dibuja.
+  confirmar: null,
   podioPaso: 0,      // 0 = oculto, 1 = 3.º, 2 = 2.º, 3 = 1.º
   miRespuesta: null, // { roundId, idx } — lo que este teléfono ya contestó
   cantidadPreguntas: 10,
@@ -171,6 +173,7 @@ function traducirError(codigo) {
     nada_que_revelar: 'No hay nada que revelar.',
     nada_que_iniciar: 'No hay ninguna pregunta preparada.',
     partida_terminada: 'La partida ya terminó.',
+    sala_cerrada: 'El presentador cerró la sala. Vuelve a entrar cuando abra otra.',
     ronda_abierta: 'Ya hay una pregunta abierta.',
     expulsado: 'No formas parte de esta partida.',
     en_espera: 'Estás en la sala de espera.',
@@ -332,7 +335,7 @@ function vistaHost() {
 
   return `
     <div class="fila-entre">
-      <button class="boton boton-secundario" data-accion="salir-host">← Menú</button>
+      <button class="boton boton-secundario" data-accion="pedir-cerrar-sala">← Menú</button>
       <span class="fila chico">
         <span class="punto-vivo"></span> En línea
       </span>
@@ -444,15 +447,17 @@ function vistaHost() {
             </li>`).join('')}</ul>` : ''}
       </div>
 
-      <div class="fila-entre" style="margin-top:auto; padding-top:1rem">
-        <button class="boton boton-peligro" data-accion="pedir-terminar">
-          Terminar el juego
-          ${ayuda('Cierra la partida y muestra la tabla de clasificación. Te pedirá confirmar.')}
-        </button>
-      </div>
+      ${r ? `
+        <div class="fila-entre" style="margin-top:auto; padding-top:1rem">
+          <button class="boton boton-peligro" data-accion="pedir-terminar">
+            Terminar el juego
+            ${ayuda('Cierra la partida y muestra la tabla de clasificación. Te pedirá confirmar.')}
+          </button>
+        </div>` : ''}
     </main>
 
-    ${app.cerrarConfirm ? modalConfirmarCierre() : ''}`;
+    ${app.confirmar === 'terminar' ? modalConfirmarCierre() : ''}
+    ${app.confirmar === 'sala' ? modalCerrarSala() : ''}`;
 }
 
 
@@ -568,7 +573,7 @@ function controlesHostHTML(r, enPausa) {
 
 function modalConfirmarCierre() {
   return `
-    <div class="modal-fondo" data-accion="cancelar-terminar" data-solo-fondo="1">
+    <div class="modal-fondo" data-accion="cancelar-confirmar" data-solo-fondo="1">
       <div class="modal" role="dialog" aria-modal="true" aria-labelledby="t-confi">
         <h2 id="t-confi" style="font-size:var(--t-lg)">¿Terminar el juego?</h2>
         <p class="chico tenue">
@@ -576,11 +581,49 @@ function modalConfirmarCierre() {
           Esta acción no se puede deshacer.
         </p>
         <div class="fila" style="gap:.6rem">
-          <button class="boton boton-secundario" data-accion="cancelar-terminar" style="flex:1">
+          <button class="boton boton-secundario" data-accion="cancelar-confirmar" style="flex:1">
             Seguir jugando
           </button>
           <button class="boton boton-peligro" data-accion="confirmar-terminar" style="flex:1">
             Sí, terminar
+          </button>
+        </div>
+      </div>
+    </div>`;
+}
+
+/**
+ * Confirmación de «Menú» en la sala.
+ * El texto dice lo que pasa de verdad: la sala se cierra en el servidor, así
+ * que los participantes dejan de poder entrar. Antes este botón solo cerraba
+ * la pestaña y la sala quedaba viva, aceptando jugadores y bloqueando el tema
+ * durante horas.
+ *
+ * El texto cambia si la partida ya está en marcha: cerrarla a la mitad cuesta
+ * el puntaje de quienes iban ganando, y eso no se puede decir con la misma
+ * frase que una sala recién creada.
+ */
+function modalCerrarSala() {
+  const s = app.estado;
+  const n = (s?.players ?? []).filter(p => !p.kicked).length;
+  const enMarcha = Boolean(s?.round) || s?.status === 'question' || s?.status === 'reveal';
+  const cuantos = n ? ` Hay ${n} participante${n === 1 ? '' : 's'} dentro.` : '';
+
+  const cuerpo = enMarcha
+    ? 'La partida está en curso. Se cierra la sala y se pierden el puntaje y la tabla final: no hay podio que mostrar.' + cuantos
+    : `La partida todavía no empezó. Se cierra la sala y los participantes dejan de poder entrar con el código ${esc(s?.code ?? '')}.` + cuantos;
+
+  return `
+    <div class="modal-fondo" data-accion="cancelar-confirmar" data-solo-fondo="1">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="t-cerrar">
+        <h2 id="t-cerrar" style="font-size:var(--t-lg)">¿Cerrar la sala?</h2>
+        <p class="chico tenue">${cuerpo}</p>
+        <div class="fila" style="gap:.6rem">
+          <button class="boton boton-secundario" data-accion="cancelar-confirmar" style="flex:1">
+            Seguir aquí
+          </button>
+          <button class="boton boton-peligro" data-accion="confirmar-cerrar-sala" style="flex:1">
+            Sí, cerrar
           </button>
         </div>
       </div>
@@ -665,6 +708,24 @@ function vistaJugador() {
       footer,
       vacio: 'Nadie participó en esta partida.'
     });
+  }
+
+  /*
+   * La sala se cerró antes de terminar (el presentador se fue).
+   * Sin este caso el jugador se quedaba mirando «espera la respuesta» para
+   * siempre: el servidor ya no manda rondas y la pantalla nunca cambia.
+   */
+  if (s.status === 'closed') {
+    return `
+      <main class="crecer columna centro" style="gap:1rem">
+        <div class="aviso espera centro" style="text-align:center">
+          El presentador cerró la sala.
+        </div>
+        <p class="tenue centro chico" style="text-align:center; max-width:32ch">
+          Esta partida no llegó al final, así que no hay tabla de posiciones.
+        </p>
+        <button class="boton boton-secundario" data-ir="menu">← Menú</button>
+      </main>`;
   }
 
   if (enEspera) {
@@ -910,6 +971,9 @@ function vistaTV() {
 /* Render                                                              */
 /* ------------------------------------------------------------------ */
 let timerReloj = null;
+// Cerrando sala: evita mandar dos veces la orden si se toca el botón dos
+// veces mientras viaja la respuesta del servidor.
+let cerrando = false;
 
 /* ------------------------------------------------------------------ */
 /* Administración: temas, preguntas y clave maestra                    */
@@ -1207,12 +1271,54 @@ document.addEventListener('click', async ev => {
     case 'deshacer': { const e = app.host.deshacer(); if (e) ponerAviso('error', e); break; }
     case 'expulsar': app.host.expulsar(el.dataset.id); break;
     case 'admitir': app.host.admitir(el.dataset.id); break;
-    case 'pedir-terminar': app.cerrarConfirm = true; render(); break;
-    case 'cancelar-terminar': app.cerrarConfirm = false; render(); break;
+    case 'pedir-terminar': app.confirmar = 'terminar'; render(); break;
+    case 'pedir-cerrar-sala': app.confirmar = 'sala'; render(); break;
+    case 'cancelar-confirmar': app.confirmar = null; render(); break;
     case 'confirmar-terminar': {
-      app.cerrarConfirm = false;
+      app.confirmar = null;
       app.podioPaso = 0;
       app.host.terminar();
+      break;
+    }
+    /*
+     * Cerrar la sala desde «Menú».
+     * Se cierra DE VERDAD: en la nube la sala pasa a 'closed' en el servidor;
+     * en local se difunde el estado final y se suelta el canal. Solo después
+     * se navega al menú, para no abandonar una sala que siga viva por un
+     * fallo de red.
+     *
+     * Se olvida la sesión guardada: sin borrar la clave, recargar la página
+     * reabría la sala y el presentador se encontraba dentro de una partida
+     * fantasma.
+     */
+    case 'confirmar-cerrar-sala': {
+      app.confirmar = null;
+      if (cerrando) break;          // doble toque: no se manda dos veces
+      cerrando = true;
+      render();
+
+      let fallo = null;
+      try {
+        const r = await app.host?.cerrarSala?.();
+        fallo = r?.error ?? null;
+      } catch (e) {
+        fallo = e?.message ?? 'No se pudo cerrar la sala.';
+      }
+      cerrando = false;
+
+      if (fallo) {
+        // Si no se cerró, no se simula: el presentador sigue en su sala y
+        // recibe el motivo. Cerrar la pantalla sin cerrar la sala es justo
+        // lo que dejaba jugadores esperando a alguien que ya se fue.
+        ponerAviso('error', traducirError(fallo));
+        break;
+      }
+
+      try { localStorage.removeItem(CLAVE_HOST); } catch { /* modo privado */ }
+      app.host = null;
+      app.estado = null;
+      app.podioPaso = 0;
+      ir('menu');
       break;
     }
     case 'jugar-host': {
@@ -1337,8 +1443,8 @@ document.addEventListener('keydown', ev => {
       document.querySelector('[data-accion="unirse"]')?.click();
     }
   }
-  if (ev.key === 'Escape' && app.cerrarConfirm) {
-    app.cerrarConfirm = false;
+  if (ev.key === 'Escape' && app.confirmar) {
+    app.confirmar = null;
     render();
   }
 });

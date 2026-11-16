@@ -46,6 +46,16 @@ export function estadoInicial(opciones = {}) {
 
 const ahora = () => Date.now();
 
+/**
+ * ¿La sala ya se cerró? Una sala cerrada no admite ninguna acción del
+ * presentador: es el mismo criterio que aplica el servidor en `assert_host`
+ * (rechaza 'ceremony' y 'closed'). Sin esto, el modo local dejaba reabrir
+ * preguntas y deshacer rondas en una sala que ya no existe para nadie.
+ */
+function cerrada(estado) {
+  return estado.status === 'closed';
+}
+
 function siguienteSeq(estado) {
   return { ...estado, seq: estado.seq + 1 };
 }
@@ -116,6 +126,9 @@ export function abrirPregunta(estado, t = ahora()) {
   if (st === 'prepared' || st === 'open') {
     return { error: 'Ya hay una pregunta en curso. Ciérrala primero.' };
   }
+  if (cerrada(estado)) {
+    return { error: 'La sala está cerrada.' };
+  }
   if (estado.status === 'ceremony') {
     return { error: 'La partida ya terminó.' };
   }
@@ -170,6 +183,7 @@ export function abrirPregunta(estado, t = ahora()) {
 export function iniciarCuenta(estado, t = ahora()) {
   const round = estado.round;
   if (!round) return { error: 'No hay pregunta que iniciar.' };
+  if (cerrada(estado)) return { error: 'La sala está cerrada.' };
   if (round.state !== 'prepared') return { error: 'La cuenta ya se inició.' };
 
   return {
@@ -306,6 +320,7 @@ export function saltarPregunta(estado, t = ahora()) {
 }
 
 export function repetirPregunta(estado, t = ahora()) {
+  if (cerrada(estado)) return { error: 'La sala está cerrada.' };
   const ultima = estado.history[estado.history.length - 1];
   if (!ultima) return { error: 'No hay ninguna pregunta para repetir.' };
 
@@ -341,6 +356,7 @@ export function deshacer(estado, t = ahora()) {
   // de una ronda que ya no se está jugando.
   const actual = estado.round;
 
+  if (cerrada(estado)) return { error: 'La sala está cerrada.' };
   if (!actual) return { error: 'No hay nada que deshacer.' };
   if (actual.state === 'open' || actual.state === 'prepared') {
     return { error: 'La pregunta está en curso. Ciérrala antes de deshacerla.' };
@@ -409,6 +425,26 @@ export function terminarJuego(estado, t = ahora()) {
     nuevo = { ...estado, round: cerrada, history: [...estado.history, cerrada] };
   }
   return { estado: { ...nuevo, status: 'ceremony', paused: false, endedAt: t } };
+}
+
+/**
+ * El presentador CIERRA la sala.
+ * No es la ceremonia: ahí la partida llegó a su final y se corona a alguien.
+ * Aquí se abandona antes de tiempo, así que no hay podio que mostrar; solo un
+ * estado final que le dice a cada jugador que ya no hay partida y lo suelta.
+ *
+ * Su razón de ser es liberar: una sala que queda viva en 'lobby' o 'question'
+ * bloquea el tema durante horas y deja a los jugadores esperando a un
+ * presentador que ya se fue. Por eso cierra también la ronda preparda.
+ */
+export function cerrarSala(estado, t = ahora()) {
+  let nuevo = estado;
+  const viva = estado.round && ['prepared', 'open'].includes(estado.round.state);
+  if (viva) {
+    const cerrada = { ...estado.round, state: 'closed', closedAt: t, noWinner: true, winnerId: null };
+    nuevo = { ...estado, round: cerrada, history: [...estado.history, cerrada] };
+  }
+  return { estado: { ...nuevo, status: 'closed', paused: false, endedAt: t } };
 }
 
 export function expulsarJugador(estado, playerId) {

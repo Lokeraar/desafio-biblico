@@ -276,6 +276,55 @@ console.log('\n=== 17. El nombre no se filtra a la proyección pública ===');
 t(!JSON.stringify(vis).includes('playerToken'), 'no viaja el token del jugador');
 
 /* ------------------------------------------------------------------ */
+console.log('\n=== 18. Cerrar la sala no es terminar el juego ===');
+// Terminar el juego lleva a 'ceremony' y da podio. Cerrar la sala la
+// abandona: estado final 'closed', sin podio, y las rondas vivas cerradas.
+function partidaViva() {
+  let s2 = E.estadoInicial();
+  s2.players = [
+    { id:'p1', name:'Ana', score:0, totalMs:0, correct:0, joinedAt:T0, waiting:false, kicked:false },
+    { id:'p2', name:'Beto', score:0, totalMs:0, correct:0, joinedAt:T0+1, waiting:false, kicked:false }
+  ];
+  s2 = E.prepararPartida(s2, BANCO, 2);
+  return s2;
+}
+
+// (a) en el lobby: nada que cerrar salvo la sala misma
+const lobby = partidaViva();
+t(lobby.status === 'lobby', 'la partida recién creada está en lobby');
+t(lobby.round === null, 'en el lobby todavía no hay ronda: no hay nada que «terminar»');
+const cerradaLobby = E.cerrarSala(lobby, T0).estado;
+t(cerradaLobby.status === 'closed', 'cerrar desde el lobby deja la sala en closed');
+t(cerradaLobby.status !== 'ceremony', 'no es ceremonia: no hay podio que mostrar');
+t(cerradaLobby.endedAt === T0, 'guarda cuándo se cerró');
+t(cerradaLobby.paused === false, 'la sala cerrada no queda en pausa');
+
+// (b) con una ronda abierta: se cierra también la ronda
+const enJuego = E.cerrarSala(abrirEIniciar(partidaViva(), T0).estado, T0 + 500).estado;
+t(enJuego.status === 'closed', 'cerrar a mitad de partida deja la sala en closed');
+t(enJuego.round.state === 'closed', 'la ronda abierta se cierra: el reloj deja de correr');
+t(enJuego.round.noWinner === true, 'nadie gana una ronda que se abandonó');
+t(enJuego.round.winnerId === null, 'sin ganador inventado');
+
+// (c) con una ronda preparada (el presentador abrió pero no inició)
+const prep = E.abrirPregunta(partidaViva(), T0).estado;
+t(prep.round.state === 'prepared', 'abrir deja la ronda preparada');
+const cerradaPrep = E.cerrarSala(prep, T0 + 500).estado;
+t(cerradaPrep.round.state === 'closed',
+  'cerrar también cierra la ronda PREPARADA: si no, el jugador ve «prepárate» para siempre');
+
+// (d) no confunde los dos caminos
+const terminada = E.terminarJuego(abrirEIniciar(partidaViva(), T0).estado, T0 + 500).estado;
+t(terminada.status === 'ceremony', 'terminar el juego sí lleva a la ceremonia');
+const cerrada = E.cerrarSala(abrirEIniciar(partidaViva(), T0).estado, T0 + 500).estado;
+t(cerrada.status === 'closed' && terminada.status === 'ceremony',
+  'cerrar y terminar son estados finales DISTINTOS');
+
+console.log('\n=== 19. Una sala cerrada no se puede seguir jugando ===');
+t(E.abrirPregunta(cerradaLobby, T0 + 1).error !== undefined,
+  'no se puede abrir otra pregunta en una sala cerrada');
+
+/* ------------------------------------------------------------------ */
 console.log('\n===============================');
 console.log(` ${ok} correctas, ${fail} fallas`);
 console.log('===============================');

@@ -16,3 +16,4 @@ config.local.js
 Thumbs.db
 supabase/.temp/
 .shots/
+.issues/

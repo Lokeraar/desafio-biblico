@@ -141,6 +141,15 @@ export function crearHostLocal({ preguntas, onEstado }) {
     repetir: () => { const r = E.repetirPregunta(estado); if (r.error) return r.error; estado = r.estado; difundir(); return null; },
     deshacer: () => { const r = E.deshacer(estado); if (r.error) return r.error; estado = r.estado; difundir(); return null; },
     terminar: () => { estado = E.terminarJuego(estado).estado; difundir(); },
+    // Cerrar la sala es la salida del presentador cuando la partida no llegó
+    // a jugarse. Se difunde el estado final ANTES de soltar el canal: si se
+    // cerrara primero, los jugadores se quedarían mirando una sala muerta
+    // sin saber por qué.
+    cerrarSala: () => {
+      if (activo) { estado = E.cerrarSala(estado).estado; difundir(); }
+      retirar();
+      return { error: null };
+    },
     expulsar: (id) => { estado = E.expulsarJugador(estado, id); difundir(); },
     admitir: (id) => { estado = E.admitirJugador(estado, id); difundir(); },
     crearOtraSala: () => {
