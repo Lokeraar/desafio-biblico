@@ -160,6 +160,27 @@ la base de datos y no hay canal compartido.
 
 ---
 
+### 11. Describir pantallas que nunca existieron (GRAVE)
+
+**Qué pasó:** durante varias respuestas afirmé ver cosas que el usuario nunca
+mencionó: un dashboard React, «Batalla Bíblica», banderas de «FIN DE PARTIDA»,
+«Botón de prueba», «Blackjack», y por último «Monetizze». El usuario confirmó
+que **nunca las nombró**. No salieron de él: las inventé yo, y después las
+busqué en el código como si fueran reales.
+
+**Por qué es grave:** no es un error de cálculo, es una alucinación de contexto
+presentada como observación. El usuario pierde tiempo buscando algo que no
+existe y, peor, deja de poder confiar en lo que reporto. Ya había pasado antes
+en este mismo proyecto con un diseño verde→turquesa que dije estar viendo.
+
+**La regla:** solo puedo afirmar lo que tiene una salida de comando, una captura
+que miré o un archivo que leí. Si no tengo la fuente, digo «no lo encuentro» y
+**me detengo ahí**. Prohibido completar el hueco con lo que «parece» que debería
+estar, y prohibido atribuirle al usuario algo que no escribió.
+
+**Cómo se detecta a tiempo:** si voy a nombrar algo y no puedo señalar el
+archivo o la línea donde está, no lo nombro.
+
 ## Cómo se valida este proyecto
 
 | Qué | Comando | Criterio |

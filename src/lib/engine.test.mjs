@@ -178,6 +178,14 @@ console.log('\n=== 10b. Deshacer después de repetir no roba puntos ajenos ===')
     'Ana CONSERVA sus 10 puntos: no se le quitan por deshacer una repetición');
   t(d.history.length === 1, 'la ronda 1 sigue en el historial');
   t(d.round.id === x.round.id, 'se reabre la ronda que se estaba jugando');
+
+  // R3-002: una ronda deshecha vuelve a «preparada» y SIN reloj. Si se
+  // conservara openedAt, el motor creería que la cuenta ya corre y el
+  // presentador no podría leer la pregunta antes de pulsar Iniciar.
+  t(d.round.state === 'prepared', 'la ronda deshecha queda preparada');
+  t(d.round.openedAt === null, 'la ronda deshecha NO tiene el reloj arrancado');
+  t(E.transcurridoMs(d.round, T0 + 4000) === 0,
+    'el reloj marca cero tras deshacer (no corre hasta pulsar Iniciar)');
 }
 
 console.log('\n=== 11. Saltar y repetir ===');

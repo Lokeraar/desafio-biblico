@@ -373,7 +373,11 @@ export function deshacer(estado, t = ahora()) {
 
   const round = {
     ...actual,
-    openedAt: t,
+    // El reloj vuelve a cero: la pregunta queda «preparada» y no corre
+    // hasta que el presentador pulse Iniciar. Si dejáramos la hora aquí,
+    // el motor creería que ya está en marcha (usa openedAt == null para
+    // saber que el reloj no ha arrancado).
+    openedAt: null,
     durationMs: estado.roundSeconds * 1000,
     pausedAt: null,
     pausedTotal: 0,

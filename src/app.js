@@ -12,6 +12,12 @@ import {
   esc, validarNombre, segundos, EMOJI, normalizeName
 } from './lib/util.js';
 import { crearHostLocal, crearClienteLocal, esLocalDisponible } from './lib/local.js';
+import { crearHostNube, crearClienteNube, admin, rpc } from './lib/cloud.js';
+import { hayNube } from './config.js';
+import {
+  selectorTema, modalClave, modalCambiarClave, modalTemas,
+  modalPreguntas, modalFormPregunta, vistaConfig, validarPregunta
+} from './lib/admin-ui.js';
 import { qrSVG } from './lib/qr.js';
 import { ceremoniaHTML, totalPasos } from './lib/render.js';
 
@@ -60,7 +66,17 @@ const app = {
   cerrarConfirm: false,
   podioPaso: 0,      // 0 = oculto, 1 = 3.º, 2 = 2.º, 3 = 1.º
   miRespuesta: null, // { roundId, idx } — lo que este teléfono ya contestó
-  cantidadPreguntas: 10
+  cantidadPreguntas: 10,
+
+  // --- administración (temas y preguntas) ---
+  temas: [],           // [{ id, name, questions }]
+  temasCargados: false, // evita volver a pedir la lista en cada render
+  temaElegido: null,   // id del tema de la partida
+  adminClave: null,    // clave maestra ya verificada en esta sesión
+  modal: null,         // { tipo, ...datos } o null
+  adminError: null,    // mensaje de error dentro del modal
+  preguntasTema: [],   // preguntas del tema abierto en el modal
+  editarPregunta: null // pregunta que se está editando (null = nueva)
 };
 
 const CLAVE_SESION = 'desafio-biblico-sesion';
@@ -107,6 +123,54 @@ function ponerAviso(tipo, texto, ms = 4000) {
   app.aviso = { tipo, texto };
   render();
   if (ms) setTimeout(() => { app.aviso = null; render(); }, ms);
+}
+
+/**
+ * Traduce los códigos del motor a frases que se entiendan.
+ * La base devuelve códigos en español (`nombre_ocupado`), pero un código
+ * suelto en pantalla no le dice nada a nadie.
+ */
+function traducirError(codigo) {
+  const frases = {
+    clave_incorrecta: 'La clave no es correcta.',
+    clave_bloqueada: 'Demasiados intentos. Espera 10 minutos.',
+    clave_no_configurada: 'Todavía no hay clave maestra configurada.',
+    clave_muy_corta: 'La clave nueva debe tener al menos 4 caracteres.',
+    clave_muy_larga: 'La clave nueva es demasiado larga (máximo 64).',
+    tema_requerido: 'Elige un tema antes de crear la sala.',
+    tema_inexistente: 'Ese tema ya no existe.',
+    tema_ocupado: 'Ya hay un tema con ese nombre.',
+    tema_sin_preguntas: 'Ese tema no tiene preguntas todavía.',
+    nombre_vacio: 'Escribe un nombre para el tema.',
+    nombre_muy_largo: 'El nombre del tema es demasiado largo (máximo 60).',
+    partida_en_curso: 'No se puede borrar mientras hay una partida en curso.',
+    pregunta_inexistente: 'Esa pregunta ya no existe.',
+    enunciado_vacio: 'Escribe el enunciado de la pregunta.',
+    enunciado_muy_largo: 'El enunciado es demasiado largo (máximo 1000).',
+    se_requieren_4_opciones: 'Se necesitan exactamente 4 respuestas.',
+    opcion_vacia: 'Todas las respuestas deben tener texto.',
+    opcion_muy_larga: 'Una respuesta es demasiado larga (máximo 300).',
+    opciones_repetidas: 'Hay dos respuestas iguales.',
+    respuesta_correcta_invalida: 'Marca cuál respuesta es la correcta.',
+    opciones_invalidas: 'Las respuestas no tienen el formato esperado.',
+    nombre_ocupado: 'Ese nombre ya está tomado.',
+    ya_respondio: 'Ya respondiste esta pregunta.',
+    en_pausa: 'El juego está en pausa.',
+    tiempo_agotado: 'Se acabó el tiempo.',
+    ronda_cerrada: 'La ronda ya está cerrada.',
+    ronda_sin_revelar: 'Revela la respuesta anterior antes de avanzar.',
+    cuenta_no_iniciada: 'El presentador todavía no inició la cuenta.',
+    banco_agotado: 'No quedan preguntas en este tema.',
+    nada_que_revelar: 'No hay nada que revelar.',
+    nada_que_iniciar: 'No hay ninguna pregunta preparada.',
+    partida_terminada: 'La partida ya terminó.',
+    ronda_abierta: 'Ya hay una pregunta abierta.',
+    expulsado: 'No formas parte de esta partida.',
+    en_espera: 'Estás en la sala de espera.',
+    no_autorizado: 'Tu sesión ya no es válida. Vuelve a entrar.',
+    sala_inexistente: 'Esa sala no existe.'
+  };
+  return frases[codigo] ?? String(codigo ?? 'Algo salió mal.');
 }
 
 /**
@@ -173,6 +237,9 @@ function vistaMenu() {
         <button class="boton boton-contorno" data-ir="tv">
           📺 Pantalla para el televisor
         </button>
+        ${hayNube ? `<button class="boton boton-contorno" data-ir="config">
+          ⚙️ Configuraciones
+        </button>` : ''}
       </div>
 
       <h2 class="menu-seccion">
@@ -204,6 +271,16 @@ function vistaHost() {
   const s = app.estado;
 
   if (!s) {
+    const temaOk = Boolean(app.temaElegido);
+    const tema = app.temas.find(t => t.id === app.temaElegido);
+    const nPreguntas = tema?.questions ?? 0;
+
+    // El botón solo se habilita con un tema elegido y con preguntas.
+    const puedeCrear = temaOk && nPreguntas > 0;
+    const porQueNo = !temaOk
+      ? 'Elige un tema para empezar.'
+      : 'Ese tema no tiene preguntas todavía.';
+
     return `
       <div class="fila-entre">
         <button class="boton boton-secundario" data-ir="menu">← Volver</button>
@@ -213,17 +290,26 @@ function vistaHost() {
         <p class="tenue" style="text-align:center; max-width:34ch">
           Crea la sala. Los participantes entrarán con un código.
         </p>
-        <div class="campo" style="max-width:240px; width:100%">
-          <label for="cant">Preguntas en esta partida ${ayuda('Se eligen al azar entre las ' + BANCO.length + ' disponibles, empezando por las que hace más tiempo no se juegan.')}</label>
-          <select id="cant">
-            ${[5, 10, 15, 20, 25].map(n =>
+
+        ${selectorTema(app.temas, app.temaElegido)}
+
+        <div class="campo" style="max-width:340px; width:100%">
+          <label for="cant">Preguntas en esta partida ${ayuda(
+            'Se eligen al azar empezando por las que hace más tiempo no se juegan. '
+            + (nPreguntas ? 'Este tema tiene ' + nPreguntas + '.' : ''))}</label>
+          <select id="cant" ${puedeCrear ? '' : 'disabled'}>
+            ${[5, 10, 15, 20, 25, 30, 40, 50].filter(n => n <= Math.max(nPreguntas, 5)).map(n =>
               `<option value="${n}" ${n === app.cantidadPreguntas ? 'selected' : ''}>${n} preguntas</option>`).join('')}
           </select>
         </div>
+
         ${avisoHTML()}
-        <button class="boton-grande" data-accion="crear-sala" style="max-width:320px">
+        <button class="boton-grande" data-accion="crear-sala"
+                style="max-width:320px" ${puedeCrear ? '' : 'disabled'}
+                title="${puedeCrear ? '' : esc(porQueNo)}">
           Crear sala
         </button>
+        ${puedeCrear ? '' : `<p class="chico tenue" style="margin:0">${esc(porQueNo)}</p>`}
       </main>`;
   }
 
@@ -818,6 +904,83 @@ function vistaTV() {
 /* ------------------------------------------------------------------ */
 let timerReloj = null;
 
+/* ------------------------------------------------------------------ */
+/* Administración: temas, preguntas y clave maestra                    */
+/* ------------------------------------------------------------------ */
+
+/** Carga los temas del servidor y refresca la pantalla. */
+async function cargarTemas() {
+  if (!hayNube) return;
+  const { temas, error } = await admin.temas();
+  if (error) {
+    // Se libera la bandera para que al volver a entrar se reintente.
+    app.temasCargados = false;
+    ponerAviso('error', 'No se pudieron cargar los temas.');
+    return;
+  }
+  app.temas = temas;
+
+  // Si el tema elegido ya no existe (o cambió su número de preguntas),
+  // se corrige solo para no quedar con una selección fantasma.
+  const sigue = app.temas.find(t => t.id === app.temaElegido);
+  if (!sigue || sigue.questions === 0) {
+    app.temaElegido = app.temas.find(t => t.questions > 0)?.id ?? null;
+  }
+  render();
+}
+
+/** Pide la clave maestra si todavía no se verificó en esta sesión. */
+function pedirClave(siguiente) {
+  if (app.adminClave) { siguiente(); return; }
+  app.modal = { tipo: 'clave' };
+  app.adminError = null;
+  render();
+}
+
+/** Abre la lista de temas (ya con la clave verificada). */
+async function abrirTemas() {
+  app.modal = { tipo: 'temas' };
+  app.adminError = null;
+  render();
+  const { temas, error } = await admin.temas();
+  if (error) app.adminError = error;
+  else app.temas = temas;
+  render();
+}
+
+/** Abre las preguntas de un tema. */
+async function abrirPreguntas(temaId) {
+  const tema = app.temas.find(t => t.id === temaId);
+  app.modal = { tipo: 'preguntas', tema };
+  app.adminError = null;
+  app.preguntasTema = [];
+  render();
+  const { preguntas, error } = await admin.preguntas(app.adminClave, temaId);
+  if (error) app.adminError = error;
+  else app.preguntasTema = preguntas;
+  render();
+}
+
+/** Dibuja el modal que esté abierto, si hay alguno. */
+function modalActivo() {
+  const m = app.modal;
+  if (!m) return '';
+  const err = app.adminError;
+
+  switch (m.tipo) {
+    case 'clave':       return modalClave({ error: err });
+    case 'cambiar':     return modalCambiarClave({ error: err });
+    case 'temas':       return modalTemas(app.temas, { error: err });
+    case 'preguntas':   return modalPreguntas(m.tema, app.preguntasTema, { error: err });
+    case 'pregunta':    return modalFormPregunta({
+                          temaId: m.temaId,
+                          pregunta: app.editarPregunta,
+                          error: err
+                        });
+    default: return '';
+  }
+}
+
 function render() {
   const { vista } = rutaActual();
 
@@ -827,11 +990,24 @@ function render() {
     case 'join':
     case 'play':  html = vistaJugador(); break;
     case 'tv':    html = vistaTV(); break;
+    case 'config': html = vistaConfig({ hayClave: hayNube }); break;
     default:      html = vistaMenu();
   }
 
+  // El modal se dibuja ENCIMA de la vista, sin reemplazarla: así al
+  // cerrarlo no se pierde lo que el usuario estaba escribiendo debajo.
+  if (app.modal) html += modalActivo();
+
   $app.innerHTML = html;
   document.body.classList.toggle('tv', vista === 'tv');
+
+  // Al entrar a la vista del presentador, se cargan los temas una vez.
+  // La bandera evita un bucle: si la lista vuelve vacía, render() no debe
+  // volver a pedirla, porque se llamaría a sí mismo sin fin.
+  if (vista === 'host' && hayNube && !app.temasCargados) {
+    app.temasCargados = true;
+    cargarTemas();
+  }
 
   // El reloj se actualiza cada 250 ms sin re-renderizar toda la pantalla.
   clearInterval(timerReloj);
@@ -890,6 +1066,28 @@ document.addEventListener('click', async ev => {
   switch (accion) {
     /* --- menú / navegación --- */
     case 'crear-sala': {
+      if (!app.temaElegido) {
+        ponerAviso('error', 'Elige un tema antes de crear la sala.');
+        break;
+      }
+
+      // Con proyecto configurado, la partida vive en la nube: varios
+      // teléfonos de verdad, no solo pestañas del mismo aparato.
+      if (hayNube) {
+        const host = crearHostNube({
+          topicId: app.temaElegido,
+          onEstado: est => { app.estado = est; render(); }
+        });
+        const r = await host.crear(app.cantidadPreguntas);
+        if (r.error) {
+          ponerAviso('error', traducirError(r.error));
+          break;
+        }
+        app.host = host;
+        render();
+        break;
+      }
+
       app.host = crearHostLocal({
         preguntas: BANCO,
         onEstado: est => { app.estado = est; render(); }
@@ -897,6 +1095,77 @@ document.addEventListener('click', async ev => {
       app.host.preparar(app.cantidadPreguntas);
       // Por defecto, el presentador es quien orquesta: no necesita cuenta.
       app.estado = app.host.estado();
+      render();
+      break;
+    }
+
+    /* --- administración --- */
+    case 'abrir-temas': {
+      pedirClave(() => abrirTemas());
+      break;
+    }
+
+    case 'cerrar-admin': {
+      app.modal = null;
+      app.adminError = null;
+      app.editarPregunta = null;
+      render();
+      break;
+    }
+
+    case 'ver-preguntas': {
+      await abrirPreguntas(el.dataset.tema);
+      break;
+    }
+
+    case 'nueva-pregunta': {
+      app.editarPregunta = null;
+      app.adminError = null;
+      app.modal = { tipo: 'pregunta', temaId: el.dataset.tema };
+      render();
+      break;
+    }
+
+    case 'editar-pregunta': {
+      app.editarPregunta = app.preguntasTema.find(q => q.id === el.dataset.pregunta) ?? null;
+      app.adminError = null;
+      app.modal = { tipo: 'pregunta', temaId: app.modal?.tema?.id ?? null };
+      render();
+      break;
+    }
+
+    case 'borrar-pregunta': {
+      const r = await admin.borrarPregunta(app.adminClave, el.dataset.pregunta);
+      if (r.error) app.adminError = traducirError(r.error);
+      await abrirPreguntas(app.modal?.tema?.id);
+      if (r.error) { app.adminError = traducirError(r.error); render(); }
+      break;
+    }
+
+    case 'borrar-tema': {
+      const nombre = el.dataset.nombre ?? '';
+      if (!confirm(`¿Borrar el tema «${nombre}» y todas sus preguntas?`)) break;
+      const r = await admin.borrarTema(app.adminClave, el.dataset.tema);
+      if (r.error) app.adminError = traducirError(r.error);
+      await abrirTemas();
+      if (r.error) { app.adminError = traducirError(r.error); render(); }
+      break;
+    }
+
+    case 'renombrar-tema': {
+      const viejo = el.dataset.nombre ?? '';
+      const nuevo = prompt('Nuevo nombre del tema:', viejo);
+      if (nuevo === null || !nuevo.trim() || nuevo.trim() === viejo) break;
+      const r = await admin.renombrarTema(app.adminClave, el.dataset.tema, nuevo.trim());
+      if (r.error) app.adminError = traducirError(r.error);
+      await abrirTemas();
+      if (r.error) { app.adminError = traducirError(r.error); render(); }
+      break;
+    }
+
+    case 'abrir-cambiar-clave': {
+      app.modal = { tipo: 'cambiar' };
+      app.adminError = null;
       render();
       break;
     }
@@ -1035,3 +1304,113 @@ document.addEventListener('keydown', ev => {
 
   render();
 })();
+
+/* ------------------------------------------------------------------ */
+/* Formularios del panel de administración                              */
+/* ------------------------------------------------------------------ */
+document.addEventListener('submit', async ev => {
+  const form = ev.target.closest('[data-form]');
+  if (!form) return;
+  ev.preventDefault();
+
+  const datos = new FormData(form);
+  const tipo = form.dataset.form;
+
+  /* --- introducir la clave maestra --- */
+  if (tipo === 'clave') {
+    const clave = String(datos.get('clave') ?? '').trim();
+    const { error } = await admin.comprobarClave(clave);
+    if (error) {
+      app.adminError = traducirError(error);
+      render();
+      return;
+    }
+    app.adminClave = clave;
+    app.adminError = null;
+    await abrirTemas();
+    return;
+  }
+
+  /* --- cambiar la clave maestra --- */
+  if (tipo === 'cambiar-clave') {
+    const anterior = String(datos.get('anterior') ?? '').trim();
+    const nueva = String(datos.get('nueva') ?? '').trim();
+    const repetir = String(datos.get('repetir') ?? '').trim();
+
+    if (nueva !== repetir) {
+      app.adminError = 'Las dos claves nuevas no coinciden.';
+      render();
+      return;
+    }
+    if (nueva.length < 4) {
+      app.adminError = 'La clave nueva debe tener al menos 4 caracteres.';
+      render();
+      return;
+    }
+
+    const { error } = await admin.cambiarClave(anterior, nueva);
+    if (error) {
+      app.adminError = traducirError(error);
+      render();
+      return;
+    }
+    app.adminClave = nueva;   // la sesión sigue abierta con la clave nueva
+    app.modal = null;
+    app.adminError = null;
+    ponerAviso('ok', 'Clave maestra actualizada.');
+    return;
+  }
+
+  /* --- crear un tema --- */
+  if (tipo === 'crear-tema') {
+    const nombre = String(datos.get('nombre') ?? '').trim();
+    if (!nombre) { app.adminError = 'Escribe un nombre para el tema.'; render(); return; }
+
+    const r = await admin.crearTema(app.adminClave, nombre);
+    if (r.error) { app.adminError = traducirError(r.error); render(); return; }
+    app.adminError = null;
+    await abrirTemas();
+    return;
+  }
+
+  /* --- guardar una pregunta (nueva o editada) --- */
+  if (tipo === 'pregunta') {
+    const enunciado = String(datos.get('enunciado') ?? '');
+    const opciones = [0, 1, 2, 3].map(i => String(datos.get(`opcion${i}`) ?? ''));
+    const correcta = datos.get('correcta');
+    const referencia = String(datos.get('referencia') ?? '').trim() || null;
+    const indiceCorrecto = correcta === null ? -1 : Number(correcta);
+
+    // Misma validación que usa la base, pero al instante y sin petición.
+    const problema = validarPregunta({ enunciado, opciones, indiceCorrecto });
+    if (problema) { app.adminError = problema; render(); return; }
+
+    const r = await admin.guardarPregunta(app.adminClave, {
+      topicId: form.dataset.tema,
+      id: form.dataset.pregunta || null,
+      enunciado: enunciado.trim(),
+      opciones: opciones.map(o => o.trim()),
+      indiceCorrecto,
+      referencia
+    });
+    if (r.error) { app.adminError = traducirError(r.error); render(); return; }
+
+    app.adminError = null;
+    app.editarPregunta = null;
+    await abrirPreguntas(form.dataset.tema);
+    return;
+  }
+});
+
+/* --- elegir tema o cantidad de preguntas --- */
+document.addEventListener('change', ev => {
+  if (ev.target.id === 'sel-tema') {
+    app.temaElegido = ev.target.value || null;
+    render();
+    return;
+  }
+  if (ev.target.id === 'cant') {
+    app.cantidadPreguntas = Number(ev.target.value) || 10;
+    render();
+  }
+});
