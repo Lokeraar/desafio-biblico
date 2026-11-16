@@ -43,8 +43,12 @@ function codigoDeUrl() {
 
 function rutaActual() {
   const h = location.hash.replace(/^#\/?/, '');
-  const [vista, ...resto] = h.split('/');
-  return { vista: vista || 'menu', params: resto };
+  // El hash puede traer consulta (`join?c=ABC`). Sin cortarla aquí, la
+  // vista se llamaría «join?c=ABC» y no coincidiría con ningún case: al
+  // escanear el QR se abría el menú en vez de la pantalla de entrada.
+  const [ruta, consulta] = h.split('?');
+  const [vista, ...resto] = ruta.split('/');
+  return { vista: vista || 'menu', params: resto, consulta: consulta ?? '' };
 }
 
 function ir(vista) {
@@ -1224,6 +1228,27 @@ document.addEventListener('click', async ev => {
       const problema = validarNombre(nombre);
       if (problema) { ponerAviso('error', problema); return; }
 
+      // Con proyecto configurado, el jugador entra por la nube: su teléfono
+      // habla con Supabase, no con una pestaña del mismo aparato. Sin esto
+      // el QR servía de adorno y solo funcionaba el modo local.
+      if (hayNube) {
+        const codigo = codigoDeUrl();
+        if (!codigo) { ponerAviso('error', 'Falta el código de la sala.'); return; }
+
+        if (!app.cliente || !app.cliente.nube) {
+          app.cliente = crearClienteNube({
+            onEstado: est => { app.estado = est; render(); }
+          });
+        }
+        const r = await app.cliente.unirse(codigo, nombre);
+        if (r.error) { ponerAviso('error', traducirError(r.error)); return; }
+
+        app.yo = { playerId: r.player_id, name: r.display_name ?? nombre.trim(), code: r.code };
+        guardarSesion();
+        render();
+        break;
+      }
+
       if (!app.cliente) {
         app.cliente = crearClienteLocal({
           onEstado: est => { app.estado = est; render(); }
@@ -1244,13 +1269,17 @@ document.addEventListener('click', async ev => {
       if (!app.yo || !app.estado?.round) return;
       el.disabled = true;
       const ronda = app.estado.round;
-      const r = await app.cliente.responder(
-        app.yo.playerId, ronda.id, Number(el.dataset.idx)
-      );
-      if (r.error) ponerAviso('error', r.error);
+      const idx = Number(el.dataset.idx);
+
+      // La nube espera la letra de la opción; el motor local, el índice.
+      const r = app.cliente?.nube
+        ? await app.cliente.responder(ronda.id, ['a', 'b', 'c', 'd'][idx])
+        : await app.cliente.responder(app.yo.playerId, ronda.id, idx);
+
+      if (r.error) ponerAviso('error', traducirError(r.error));
       else {
         // registrar en local que ya respondió esta ronda
-        app.miRespuesta = { roundId: ronda.id, idx: Number(el.dataset.idx) };
+        app.miRespuesta = { roundId: ronda.id, idx };
         ponerAviso('ok', 'Respuesta enviada.', 2000);
       }
       break;
