@@ -1161,9 +1161,13 @@ body.tv .opcion { font-size: var(--t-xl); }
 }
 /* La ficha de pregunta lleva dos botones junto al número. Sin esta rejilla
    heredaban `width: 100%` de .boton-contorno, cada uno pedía todo el ancho
-   y «Borrar» se salía de la tarjeta: había que deslizar para verlo. */
+   y «Borrar» se salía de la tarjeta: había que deslizar para verlo.
+   Las columnas son de tamaño natural (`max-content`) y no `1fr`: con `1fr`
+   la rejilla se encogía al mínimo y dejaba dos botones de 43 px pegados al
+   borde, con espacio de sobra al lado. */
 .pregunta-fila .fila {
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, max-content);
+  flex: 0 1 auto;
 }
 .tema-fila .fila .boton,
 .pregunta-fila .fila .boton {
@@ -1171,6 +1175,10 @@ body.tv .opcion { font-size: var(--t-xl); }
   min-width: 0;
   padding-inline: .3em;
   white-space: nowrap;
+}
+/* En la ficha de pregunta el botón ocupa su columna natural, no el 100% */
+.pregunta-fila .fila .boton {
+  padding-inline: .7em;
 }
 
 /* Ficha de pregunta dentro de la lista */
