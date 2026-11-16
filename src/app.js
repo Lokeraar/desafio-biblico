@@ -1075,6 +1075,14 @@ document.addEventListener('click', async ev => {
         break;
       }
 
+      // Un solo host vivo. Si se crea una sala nueva sin retirar la
+      // anterior, los dos siguen consultando y el viejo sobrescribe el
+      // estado con SU código: en pantalla aparecía un código y el QR de
+      // otro, y la sala real era impredecible.
+      if (app.host?.destruir) app.host.destruir();
+      app.host = null;
+      app.estado = null;
+
       // Con proyecto configurado, la partida vive en la nube: varios
       // teléfonos de verdad, no solo pestañas del mismo aparato.
       if (hayNube) {
@@ -1243,7 +1251,15 @@ document.addEventListener('click', async ev => {
         const r = await app.cliente.unirse(codigo, nombre);
         if (r.error) { ponerAviso('error', traducirError(r.error)); return; }
 
-        app.yo = { playerId: r.player_id, name: r.display_name ?? nombre.trim(), code: r.code };
+        app.yo = {
+          playerId: r.player_id,
+          name: r.display_name ?? nombre.trim(),
+          code: r.code,
+          // Token y sala son lo que permite VOLVER a la partida tras
+          // recargar. Sin ellos, refrescar dejaba al jugador fuera.
+          token: r.player_token,
+          roomId: r.room_id
+        };
         guardarSesion();
         render();
         break;
@@ -1323,7 +1339,28 @@ document.addEventListener('keydown', ev => {
 (function iniciar() {
   const sesion = leerSesion();
 
-  if (rutaActual().vista === 'play' && sesion) {
+  // Volver a la partida tras recargar o tras un corte de señal.
+  // Si hay sesión de nube con token, se reconecta y se muestra el estado
+  // actual; equivale a nunca haberse ido. Si el servidor ya no conoce al
+  // jugador (lo expulsaron, la sala murió), se limpia y se pide el nombre.
+  if (sesion && hayNube && sesion.token && sesion.roomId) {
+    app.yo = sesion;
+    app.cliente = crearClienteNube({
+      onEstado: est => { app.estado = est; render(); }
+    });
+    app.cliente.reanudar({
+      playerId: sesion.playerId,
+      token: sesion.token,
+      roomId: sesion.roomId
+    }).then(r => {
+      if (r?.error) {
+        app.yo = null;
+        app.cliente = null;
+        guardarSesion();
+        ponerAviso('error', 'Tu sesión terminó. Vuelve a entrar con tu nombre.');
+      }
+    });
+  } else if (rutaActual().vista === 'play' && sesion) {
     app.yo = sesion;
     app.cliente = crearClienteLocal({
       onEstado: est => { app.estado = est; render(); }

@@ -330,6 +330,32 @@ export function crearClienteNube({ onEstado } = {}) {
       return { error: null, ...dato };
     },
 
+    /**
+     * Vuelve a la partida tras recargar la página, sin pedir el nombre otra
+     * vez. Un refresco no debe dejar a nadie fuera: la sesión ya está
+     * guardada, solo hay que reconectar el sondeo con los datos que ya
+     * tenemos. Si el servidor ya no conoce al jugador, devuelve error y la
+     * interfaz vuelve a pedir el nombre.
+     */
+    async reanudar({ playerId, token, roomId }) {
+      if (!playerId || !token || !roomId) return { error: 'sesion_incompleta' };
+      jugador = { id: playerId, token };
+      salaId = roomId;
+
+      const { dato, error } = await rpc('room_state', { p_room: roomId });
+      if (error) return { error };
+
+      // ¿sigue este jugador en la sala? Si lo expulsaron o la sala ya no
+      // existe, no se reanuda nada.
+      const sigo = (dato?.players ?? []).some(p => p.id === playerId);
+      if (!sigo) return { error: 'jugador_ausente' };
+
+      activo = true;
+      onEstado?.(estadoDesdeServidor(dato, { completo: false }), jugador);
+      if (!sondeo) sondeo = setInterval(refrescar, MS_SONDEO_JUGADOR);
+      return { error: null };
+    },
+
     /** Responde la ronda en curso. */
     async responder(roundId, claveLetra) {
       if (!jugador) return { error: 'No estás dentro de una sala.' };
