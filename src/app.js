@@ -84,6 +84,9 @@ const app = {
 };
 
 const CLAVE_SESION = 'desafio-biblico-sesion';
+// La sala del presentador se guarda aparte: si refresca, debe volver a SU
+// sala con sus participantes, no encontrarse el panel vacío.
+const CLAVE_HOST = 'desafio-biblico-host';
 
 function guardarSesion() {
   try {
@@ -1096,6 +1099,13 @@ document.addEventListener('click', async ev => {
           break;
         }
         app.host = host;
+        // Guardar para sobrevivir a un refresco: la sala es del servidor,
+        // así que basta recordar su id y el token del presentador.
+        try {
+          localStorage.setItem(CLAVE_HOST, JSON.stringify({
+            roomId: r.roomId, hostToken: r.hostToken, code: r.code
+          }));
+        } catch { /* modo privado: la sala solo vive en memoria */ }
         render();
         break;
       }
@@ -1355,18 +1365,36 @@ document.addEventListener('keydown', ev => {
     app.cliente = crearClienteNube({
       onEstado: est => { app.estado = est; render(); }
     });
-    app.cliente.reanudar({
-      playerId: sesion.playerId,
-      token: sesion.token,
-      roomId: sesion.roomId
-    }).then(r => {
-      if (r?.error) {
-        app.yo = null;
-        app.cliente = null;
-        guardarSesion();
-        ponerAviso('error', 'Tu sesión terminó. Vuelve a entrar con tu nombre.');
-      }
-    });
+    // Errores que SÍ significan que la sesión murió. Cualquier otro (red
+    // caída, servidor lento) es transitorio: expulsar al jugador por eso
+    // contradice justo lo que se quería arreglar.
+    const SESION_MUERTA = new Set(['jugador_ausente', 'sala_inexistente', 'sesion_incompleta']);
+
+    const intentar = (intentos) => {
+      app.cliente.reanudar({
+        playerId: sesion.playerId,
+        token: sesion.token,
+        roomId: sesion.roomId
+      }).then(r => {
+        if (!r?.error) return;
+
+        if (SESION_MUERTA.has(r.error)) {
+          app.yo = null;
+          app.cliente = null;
+          guardarSesion();
+          ponerAviso('error', 'Tu sesión terminó. Vuelve a entrar con tu nombre.');
+          return;
+        }
+
+        // Fallo transitorio: se reintenta sin tocar la sesión guardada.
+        if (intentos > 0) {
+          setTimeout(() => intentar(intentos - 1), 2000);
+        } else {
+          ponerAviso('error', 'No hay conexión. Se reintentará al recargar.');
+        }
+      });
+    };
+    intentar(3);
   } else if (vista === 'play' && sesion) {
     app.yo = sesion;
     app.cliente = crearClienteLocal({
@@ -1375,6 +1403,34 @@ document.addEventListener('keydown', ev => {
     app.cliente.pedirEstado().then(r => {
       if (r?.estado) { app.estado = r.estado; render(); }
     });
+  }
+
+  // El PRESENTADOR también sobrevive a un refresco. Su sala vive en el
+  // servidor: basta recordar su id y el token para volver a ella con los
+  // participantes que ya entraron.
+  if (vista === 'host' && hayNube) {
+    let guardada = null;
+    try { guardada = JSON.parse(localStorage.getItem(CLAVE_HOST) || 'null'); } catch { guardada = null; }
+
+    if (guardada?.roomId && guardada?.hostToken) {
+      const host = crearHostNube({
+        topicId: app.temaElegido,
+        onEstado: est => { app.estado = est; render(); }
+      });
+      host.reabrir(guardada).then(r => {
+        if (r?.error) {
+          // La sala ya no existe o el token dejó de valer: se limpia y el
+          // presentador puede crear una nueva.
+          localStorage.removeItem(CLAVE_HOST);
+          app.host = null;
+          app.estado = null;
+          render();
+          return;
+        }
+        app.host = host;
+        render();
+      });
+    }
   }
 
   render();

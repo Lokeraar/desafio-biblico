@@ -249,7 +249,26 @@ export function crearHostNube({ topicId, onEstado, gameSlug = 'seleccion-simple'
       });
       await refrescar();
       arrancarSondeo();
-      return { error: null, code: dato.code, roomId: dato.room_id };
+      return { error: null, code: dato.code, roomId: dato.room_id, hostToken: dato.host_token };
+    },
+
+    /**
+     * Vuelve a la sala tras recargar la página del presentador, sin crear
+     * otra ni perder los participantes. Refrescar no debe costarle la
+     * partida a quien la dirige.
+     */
+    async reabrir({ roomId, hostToken, code }) {
+      if (!roomId || !hostToken) return { error: 'sesion_incompleta' };
+      sala = { room_id: roomId, host_token: hostToken, code };
+
+      const { error } = await rpc('host_state', { p_room: roomId, p_token: hostToken });
+      // Si el servidor ya no reconoce el token, la sala se perdió de verdad.
+      if (error) return { error };
+
+      activo = true;
+      await refrescar();
+      if (!sondeo) arrancarSondeo();
+      return { error: null, code: sala.code, roomId };
     },
 
     // Se conservan por compatibilidad con la interfaz: en la nube el plan
@@ -343,7 +362,9 @@ export function crearClienteNube({ onEstado } = {}) {
       salaId = roomId;
 
       const { dato, error } = await rpc('room_state', { p_room: roomId });
-      if (error) return { error };
+      // Un fallo de red NO significa que la sesión murió: se marca como
+      // transitorio para que quien llama reintente en vez de expulsar.
+      if (error) return { error, transitorio: true };
 
       // ¿sigue este jugador en la sala? Si lo expulsaron o la sala ya no
       // existe, no se reanuda nada.
