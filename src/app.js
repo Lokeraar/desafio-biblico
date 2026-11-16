@@ -165,7 +165,7 @@ function vistaMenu() {
 
       <div class="menu-acciones">
         <button class="boton-grande boton-oro" data-ir="host">
-          🎤 Jugar como presentador
+          🎤 Soy presentador
         </button>
         <button class="boton-grande boton-contorno" data-ir="join">
           🙋 Jugar como participante
@@ -190,10 +190,6 @@ function vistaMenu() {
             <span class="insignia">${j.listo ? 'Abierto' : 'Pronto'}</span>
           </button>`).join('')}
       </div>
-
-      <button class="boton-grande boton-verde" data-ir="host">
-        ✚ Nuevo juego
-      </button>
 
       <footer class="menu-pie">
         <span>v1.0</span>

@@ -965,14 +965,7 @@ body.tv .opcion { font-size: var(--t-xl); }
   background: rgba(46, 196, 212, .12);
   border-color: var(--tu-300);
 }
-/* botón verde: crear */
-.boton-verde {
-  background: linear-gradient(180deg, #3fae86, #1f7a56);
-  color: #fff;
-  box-shadow: 0 4px 0 #14543b, var(--sombra);
-  max-width: 480px;
-  margin: .3rem auto 0;
-}
+
 
 .menu-seccion {
   margin: .3rem 0 -.1rem;
