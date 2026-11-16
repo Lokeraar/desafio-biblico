@@ -51,7 +51,7 @@ function siguienteSeq(estado) {
  *  Con la ronda en pausa el reloj queda CONGELADO: se mide hasta el
  *  momento de la pausa, no hasta ahora. */
 export function transcurridoMs(round, t = ahora()) {
-  if (!round) return 0;
+  if (!round || round.openedAt == null) return 0;
   const hasta = round.pausedAt ?? t;
   return Math.max(0, hasta - round.openedAt - (round.pausedTotal ?? 0));
 }
@@ -59,6 +59,8 @@ export function transcurridoMs(round, t = ahora()) {
 export function restanteMs(round, t = ahora()) {
   if (!round) return 0;
   const total = round.durationMs ?? (round.roundSeconds ?? SEGUNDOS_RONDA) * 1000;
+  // Antes de «Iniciar» el reloj está lleno.
+  if (round.openedAt == null) return total;
   return Math.max(0, total - transcurridoMs(round, t));
 }
 
@@ -107,8 +109,9 @@ export function prepararPartida(estado, preguntas, cantidad) {
 }
 
 export function abrirPregunta(estado, t = ahora()) {
-  if (estado.round && estado.round.state === 'open') {
-    return { error: 'Ya hay una pregunta abierta. Ciérrala primero.' };
+  const st = estado.round?.state;
+  if (st === 'prepared' || st === 'open') {
+    return { error: 'Ya hay una pregunta en curso. Ciérrala primero.' };
   }
   if (estado.status === 'ceremony') {
     return { error: 'La partida ya terminó.' };
@@ -132,12 +135,14 @@ export function abrirPregunta(estado, t = ahora()) {
     reference: pregunta.reference ?? null,
     options: barajadas.map(o => o.texto),
     correctIdx: barajadas.findIndex(o => o.esCorrecta),
-    openedAt: t,
+    // El reloj NO arranca aquí: el presentador lee la pregunta en voz
+    // alta y las opciones, y solo entonces pulsa «Iniciar».
+    openedAt: null,
     durationMs: estado.roundSeconds * 1000,
     pausedAt: null,
     pausedTotal: 0,
     answers: [],
-    state: 'open',
+    state: 'prepared',
     winnerId: null,
     noWinner: false
   };
@@ -150,6 +155,26 @@ export function abrirPregunta(estado, t = ahora()) {
       round,
       planIndex: estado.planIndex + 1,
       lastPlayed: { ...estado.lastPlayed, [pregunta.prompt]: t }
+    }
+  };
+}
+
+/**
+ * El presentador pulsa «Iniciar»: aquí y solo aquí arranca el reloj.
+ * Antes de esto la pregunta y las opciones ya se ven, pero nadie puede
+ * responder. Así da tiempo a leerlas en voz alta.
+ */
+export function iniciarCuenta(estado, t = ahora()) {
+  const round = estado.round;
+  if (!round) return { error: 'No hay pregunta que iniciar.' };
+  if (round.state !== 'prepared') return { error: 'La cuenta ya se inició.' };
+
+  return {
+    estado: {
+      ...estado,
+      status: 'question',
+      paused: false,
+      round: { ...round, state: 'open', openedAt: t, pausedAt: null, pausedTotal: 0 }
     }
   };
 }
@@ -183,10 +208,27 @@ export function reanudar(estado, t = ahora()) {
 }
 
 /** Cierra la ronda y otorga el punto. Idempotente: llamarla dos veces no suma doble. */
+/**
+ * Cierra la votación: nadie más puede responder. El punto ya se decide
+ * aquí, pero la respuesta correcta AÚN NO se muestra a los jugadores.
+ * Ese es el momento de suspenso del presentador.
+ */
 export function cerrarRonda(estado, t = ahora()) {
   const round = estado.round;
   if (!round) return { estado };
-  if (round.state === 'closed') return { estado };
+  if (round.state === 'closed' || round.state === 'revealed') return { estado };
+  if (round.state === 'prepared') {
+    // cerrar sin haber iniciado: no hay respuestas posibles
+    const cerrada = { ...round, state: 'closed', closedAt: t, winnerId: null, noWinner: true };
+    return {
+      estado: {
+        ...estado,
+        paused: false,
+        round: cerrada,
+        history: [...estado.history, cerrada]
+      }
+    };
+  }
 
   const ganador = ganadorDe(round);
   const ganadorId = ganador ? ganador.playerId : null;
@@ -214,7 +256,7 @@ export function cerrarRonda(estado, t = ahora()) {
   return {
     estado: {
       ...estado,
-      status: 'reveal',
+      // sigue en 'question': la pregunta está cerrada pero sin revelar
       paused: false,
       players,
       round: roundCerrada,
@@ -223,10 +265,32 @@ export function cerrarRonda(estado, t = ahora()) {
   };
 }
 
+/** Revela la respuesta correcta y el ganador. Aquí sí cambia a 'reveal'. */
+export function revelarRespuesta(estado, t = ahora()) {
+  const round = estado.round;
+  if (!round) return { estado };
+  if (round.state === 'revealed') return { estado };
+  if (round.state !== 'closed') return { estado };
+
+  return {
+    estado: {
+      ...estado,
+      status: 'reveal',
+      round: { ...round, state: 'revealed', revealedAt: t }
+    }
+  };
+}
+
+/**
+ * Saltar: cierra la pregunta sin dar el punto Y muestra la correcta de una vez.
+ * No pasa por 'closed' porque no hay suspenso que sostener: se salta justamente
+ * para ver la respuesta.
+ */
 export function saltarPregunta(estado, t = ahora()) {
   const round = estado.round;
-  if (!round || round.state !== 'open') return { estado };
-  const cerrada = { ...round, state: 'closed', closedAt: t, noWinner: true, winnerId: null };
+  if (!round || (round.state !== 'open' && round.state !== 'prepared')) return { estado };
+  const cerrada = { ...round, state: 'revealed', closedAt: t, revealedAt: t,
+                    noWinner: true, winnerId: null };
   return {
     estado: {
       ...estado,
@@ -357,6 +421,7 @@ export function responder(estado, { playerId, roundId, optionIdx }, t = ahora())
 
   const round = estado.round;
   if (!round || round.id !== roundId) return { error: 'Esa pregunta ya no está activa.' };
+  if (round.state === 'prepared') return { error: 'El presentador aún no inició la cuenta.' };
   if (round.state !== 'open') return { error: 'La pregunta ya se cerró.' };
   if (restanteMs(round, t) <= 0) {
     return { error: 'Se acabó el tiempo.' };
@@ -447,12 +512,13 @@ export function estadoVisible(estado) {
     answered: r.answers.length,        // el televisor puede mostrar el conteo
     winnerId: r.winnerId,
     noWinner: r.noWinner,
-    // SOLO al cerrar viaja la correcta
-    correctIdx: r.state === 'closed' ? r.correctIdx : null,
+    // La correcta viaja SOLO al revelar. Cerrar no es revelar: entre uno y
+    // otro está el suspenso del presentador.
+    correctIdx: r.state === 'revealed' ? r.correctIdx : null,
     // Al cerrar ya no hay secreto que proteger: cada jugador puede ver
     // si acertó. Mientras la ronda está abierta NO se publican, para que
     // nadie sepa quién respondió ni en qué orden.
-    answers: r.state === 'closed'
+    answers: r.state === 'revealed'
       ? r.answers.map(a => ({
           playerId: a.playerId, optionIdx: a.optionIdx, correct: a.correct, seq: a.seq
         }))

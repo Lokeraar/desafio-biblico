@@ -190,7 +190,15 @@ button:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
   text-wrap: balance;
   margin-bottom: 1.2rem;
 }
-.opciones { display: grid; gap: .7rem; width: 100%; }
+.opciones {
+  display: grid;
+  gap: .7rem;
+  width: 100%;
+  /* sin esto, las filas se estiran cuando sobra altura
+     (align-content por omisión es 'stretch') */
+  align-content: start;
+  align-items: start;
+}
 .opcion {
   display: flex;
   gap: .8rem;
@@ -557,3 +565,17 @@ body.tv .opcion { font-size: var(--t-xl); }
   padding: .55em 1em;
   font-size: var(--t-sm);
 }
+
+/* =====================================================================
+   Código QR de la sala
+   ===================================================================== */
+.qr-caja {
+  background: #fff;
+  padding: .5rem;
+  border-radius: 14px;
+  line-height: 0;
+  box-shadow: var(--sombra);
+  max-width: 190px;
+  margin-inline: auto;
+}
+.qr-caja svg { width: 100%; height: auto; display: block; }

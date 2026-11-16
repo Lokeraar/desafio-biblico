@@ -6,6 +6,18 @@ import { BANCO } from './bank.js';
 import { validarNombre, esNombreInvalido, normalizeName } from './util.js';
 
 let ok = 0, fail = 0;
+
+/**
+ * Abre una pregunta Y arranca la cuenta.
+ * Desde el flujo con inicio manual, `abrirPregunta` deja la ronda en
+ * 'prepared' y sin reloj: hay que llamar a `iniciarCuenta` para poder
+ * responder. Este ayudante evita repetirlo en cada caso.
+ */
+function abrirEIniciar(estado, t) {
+  const r = E.abrirPregunta(estado, t);
+  if (r.error) return r;
+  return { estado: E.iniciarCuenta(r.estado, t).estado };
+}
 const t = (cond, msg) => {
   if (cond) { ok++; console.log('  ok   ' + msg); }
   else { fail++; console.log('  FALLA ' + msg); }
@@ -32,7 +44,7 @@ s = r;
 t(s.plan.length === 5, 'el plan toma 5 preguntas');
 t(new Set(s.plan.map(p => p.prompt)).size === 5, 'las 5 son distintas');
 
-r = E.abrirPregunta(s, T0);
+r = abrirEIniciar(s, T0);
 s = r.estado;
 t(!r.error, 'la pregunta abre');
 t(s.status === 'question', 'pasa a estado question');
@@ -70,11 +82,12 @@ r = E.cerrarRonda(s, T0 + 5000);
 s = r.estado;
 const ana = s.players.find(p => p.id === 'p1');
 const beto = s.players.find(p => p.id === 'p2');
-t(s.status === 'reveal', 'pasa a reveal');
+t(s.round.state === 'closed', 'cerrar deja la ronda cerrada');
+t(s.status === 'question', 'el estado sigue en question: aún no se revela');
 t(ana.score === 1, 'Ana suma 1 punto por acertar');
 t(beto.score === 0, 'Beto no suma por errar');
 t(s.round.winnerId === 'p1', 'el ganador es quien acertó');
-t(s.round.state === 'closed', 'la ronda queda cerrada');
+t(s.round.state === 'closed', 'la ronda queda cerrada, pendiente de revelar');
 
 // idempotencia
 const antes = JSON.stringify(s.players);
@@ -82,7 +95,7 @@ r = E.cerrarRonda(s, T0 + 6000);
 t(JSON.stringify(r.estado.players) === antes, 'cerrar dos veces NO duplica el punto');
 
 console.log('\n=== 7. Gana el segundo si el primero falla ===');
-s = E.abrirPregunta(s, T0 + 7000).estado;
+s = abrirEIniciar(s, T0 + 7000).estado;
 const R2 = s.round;
 const C2 = R2.correctIdx;
 const M2 = (C2 + 1) % 4;
@@ -94,7 +107,7 @@ t(s.players.find(p => p.id === 'p3').score === 1, 'Carla suma 1');
 t(s.players.find(p => p.id === 'p2').score === 0, 'Beto sigue en 0');
 
 console.log('\n=== 8. Nadie acierta ===');
-s = E.abrirPregunta(s, T0 + 10000).estado;
+s = abrirEIniciar(s, T0 + 10000).estado;
 const R3 = s.round;
 const M3a = (R3.correctIdx + 1) % 4;
 const M3b = (R3.correctIdx + 2) % 4;
@@ -105,7 +118,7 @@ t(s.round.noWinner === true, 'se marca sin ganador');
 t(s.players.every(p => p.score <= 1), 'nadie suma en una ronda sin acierto');
 
 console.log('\n=== 9. Pausa congela el reloj ===');
-s = E.abrirPregunta(s, T0 + 20000).estado;
+s = abrirEIniciar(s, T0 + 20000).estado;
 const R4 = s.round;
 s = E.pausar(s, T0 + 21000).estado;
 t(s.paused === true, 'queda en pausa');
@@ -135,6 +148,7 @@ console.log('\n=== 11. Saltar y repetir ===');
 r = E.saltarPregunta(s, T0 + 34000);
 s = r.estado;
 t(s.round.noWinner === true, 'saltar deja la ronda sin ganador');
+t(s.round.state === 'revealed', 'saltar revela de inmediato (para eso se salta)');
 t(s.status === 'reveal', 'saltar pasa a reveal');
 r = E.repetirPregunta(s, T0 + 35000);
 s = r.estado;
@@ -185,7 +199,7 @@ sp.players = [
   { id:'p2', name:'Beto', score:0, totalMs:0, correct:0, joinedAt:T0+1, waiting:false, kicked:false }
 ];
 sp = E.prepararPartida(sp, BANCO, 2);
-sp = E.abrirPregunta(sp, T0).estado;
+sp = abrirEIniciar(sp, T0).estado;
 const rr = sp.round;
 
 let vis = E.estadoVisible(sp);
@@ -199,14 +213,20 @@ vis = E.estadoVisible(sp);
 t(vis.round.answers.length === 0, 'tras responder, las respuestas siguen ocultas');
 t(vis.round.answered === 1, 'pero el conteo de respuestas sí se publica');
 
-// cerrar
+// cerrar: NO revela todavía
 sp = E.cerrarRonda(sp, T0+2000).estado;
 vis = E.estadoVisible(sp);
-t(vis.round.correctIdx === rr.correctIdx, 'CERRADA: la correcta sí se publica');
-t(vis.round.answers.length === 1, 'CERRADA: las respuestas sí se publican');
-t(vis.round.answers[0].correct === true, 'CERRADA: cada quien puede ver si acertó');
-t(vis.round.answers[0].seq === 1, 'CERRADA: se publica el orden de llegada');
-t(vis.round.winnerId === 'p1', 'CERRADA: se publica el ganador');
+t(vis.round.correctIdx === null, 'CERRADA pero sin revelar: la correcta sigue oculta');
+t(vis.round.answers.length === 0, 'CERRADA pero sin revelar: las respuestas siguen ocultas');
+
+// revelar: ahora sí
+sp = E.revelarRespuesta(sp, T0+2500).estado;
+vis = E.estadoVisible(sp);
+t(vis.round.correctIdx === rr.correctIdx, 'REVELADA: la correcta sí se publica');
+t(vis.round.answers.length === 1, 'REVELADA: las respuestas sí se publican');
+t(vis.round.answers[0].correct === true, 'REVELADA: cada quien puede ver si acertó');
+t(vis.round.answers[0].seq === 1, 'REVELADA: se publica el orden de llegada');
+t(vis.round.winnerId === 'p1', 'REVELADA: se publica el ganador');
 
 console.log('\n=== 17. El nombre no se filtra a la proyección pública ===');
 t(!JSON.stringify(vis).includes('playerToken'), 'no viaja el token del jugador');

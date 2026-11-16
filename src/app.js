@@ -12,12 +12,28 @@ import {
   esc, validarNombre, segundos, EMOJI, normalizeName
 } from './lib/util.js';
 import { crearHostLocal, crearClienteLocal, esLocalDisponible } from './lib/local.js';
+import { qrSVG } from './lib/qr.js';
 
 const $app = document.getElementById('app');
 
 /* ------------------------------------------------------------------ */
 /* Navegación por hash                                                 */
 /* ------------------------------------------------------------------ */
+/**
+ * URL que se comparte por QR. Lleva el código en el hash para que al
+ * escanear se entre directo a esa sala.
+ */
+function urlSala(codigo) {
+  const base = location.origin + location.pathname;
+  return `${base}#/join?c=${encodeURIComponent(codigo)}`;
+}
+
+/** Lee ?c=CODIGO del hash. */
+function codigoDeUrl() {
+  const m = location.hash.match(/[?&]c=([A-Z0-9]+)/i);
+  return m ? m[1].toUpperCase() : null;
+}
+
 function rutaActual() {
   const h = location.hash.replace(/^#\/?/, '');
   const [vista, ...resto] = h.split('/');
@@ -218,9 +234,15 @@ function vistaHost() {
 
     <main class="crecer columna" style="gap:1rem; margin-top:1rem">
 
-      <div class="columna centro" style="gap:.2rem">
+      <div class="columna centro" style="gap:.4rem">
         <span class="mini tenue">Código de la sala</span>
         <div class="codigo-sala">${esc(s.code)}</div>
+        <div class="qr-caja" title="Escanéalo para entrar a la sala">
+          ${qrSVG(urlSala(s.code), { nivel: 'M', escala: 6, margen: 3 })}
+        </div>
+        <p class="mini tenue" style="text-align:center; margin:0">
+          Escanea el QR o escribe el código
+        </p>
         <span class="chico tenue">${jugando.length} participante${jugando.length === 1 ? '' : 's'}</span>
       </div>
 
@@ -234,94 +256,60 @@ function vistaHost() {
           <button class="boton-grande" data-accion="abrir">Empezar la primera pregunta</button>
         </div>
       ` : `
-        <!-- pregunta abierta o revelada -->
+        <!-- LA RONDA: prepared → open → closed → revealed -->
         <div class="columna" style="gap:.7rem">
           <div class="fila-entre">
             <span class="mini tenue">Pregunta ${r.ordinal}</span>
-            ${r.state === 'open'
-              ? `<span class="fila chico ${enPausa ? 'tenue' : ''}">
-                   ${enPausa ? '⏸ En pausa' : `<span class="reloj" id="reloj">${segundos(E.restanteMs({
-                     openedAt: r.openedAt, pausedAt: r.pausedAt, pausedTotal: r.pausedTotal,
-                     durationMs: r.deadlineMs
-                   }))}s</span>`}
-                 </span>`
-              : `<span class="chico" style="color:var(--ok)">Cerrada</span>`}
+            ${estadoRelojHTML(r, enPausa)}
           </div>
 
-          ${r.state === 'open' && !enPausa ? `
-            <div class="barra-tiempo" id="barra">
-              <i style="width:${(E.restanteMs({
-                openedAt: r.openedAt, pausedAt: r.pausedAt,
-                pausedTotal: r.pausedTotal, durationMs: r.deadlineMs
-              }) / r.deadlineMs) * 100}%"></i>
-            </div>` : ''}
+          ${r.state === 'open' && !enPausa ? barraTiempoHTML(r) : ''}
 
           <p class="enunciado">${esc(r.prompt)}</p>
           ${r.reference ? `<p class="chico tenue centro" style="text-align:center; margin-top:-.6rem">${esc(r.reference)}</p>` : ''}
         </div>
 
-        <!-- opciones con marca de correcta para el presentador -->
+        <!-- opciones: el presentador ve la correcta siempre -->
         <div class="opciones">
-          ${r.options.map((o, i) => {
-            // El presentador es el árbitro: ve la correcta aunque la ronda
-            // siga abierta. El televisor y los teléfonos, no.
-            const esCorrecta = i === r.correctIdx;
-            return `
-            <div class="opcion${esCorrecta ? ' correcta' : ''}" role="presentation">
+          ${r.options.map((o, i) => `
+            <div class="opcion${i === r.correctIdx ? ' correcta' : ''}" role="presentation">
               <span class="letra">${'ABCD'[i]}</span>
               <span>${esc(o)}</span>
-              ${esCorrecta ? '<span style="margin-left:auto">✓</span>' : ''}
-            </div>`;
-          }).join('')}
+              ${i === r.correctIdx ? '<span style="margin-left:auto">✓</span>' : ''}
+            </div>`).join('')}
         </div>
 
-        <!-- respuestas en vivo: solo el presentador las ve -->
-        <div class="columna" style="gap:.4rem">
-          <div class="fila-entre">
-            <h3 style="font-size:var(--t-sm); margin:0">
-              Respuestas en vivo
-              ${ayuda('Solo tú ves esta lista. Los participantes no saben quién respondió ni en qué orden.')}
-            </h3>
-            <span class="mini tenue" id="conteo">${r.answered} respondieron</span>
+        <!-- respuestas en vivo -->
+        ${r.state === 'prepared' ? `
+          <div class="aviso info">
+            Lee la pregunta y las cuatro opciones en voz alta.
+            Cuando estés listo, pulsa <strong>Iniciar</strong>.
           </div>
-          <div id="respuestas">
-            ${r.state === 'open' ? '<p class="mini tenue">Aún nadie responde.</p>' : ''}
+        ` : `
+          <div class="columna" style="gap:.4rem">
+            <div class="fila-entre">
+              <h3 style="font-size:var(--t-sm); margin:0">
+                Respuestas en vivo
+                ${ayuda('Solo tú ves esta lista. Los participantes no saben quién respondió ni en qué orden.')}
+              </h3>
+              <span class="mini tenue">${r.answered} respondieron</span>
+            </div>
+            <div id="respuestas">
+              ${r.answers?.length
+                ? `<ul class="lista-jugadores">${r.answers.map(a => `
+                    <li>
+                      <span class="nombre-j">${a.seq}. ${esc(a.name)}</span>
+                      <span class="mini ${a.correct ? 'ok-txt' : 'tenue'}">
+                        ${'ABCD'[a.optionIdx]} · ${(a.elapsedMs / 1000).toFixed(1)}s
+                      </span>
+                    </li>`).join('')}</ul>`
+                : '<p class="mini tenue">Aún nadie responde.</p>'}
+            </div>
           </div>
-        </div>
+        `}
 
-        <!-- controles, cada uno explicado -->
-        <div class="columna" style="gap:.6rem; margin-top:.4rem">
-          ${r.state === 'open' ? `
-            <div class="fila envolver" style="gap:.5rem">
-              <button class="boton boton-secundario" data-accion="${enPausa ? 'reanudar' : 'pausar'}" style="flex:1">
-                ${enPausa ? '▶ Reanudar' : '⏸ Pausar'}
-                ${ayuda(enPausa
-                  ? 'El reloj vuelve a correr con los segundos que quedaban.'
-                  : 'Congela el reloj y bloquea las respuestas. Nadie puede contestar mientras está en pausa.')}
-              </button>
-              <button class="boton boton-secundario" data-accion="saltar" style="flex:1">
-                ⏭ Saltar
-                ${ayuda('Cierra la pregunta sin dar el punto a nadie y muestra la respuesta correcta.')}
-              </button>
-            </div>
-            <button class="boton-grande" data-accion="cerrar">
-              Cerrar pregunta y revelar
-              ${ayuda('Detiene el reloj, decide quién ganó y muestra el resultado en todos los teléfonos.')}
-            </button>
-          ` : `
-            <div class="fila envolver" style="gap:.5rem">
-              <button class="boton boton-secundario" data-accion="repetir" style="flex:1">
-                🔁 Repetir
-                ${ayuda('Vuelve a lanzar esta misma pregunta, con las opciones mezcladas de nuevo.')}
-              </button>
-              <button class="boton boton-secundario" data-accion="deshacer" style="flex:1">
-                ↶ Deshacer
-                ${ayuda('Anula el resultado de esta pregunta, devuelve el punto y la reabre.')}
-              </button>
-            </div>
-            <button class="boton-grande" data-accion="abrir">Siguiente pregunta →</button>
-          `}
-        </div>
+        <!-- controles según el estado -->
+        ${controlesHostHTML(r, enPausa)}
       `}
 
       <!-- participantes -->
@@ -359,11 +347,121 @@ function vistaHost() {
     ${app.cerrarConfirm ? modalConfirmarCierre() : ''}`;
 }
 
+
+/* ------------------------------------------------------------------ */
+/* Piezas del panel del presentador                                    */
+/* ------------------------------------------------------------------ */
+
+/** Reloj o etiqueta de estado, según dónde esté la ronda. */
+function estadoRelojHTML(r, enPausa) {
+  const base = {
+    openedAt: r.openedAt, pausedAt: r.pausedAt,
+    pausedTotal: r.pausedTotal, durationMs: r.deadlineMs
+  };
+
+  if (r.state === 'prepared') {
+    return `<span class="chico tenue">Lista · ${segundos(r.deadlineMs)}s</span>`;
+  }
+  if (r.state === 'open') {
+    return enPausa
+      ? '<span class="chico tenue">⏸ En pausa</span>'
+      : `<span class="fila chico"><span class="reloj" id="reloj">${segundos(E.restanteMs(base))}s</span></span>`;
+  }
+  if (r.state === 'closed') {
+    return '<span class="chico" style="color:var(--espera)">Cerrada · lista para revelar</span>';
+  }
+  return '<span class="chico" style="color:var(--ok)">Revelada</span>';
+}
+
+/** Barra de tiempo restante. */
+function barraTiempoHTML(r) {
+  const base = {
+    openedAt: r.openedAt, pausedAt: r.pausedAt,
+    pausedTotal: r.pausedTotal, durationMs: r.deadlineMs
+  };
+  const pct = (E.restanteMs(base) / r.deadlineMs) * 100;
+  return `<div class="barra-tiempo" id="barra"><i style="width:${pct}%"></i></div>`;
+}
+
+/** Botones del presentador: cambian con el estado de la ronda. */
+function controlesHostHTML(r, enPausa) {
+  /* 1. PREPARADA: leer en voz alta, luego iniciar el reloj */
+  if (r.state === 'prepared') {
+    return `
+      <div class="columna" style="gap:.6rem; margin-top:.4rem">
+        <button class="boton-grande" data-accion="iniciar">
+          ▶ Iniciar cuenta (${segundos(r.deadlineMs)} s)
+          ${ayuda('Arranca el reloj y abre las respuestas. Antes de esto nadie puede contestar.')}
+        </button>
+        <div class="fila envolver" style="gap:.5rem">
+          <button class="boton boton-secundario" data-accion="saltar" style="flex:1">
+            ⏭ Saltar ${ayuda('Cierra la pregunta sin dar el punto y muestra la correcta.')}
+          </button>
+        </div>
+      </div>`;
+  }
+
+  /* 2. CORRIENDO: pausar, saltar, cerrar */
+  if (r.state === 'open') {
+    return `
+      <div class="columna" style="gap:.6rem; margin-top:.4rem">
+        <div class="fila envolver" style="gap:.5rem">
+          <button class="boton boton-secundario" data-accion="${enPausa ? 'reanudar' : 'pausar'}" style="flex:1">
+            ${enPausa ? '▶ Reanudar' : '⏸ Pausar'}
+            ${ayuda(enPausa
+              ? 'El reloj vuelve a correr con los segundos que quedaban.'
+              : 'Congela el reloj y bloquea las respuestas.')}
+          </button>
+          <button class="boton boton-secundario" data-accion="saltar" style="flex:1">
+            ⏭ Saltar ${ayuda('Cierra sin dar el punto y muestra la correcta.')}
+          </button>
+        </div>
+        <button class="boton-grande" data-accion="cerrar">
+          Cerrar pregunta
+          ${ayuda('Detiene las respuestas y decide quién ganó. Todavía no muestra la respuesta correcta a los participantes.')}
+        </button>
+      </div>`;
+  }
+
+  /* 3. CERRADA: el momento del suspenso. Revelar. */
+  if (r.state === 'closed') {
+    return `
+      <div class="columna" style="gap:.6rem; margin-top:.4rem">
+        <div class="aviso espera">
+          Se registraron ${r.answered} respuesta(s).
+          Pulsa <strong>Revelar respuesta</strong> cuando quieras mostrarla.
+        </div>
+        <button class="boton-grande" data-accion="revelar">
+          ✨ Revelar respuesta
+          ${ayuda('Muestra la opción correcta y al ganador en todos los teléfonos y en el televisor.')}
+        </button>
+        <div class="fila envolver" style="gap:.5rem">
+          <button class="boton boton-secundario" data-accion="deshacer" style="flex:1">
+            ↶ Deshacer ${ayuda('Anula el resultado, devuelve el punto y reabre la pregunta.')}
+          </button>
+        </div>
+      </div>`;
+  }
+
+  /* 4. REVELADA: siguiente */
+  return `
+    <div class="columna" style="gap:.6rem; margin-top:.4rem">
+      <div class="fila envolver" style="gap:.5rem">
+        <button class="boton boton-secundario" data-accion="repetir" style="flex:1">
+          🔁 Repetir ${ayuda('Vuelve a lanzar esta pregunta con las opciones mezcladas.')}
+        </button>
+        <button class="boton boton-secundario" data-accion="deshacer" style="flex:1">
+          ↶ Deshacer ${ayuda('Anula el resultado, devuelve el punto y reabre la pregunta.')}
+        </button>
+      </div>
+      <button class="boton-grande" data-accion="abrir">Siguiente pregunta →</button>
+    </div>`;
+}
+
 function modalConfirmarCierre() {
   return `
-    <div class="modal-fondo" data-accion="cancelar-terminar">
-      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="t-confi"
-           onclick="event.stopPropagation()">
+    <div class="modal-fondo" data-accion="cancelar-terminar" data-solo-fondo="1">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="t-confi">
         <h2 id="t-confi" style="font-size:var(--t-lg)">¿Terminar el juego?</h2>
         <p class="chico tenue">
           Se cierra la partida y se muestra la tabla de clasificación.
@@ -445,8 +543,8 @@ function vistaCeremonia(s) {
 
 function modalTabla(tabla) {
   return `
-    <div class="modal-fondo" data-accion="cerrar-tabla">
-      <div class="modal" role="dialog" aria-modal="true" onclick="event.stopPropagation()">
+    <div class="modal-fondo" data-accion="cerrar-tabla" data-solo-fondo="1">
+      <div class="modal" role="dialog" aria-modal="true">
         <h2 style="font-size:var(--t-lg)">Tabla completa</h2>
         <ul class="podio-lista">
           ${tabla.map(p => filaClasificacion({
@@ -476,6 +574,7 @@ function vistaJugador() {
       </div>
       <main class="crecer columna centro" style="gap:1rem">
         <h1 style="font-size:var(--t-xl)">Entrar a la partida</h1>
+        ${codigoDeUrl() ? `<div class="aviso info">Sala ${esc(codigoDeUrl())}</div>` : ''}
         <div class="columna" style="gap:.8rem; max-width:340px; width:100%">
           <div class="campo">
             <label for="nombre">Tu nombre ${ayuda('Escribe tu nombre y apellido, o un alias respetuoso. No se permiten nombres repetidos ni ofensivos.')}</label>
@@ -555,6 +654,44 @@ function vistaJugador() {
         </p>
         <p class="codigo-sala" style="font-size:var(--t-2xl)">${esc(yo.name)}</p>
         <p class="chico tenue">${miPuntaje?.score ?? 0} puntos</p>
+      </main>`;
+  }
+
+  /* --- ronda preparada: la pregunta se ve, pero aún no se puede responder --- */
+  if (r.state === 'prepared') {
+    return `
+      <main class="crecer columna" style="gap:1rem">
+        ${barraVolver({ extra: `<span class="chico tenue">${esc(yo.name)} · ${miPuntaje?.score ?? 0} pts</span>` })}
+        <div class="aviso info centro" style="text-align:center">
+          Escucha la pregunta. Los botones se activan cuando el presentador inicie la cuenta.
+        </div>
+        <p class="enunciado">${esc(r.prompt)}</p>
+        <div class="opciones">
+          ${r.options.map((o, i) => `
+            <div class="opcion apagada" role="presentation">
+              <span class="letra">${'ABCD'[i]}</span>
+              <span>${esc(o)}</span>
+            </div>`).join('')}
+        </div>
+      </main>`;
+  }
+
+  /* --- ronda cerrada: ya no se puede responder, aún no se revela --- */
+  if (r.state === 'closed') {
+    return `
+      <main class="crecer columna" style="gap:1rem">
+        ${barraVolver({ extra: `<span class="chico tenue">${esc(yo.name)} · ${miPuntaje?.score ?? 0} pts</span>` })}
+        <div class="aviso espera centro" style="text-align:center">
+          ⏳ Se acabó el tiempo. Espera la respuesta…
+        </div>
+        <p class="enunciado">${esc(r.prompt)}</p>
+        <div class="opciones">
+          ${r.options.map((o, i) => `
+            <div class="opcion apagada" role="presentation">
+              <span class="letra">${'ABCD'[i]}</span>
+              <span>${esc(o)}</span>
+            </div>`).join('')}
+        </div>
       </main>`;
   }
 
@@ -704,13 +841,18 @@ function vistaTV() {
 
       ${r ? `
         <div class="columna centro" style="gap:1rem">
-          ${r.state === 'open' ? `
-            <div class="reloj" id="reloj-tv" style="font-size:var(--t-3xl)">
-              ${segundos(E.restanteMs({
-                openedAt: r.openedAt, pausedAt: r.pausedAt,
-                pausedTotal: r.pausedTotal, durationMs: r.deadlineMs
-              }))}
-            </div>` : `<div class="aviso ok" style="font-size:var(--t-xl)">Pregunta cerrada</div>`}
+          ${r.state === 'prepared'
+            ? `<div class="aviso info" style="font-size:var(--t-lg)">Prepárate…</div>`
+            : r.state === 'open'
+              ? `<div class="reloj" id="reloj-tv" style="font-size:var(--t-3xl)">
+                   ${segundos(E.restanteMs({
+                     openedAt: r.openedAt, pausedAt: r.pausedAt,
+                     pausedTotal: r.pausedTotal, durationMs: r.deadlineMs
+                   }))}
+                 </div>`
+              : r.state === 'closed'
+                ? `<div class="aviso espera" style="font-size:var(--t-xl)">⏳ Tiempo agotado</div>`
+                : `<div class="aviso ok" style="font-size:var(--t-xl)">Respuesta revelada</div>`}
 
           <p class="enunciado">${esc(r.prompt)}</p>
           ${r.reference ? `<p class="tenue">${esc(r.reference)}</p>` : ''}
@@ -718,7 +860,7 @@ function vistaTV() {
 
         <div class="opciones" style="max-width:900px; margin-inline:auto; width:100%">
           ${r.options.map((o, i) => {
-            const esCorrecta = r.state === 'closed' && i === r.correctIdx;
+            const esCorrecta = r.state === 'revealed' && i === r.correctIdx;
             return `
             <div class="opcion${esCorrecta ? ' correcta' : ' apagada'}" role="presentation">
               <span class="letra">${'ABCD'[i]}</span>
@@ -727,7 +869,7 @@ function vistaTV() {
           }).join('')}
         </div>
 
-        ${r.state === 'closed' ? `
+        ${r.state === 'revealed' ? `
           <p class="centro" style="text-align:center; font-size:var(--t-xl); color:var(--raya); font-weight:800">
             ${r.noWinner ? 'Nadie acertó' : `🎉 ${esc(s.players.find(p => p.id === r.winnerId)?.name ?? '')}`}
           </p>` : ''}
@@ -781,7 +923,17 @@ function render() {
       }
       const barra = document.querySelector('#barra > i');
       if (barra) barra.style.width = `${(ms / r.deadlineMs) * 100}%`;
-      if (ms <= 0) clearInterval(timerReloj);
+
+      // Al llegar a cero, el presentador cierra la ronda solo.
+      // Los jugadores ya no pueden responder (el motor rechaza por tiempo);
+      // esta llamada solo mueve la máquina de estados para que el botón
+      // pase a «Revelar respuesta».
+      if (ms <= 0) {
+        clearInterval(timerReloj);
+        if (app.host && app.estado?.round?.state === 'open') {
+          app.host.cerrar();
+        }
+      }
     }, 250);
   }
 }
@@ -805,8 +957,10 @@ document.addEventListener('click', async ev => {
     return;
   }
 
+  // Un clic dentro del modal no debe cerrarlo: solo el fondo.
+  if (el.dataset.soloFondo && ev.target !== el) return;
+
   const accion = el.dataset.accion;
-  const h = app.host;
 
   switch (accion) {
     /* --- menú / navegación --- */
@@ -827,6 +981,8 @@ document.addEventListener('click', async ev => {
       if (err) ponerAviso('error', err);
       break;
     }
+    case 'iniciar': { const e = app.host.iniciar(); if (e) ponerAviso('error', e); break; }
+    case 'revelar': app.host.revelar(); break;
     case 'pausar': app.host.pausar(); break;
     case 'reanudar': app.host.reanudar(); break;
     case 'cerrar': app.host.cerrar(); break;

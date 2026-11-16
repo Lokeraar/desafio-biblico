@@ -18,7 +18,7 @@ s.players = [
   { id: 'p2', name: 'Beto', score: 0, totalMs: 0, correct: 0, joinedAt: T0 + 1, waiting: false, kicked: false }
 ];
 s = E.prepararPartida(s, BANCO, 2);
-s = E.abrirPregunta(s, T0).estado;
+s = E.iniciarCuenta(E.abrirPregunta(s, T0).estado, T0).estado;
 const r = s.round;
 
 let v = vistaHostCompleta(s);
