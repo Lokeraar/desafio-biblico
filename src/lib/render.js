@@ -119,17 +119,20 @@ export function ceremoniaHTML(tabla, paso, { miId = null, footer = '', vacio = '
   const primero = tabla[0] ?? null;
   const resto = tabla.slice(3);
 
-  // Quién se ve en cada paso. Se acumula: lo revelado no desaparece.
-  const filas = [];
-  if (paso >= 1 && tercero) filas.push({ p: tercero, puesto: true });
-  if (paso >= 2 && segundo) filas.push({ p: segundo, puesto: true });
-  if (paso >= 3 && primero) filas.push({ p: primero, puesto: true });
+  // Se REVELA en orden 3.º → 2.º → 1.º, pero se COLOCA en orden de ranking:
+  // el 1.º arriba del todo, como en cualquier tabla de clasificación.
+  // Así, al aparecer el ganador, lo hace en el primer renglón.
+  const visibles = new Set();
+  if (paso >= 1 && tercero) visibles.add(tercero.position);
+  if (paso >= 2 && segundo) visibles.add(segundo.position);
+  if (paso >= 3 && primero) visibles.add(primero.position);
 
-  // A partir del paso 4 se ven todas las demás posiciones.
   const muestraResto = paso >= 4;
-  if (muestraResto) {
-    for (const p of resto) filas.push({ p, puesto: false });
-  }
+  if (muestraResto) for (const p of resto) visibles.add(p.position);
+
+  const filas = tabla
+    .filter(p => visibles.has(p.position))
+    .map(p => ({ p, puesto: p.position <= 3 }));
 
   const confirmacion = paso >= 3 && primero
     ? `<p class="felicitacion">🎉 ¡Felicitaciones, ${esc(primero.name)}!</p>`

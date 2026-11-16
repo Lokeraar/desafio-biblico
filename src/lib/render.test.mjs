@@ -36,7 +36,7 @@ t(filas(ceremoniaHTML(t8, 2)) === 2, 'paso 2: aparece el 2.º');
 t(filas(ceremoniaHTML(t8, 3)) === 3, 'paso 3: aparece el 1.º');
 t(filas(ceremoniaHTML(t8, 4)) === 8, 'paso 4: aparecen TODAS las posiciones');
 
-console.log('\n=== 5. Orden de aparición: 3.º → 2.º → 1.º ===');
+console.log('\n=== 5. Se revela 3.º→2.º→1.º pero se coloca en orden de ranking ===');
 const p1 = ceremoniaHTML(t8, 1);
 t(p1.includes('Jugador 3') && !p1.includes('Jugador 1') && !p1.includes('Jugador 2'),
   'paso 1 muestra solo al 3.º');
@@ -48,7 +48,20 @@ const lista = p3.slice(p3.indexOf('<ul class="lista-ceremonia"'));
 const pos3 = lista.indexOf('Jugador 3');
 const pos2 = lista.indexOf('Jugador 2');
 const pos1 = lista.indexOf('Jugador 1');
-t(pos3 >= 0 && pos2 > pos3 && pos1 > pos2, 'en la lista el orden es 3.º, 2.º, 1.º');
+
+// El ganador va PRIMERO en la tabla, aunque se revele último.
+t(pos1 >= 0 && pos1 < pos2 && pos2 < pos3,
+  'colocado por ranking: 1.º arriba, luego 2.º y 3.º');
+t(pos1 < pos2, 'el ganador no queda debajo de los demás');
+
+console.log('\n=== 5b. Con todo revelado, el orden es 1.º, 2.º, 3.º, 4.º… ===');
+{
+  const todos = ceremoniaHTML(t8, 4);
+  const listaTodo = todos.slice(todos.indexOf('<ul class="lista-ceremonia"'));
+  const idx = n => listaTodo.indexOf('Jugador ' + n);
+  const ordenados = [1,2,3,4,5,6,7,8].every((n, i, arr) => i === 0 || idx(arr[i-1]) < idx(n));
+  t(ordenados, 'de la 1.ª a la 8.ª posición, en orden descendente de puesto');
+}
 
 console.log('\n=== 6. Confeti y felicitación ===');
 t(!ceremoniaHTML(t8, 2).includes('confeti'), 'sin confeti antes del primero');
