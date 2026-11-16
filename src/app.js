@@ -1343,7 +1343,14 @@ document.addEventListener('keydown', ev => {
   // Si hay sesión de nube con token, se reconecta y se muestra el estado
   // actual; equivale a nunca haberse ido. Si el servidor ya no conoce al
   // jugador (lo expulsaron, la sala murió), se limpia y se pide el nombre.
-  if (sesion && hayNube && sesion.token && sesion.roomId) {
+  // Solo se reanuda la PARTIDA DEL JUGADOR. Si el presentador abre el
+  // panel, no debe encontrarse con la sesión del jugador encima: eso
+  // restauraba la pantalla del participante y escondía el botón de crear
+  // sala, mostrando una sala vieja que ya no se podía cambiar.
+  const vista = rutaActual().vista;
+  const esVistaJugador = vista === 'join' || vista === 'play';
+
+  if (esVistaJugador && sesion && hayNube && sesion.token && sesion.roomId) {
     app.yo = sesion;
     app.cliente = crearClienteNube({
       onEstado: est => { app.estado = est; render(); }
@@ -1360,7 +1367,7 @@ document.addEventListener('keydown', ev => {
         ponerAviso('error', 'Tu sesión terminó. Vuelve a entrar con tu nombre.');
       }
     });
-  } else if (rutaActual().vista === 'play' && sesion) {
+  } else if (vista === 'play' && sesion) {
     app.yo = sesion;
     app.cliente = crearClienteLocal({
       onEstado: est => { app.estado = est; render(); }
