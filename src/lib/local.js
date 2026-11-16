@@ -27,7 +27,30 @@ export function esLocalDisponible() {
 export function crearHostLocal({ preguntas, onEstado }) {
   let estado = E.estadoInicial();
   const canal = new BroadcastChannel(CANAL);
-  const pendientes = new Map();  // requestId -> {resolve, reject, tipo}
+  const pendientes = new Map();
+
+  // ── Un solo host vivo ───────────────────────────────────────────────
+  // Al recargar el presentador, la pestaña nueva debe quedarse con el
+  // canal y las viejas abandonarlo. Sin esto se acumulan hosts y las
+  // pestañas viejas responden con un estado anterior: los jugadores
+  // desaparecen del panel.
+  const hostId = Math.random().toString(36).slice(2) + Date.now().toString(36);
+  let activo = true;
+
+  function retirar() {
+    if (!activo) return;
+    activo = false;
+    try { canal.close(); } catch { /* ya cerrado */ }
+    onEstado?.(null);   // el panel sabrá que este host ya no manda
+  }
+
+  // Avisa a cualquier host anterior que este manda desde ahora.
+  canal.postMessage({ tipo: 'reclamo', hostId, ts: Date.now() });
+
+  // Al cerrar o navegar fuera, el host se retira ordenadamente.
+  if (typeof addEventListener === 'function') {
+    addEventListener('pagehide', retirar, { once: true });
+  }
 
   function difundir() {
     // Al público: solo lo que la proyección permite (sin respuestas ni
@@ -46,7 +69,16 @@ export function crearHostLocal({ preguntas, onEstado }) {
 
   canal.onmessage = ev => {
     const m = ev.data;
-    if (!m || m.tipo !== 'solicitud') return;
+    if (!m) return;
+
+    // Otro host más nuevo tomó el canal: este se retira.
+    if (m.tipo === 'reclamo' && m.hostId !== hostId) {
+      retirar();
+      return;
+    }
+
+    if (m.tipo !== 'solicitud') return;
+    if (!activo) return;   // ya no soy el presentador: no respondo nada
     const { requestId, accion, payload } = m;
 
     try {
@@ -115,7 +147,8 @@ export function crearHostLocal({ preguntas, onEstado }) {
       estado = E.estadoInicial({ roomSeconds: estado.roundSeconds });
       difundir();
     },
-    destruir: () => canal.close()
+    activo: () => activo,
+    destruir: retirar
   };
 }
 

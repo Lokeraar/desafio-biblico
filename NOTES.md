@@ -82,7 +82,40 @@ interactivos. Para cerrar al tocar el fondo, comparar el destino:
 if (el.dataset.soloFondo && ev.target !== el) return;
 ```
 
-### 7. Varias pestañas con el presentador abierto (pendiente)
+### 7. `node --check` NO detecta errores de sintaxis en módulos ESM
+
+**Qué pasó.** `node --check src/app.js` decía "sintaxis OK" y la app no
+arrancaba: el `#app` quedaba vacío porque el navegador lanzaba
+`Unexpected token 'class'`. La causa era una plantilla de texto con comillas
+invertidas anidadas dentro de otra, que la cerraba antes de tiempo.
+
+**Por qué no lo detectó.** `node --check` analiza el archivo como CommonJS
+salvo que se le dé extensión `.mjs`. Con `.js` y `import` adentro, puede pasar.
+
+**Regla.** Comprobar siempre copiando a `.mjs`:
+
+```bash
+cp src/app.js .logs/chk.mjs && node --check .logs/chk.mjs
+```
+
+Y sobre todo: **abrir la página y mirar el DOM**, no confiar en el chequeo.
+
+### 8. Confundir "el archivo se sirvió" con "la app funciona"
+
+**Qué pasó.** Se leyó el log del servidor, se vio `200` en todos los módulos
+y se concluyó que todo estaba bien. El HTTP 200 solo dice que el archivo viajó;
+no dice que el JavaScript se ejecute. Con la app rota, `#app` seguía vacío.
+
+**Regla.** La verificación termina en el DOM, con una cuenta concreta:
+
+```js
+document.getElementById('app').innerHTML.length   // > 0
+document.querySelectorAll('[data-ir]').length     // los botones que toca
+```
+
+Si eso da 0, la app no arrancó, por más 200 que muestre el log.
+
+### 9. Varias pestañas con el presentador abierto (pendiente)
 
 **Qué pasó.** Al recargar la pantalla del presentador varias veces, el
 `BroadcastChannel` acumula hosts. Las pestañas viejas siguen respondiendo y
@@ -93,8 +126,9 @@ pestaña nueva debe reclamar el canal y las anteriores abandonarlo. Se resuelve
 con un `hostId` y un mensaje de reclamo, o cerrando el canal en `pagehide`.
 Mientras tanto: recargar con Ctrl+Shift+R y cerrar las demás pestañas.
 
-**Estado:** sin arreglar. No afecta al modo nube, donde el árbitro es la base
-de datos y no hay canal compartido.
+**Estado:** parcialmente resuelto con un `hostId` y mensaje de reclamo; falta
+probar con varias pestañas reales. No afecta al modo nube, donde el árbitro es
+la base de datos y no hay canal compartido.
 
 ---
 

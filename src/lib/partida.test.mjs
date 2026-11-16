@@ -88,7 +88,7 @@ t(estadoHost.round.winnerId === r1.playerId, 'gana Ana (acertó y fue la primera
 const anaPts = estadoHost.players.find(p => p.id === r1.playerId);
 const betoPts = estadoHost.players.find(p => p.id === r2.playerId);
 const carlaPts = estadoHost.players.find(p => p.id === r3.playerId);
-t(anaPts.score === 1, 'Ana suma 1');
+t(anaPts.score === E.PUNTOS_POR_ACIERTO, `Ana suma ${E.PUNTOS_POR_ACIERTO}`);
 t(betoPts.score === 0, 'Beto (falló) no suma');
 t(carlaPts.score === 0, 'Carla (acertó después) no suma');
 

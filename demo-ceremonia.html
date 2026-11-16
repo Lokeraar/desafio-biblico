@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demostración · Ceremonia</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+  /* página de demostración: solo para ver la ceremonia sin jugar */
+  body { margin: 0; }
+  .demo-barra {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 999;
+    display: flex; gap: .5rem; padding: .5rem; flex-wrap: wrap;
+    background: rgba(0,0,0,.65); backdrop-filter: blur(6px);
+  }
+  .demo-barra button { padding: .45em .9em; font-size: .85rem; }
+</style>
+</head>
+<body>
+
+<div class="demo-barra">
+  <button data-paso="0">Paso 0 · oculto</button>
+  <button data-paso="1">Paso 1 · tercero</button>
+  <button data-paso="2">Paso 2 · segundo</button>
+  <button data-paso="3">Paso 3 · primero + resto</button>
+</div>
+
+<div id="salida"></div>
+
+<script type="module">
+import { ceremoniaHTML } from './src/lib/render.js';
+
+// Doce jugadores de ejemplo, con puntos de 10 en 10.
+const nombres = ['Ana Pérez','Beto Ruiz','Carla Díaz','Diego Mora','Elena Gil',
+  'Franco Ríos','Gabi Luna','Hugo Peña','Iris Vidal','Julián Sosa','Karla Ortiz','Luis Ferrer'];
+const tabla = nombres.map((name, i) => ({
+  position: i + 1,
+  id: 'p' + i,
+  name,
+  score: (12 - i) * 10,
+  totalMs: 4200 + i * 830,
+  correct: 12 - i
+}));
+
+const controles = '<button class="boton-grande">Revelar siguiente</button>';
+
+function pintar(paso) {
+  document.getElementById('salida').innerHTML =
+    ceremoniaHTML(tabla, paso, { controles });
+}
+
+document.querySelectorAll('[data-paso]').forEach(b => {
+  b.addEventListener('click', () => pintar(Number(b.dataset.paso)));
+});
+
+// arranca mostrando el podio completo, que es lo más representativo
+pintar(3);
+</script>
+</body>
+</html>

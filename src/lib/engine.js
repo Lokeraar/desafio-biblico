@@ -19,6 +19,9 @@ import { shuffle, idUnico, nuevoCodigo } from './util.js';
 export const ESTADOS = ['lobby', 'question', 'reveal', 'ceremony'];
 export const SEGUNDOS_RONDA = 15;
 
+/** Puntos que otorga cada acierto. El concurso juega de 10 en 10. */
+export const PUNTOS_POR_ACIERTO = 10;
+
 export function estadoInicial(opciones = {}) {
   return {
     roomId: opciones.roomId ?? idUnico(),
@@ -239,7 +242,7 @@ export function cerrarRonda(estado, t = ahora()) {
     const ms = mias.reduce((s, a) => s + a.elapsedMs, 0);
     return {
       ...p,
-      score: p.score + 1,
+      score: p.score + PUNTOS_POR_ACIERTO,
       correct: (p.correct ?? 0) + 1,
       totalMs: (p.totalMs ?? 0) + ms
     };
@@ -342,7 +345,7 @@ export function deshacer(estado, t = ahora()) {
       .reduce((s, a) => s + a.elapsedMs, 0);
     return {
       ...p,
-      score: Math.max(0, p.score - 1),
+      score: Math.max(0, p.score - PUNTOS_POR_ACIERTO),
       correct: Math.max(0, (p.correct ?? 0) - 1),
       totalMs: Math.max(0, (p.totalMs ?? 0) - ms)
     };

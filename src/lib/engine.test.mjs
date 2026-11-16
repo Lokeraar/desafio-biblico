@@ -84,7 +84,7 @@ const ana = s.players.find(p => p.id === 'p1');
 const beto = s.players.find(p => p.id === 'p2');
 t(s.round.state === 'closed', 'cerrar deja la ronda cerrada');
 t(s.status === 'question', 'el estado sigue en question: aún no se revela');
-t(ana.score === 1, 'Ana suma 1 punto por acertar');
+t(ana.score === E.PUNTOS_POR_ACIERTO, `Ana suma ${E.PUNTOS_POR_ACIERTO} puntos por acertar`);
 t(beto.score === 0, 'Beto no suma por errar');
 t(s.round.winnerId === 'p1', 'el ganador es quien acertó');
 t(s.round.state === 'closed', 'la ronda queda cerrada, pendiente de revelar');
@@ -103,7 +103,7 @@ s = E.responder(s, { playerId: 'p2', roundId: R2.id, optionIdx: M2 }, T0 + 7500)
 s = E.responder(s, { playerId: 'p3', roundId: R2.id, optionIdx: C2 }, T0 + 8000).estado; // Carla acierta
 s = E.cerrarRonda(s, T0 + 9000).estado;
 t(s.round.winnerId === 'p3', 'el punto va al primero que ACERTÓ, no al primero que respondió');
-t(s.players.find(p => p.id === 'p3').score === 1, 'Carla suma 1');
+t(s.players.find(p => p.id === 'p3').score === E.PUNTOS_POR_ACIERTO, 'Carla suma los puntos del acierto');
 t(s.players.find(p => p.id === 'p2').score === 0, 'Beto sigue en 0');
 
 console.log('\n=== 8. Nadie acierta ===');
@@ -115,7 +115,7 @@ s = E.responder(s, { playerId: 'p1', roundId: R3.id, optionIdx: M3a }, T0 + 1050
 s = E.responder(s, { playerId: 'p2', roundId: R3.id, optionIdx: M3b }, T0 + 11000).estado;
 s = E.cerrarRonda(s, T0 + 11500).estado;
 t(s.round.noWinner === true, 'se marca sin ganador');
-t(s.players.every(p => p.score <= 1), 'nadie suma en una ronda sin acierto');
+t(s.players.every(p => p.score <= E.PUNTOS_POR_ACIERTO), 'nadie suma en una ronda sin acierto');
 
 console.log('\n=== 9. Pausa congela el reloj ===');
 s = abrirEIniciar(s, T0 + 20000).estado;
@@ -136,7 +136,7 @@ console.log('\n=== 10. Deshacer ===');
 const antesAna = s.players.find(p => p.id === 'p1').score;
 s = E.responder(s, { playerId: 'p1', roundId: s.round.id, optionIdx: s.round.correctIdx }, T0 + 31500).estado;
 s = E.cerrarRonda(s, T0 + 32000).estado;
-t(s.players.find(p => p.id === 'p1').score === antesAna + 1, 'Ana suma con el acierto');
+t(s.players.find(p => p.id === 'p1').score === antesAna + E.PUNTOS_POR_ACIERTO, 'Ana suma con el acierto');
 r = E.deshacer(s, T0 + 33000);
 s = r.estado;
 t(!r.error, 'deshacer funciona');
