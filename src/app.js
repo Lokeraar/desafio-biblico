@@ -1271,9 +1271,11 @@ document.addEventListener('click', async ev => {
       const ronda = app.estado.round;
       const idx = Number(el.dataset.idx);
 
-      // La nube espera la letra de la opción; el motor local, el índice.
+      // La nube espera la CLAVE REAL de la opción (que puede ser 'd'
+      // aunque se muestre primera); el motor local, el índice.
+      const clave = ronda.optionKeys?.[idx];
       const r = app.cliente?.nube
-        ? await app.cliente.responder(ronda.id, ['a', 'b', 'c', 'd'][idx])
+        ? await app.cliente.responder(ronda.id, clave)
         : await app.cliente.responder(app.yo.playerId, ronda.id, idx);
 
       if (r.error) ponerAviso('error', traducirError(r.error));

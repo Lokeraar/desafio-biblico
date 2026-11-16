@@ -69,8 +69,6 @@ export async function rpc(nombre, args = {}) {
 /* Traducción servidor → cliente                                       */
 /* ------------------------------------------------------------------ */
 
-const CLAVES = ['a', 'b', 'c', 'd'];
-
 function aMs(iso) {
   if (!iso) return null;
   const n = Date.parse(iso);
@@ -101,7 +99,11 @@ export function estadoDesdeServidor(bruto, { completo = false } = {}) {
   let round = null;
   if (r) {
     const opciones = Array.isArray(r.options) ? r.options : [];
-    const idxCorrecto = r.correct_key ? CLAVES.indexOf(r.correct_key) : -1;
+    // `r.options` llega como [{k,t}, …] ya barajado. La clave de cada
+    // posición es la ORIGINAL de esa opción: la posición 1 puede ser 'd'.
+    const claves = opciones.map(o => (typeof o === 'string' ? null : o.k));
+    // `correct_key` también es una clave original, no una posición.
+    const idxCorrecto = r.correct_key ? claves.indexOf(r.correct_key) : -1;
 
     round = {
       id: r.round_id,
@@ -109,6 +111,12 @@ export function estadoDesdeServidor(bruto, { completo = false } = {}) {
       prompt: r.prompt,
       reference: r.reference ?? null,
       options: opciones.map(o => (typeof o === 'string' ? o : o.t)),
+      // La clave real de cada opción, en el orden en que se muestran. El
+      // servidor baraja los objetos enteros, así que la opción de la
+      // posición 1 puede tener clave 'd'. Sin esto el cliente enviaba la
+      // letra de la POSICIÓN y el servidor la comparaba contra la clave
+      // real: daba incorrecto siempre y nadie sumaba puntos.
+      optionKeys: opciones.map(o => (typeof o === 'string' ? null : o.k)),
       // Solo viene cuando el servidor decide que ya se puede publicar.
       correctIdx: idxCorrecto >= 0 ? idxCorrecto : null,
       openedAt: aMs(r.opened_at),
@@ -123,7 +131,9 @@ export function estadoDesdeServidor(bruto, { completo = false } = {}) {
         seq: a.seq,
         playerId: a.player_id,
         name: a.name ?? null,
-        optionIdx: CLAVES.indexOf(a.option),
+        // `a.option` viene como clave original; se traduce a la POSICIÓN
+        // en que esa opción se mostró, que es lo que pinta la interfaz.
+        optionIdx: claves.indexOf(a.option),
         correct: Boolean(a.correct),
         elapsedMs: a.ms ?? 0
       }))
