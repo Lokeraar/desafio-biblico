@@ -335,33 +335,54 @@ export function repetirPregunta(estado, t = ahora()) {
 
 /** Deshacer: anula la última ronda cerrada, devuelve el punto y la reabre. */
 export function deshacer(estado, t = ahora()) {
-  const ultima = estado.history[estado.history.length - 1];
-  if (!ultima) return { error: 'No hay nada que deshacer.' };
+  // Deshacer opera sobre la ronda ACTUAL, nunca sobre la última del historial.
+  // Si se repitió una pregunta, la ronda en juego es una copia nueva que no
+  // está en `history`: anular la del historial le quitaría el punto al ganador
+  // de una ronda que ya no se está jugando.
+  const actual = estado.round;
 
-  const players = estado.players.map(p => {
-    if (p.id !== ultima.winnerId) return p;
-    const ms = ultima.answers
-      .filter(a => a.playerId === p.id && a.correct)
+  if (!actual) return { error: 'No hay nada que deshacer.' };
+  if (actual.state === 'open' || actual.state === 'prepared') {
+    return { error: 'La pregunta está en curso. Ciérrala antes de deshacerla.' };
+  }
+
+  const ganador = actual.winnerId;
+  let players = estado.players;
+
+  if (ganador) {
+    const ms = actual.answers
+      .filter(a => a.playerId === ganador && a.correct)
       .reduce((s, a) => s + a.elapsedMs, 0);
-    return {
-      ...p,
-      score: Math.max(0, p.score - PUNTOS_POR_ACIERTO),
-      correct: Math.max(0, (p.correct ?? 0) - 1),
-      totalMs: Math.max(0, (p.totalMs ?? 0) - ms)
-    };
-  });
+
+    players = estado.players.map(p => p.id === ganador
+      ? {
+          ...p,
+          score: Math.max(0, p.score - PUNTOS_POR_ACIERTO),
+          correct: Math.max(0, (p.correct ?? 0) - 1),
+          totalMs: Math.max(0, (p.totalMs ?? 0) - ms)
+        }
+      : p);
+  }
+
+  // Solo sale del historial si la ronda actual ES la última registrada.
+  // Si venía de un «repetir», el historial se queda como está.
+  const ultima = estado.history[estado.history.length - 1];
+  const history = ultima && ultima.id === actual.id
+    ? estado.history.slice(0, -1)
+    : estado.history;
 
   const round = {
-    ...ultima,
+    ...actual,
     openedAt: t,
     durationMs: estado.roundSeconds * 1000,
     pausedAt: null,
     pausedTotal: 0,
     answers: [],
-    state: 'open',
+    state: 'prepared',   // vuelve a «preparada»: hay que pulsar Iniciar
     winnerId: null,
     noWinner: false,
-    closedAt: null
+    closedAt: null,
+    revealedAt: null
   };
 
   return {
@@ -371,8 +392,9 @@ export function deshacer(estado, t = ahora()) {
       paused: false,
       players,
       round,
-      history: estado.history.slice(0, -1)
-    }
+      history
+    },
+    reabierta: round.id
   };
 }
 

@@ -141,8 +141,44 @@ r = E.deshacer(s, T0 + 33000);
 s = r.estado;
 t(!r.error, 'deshacer funciona');
 t(s.players.find(p => p.id === 'p1').score === antesAna, 'deshacer devuelve el punto');
-t(s.round.state === 'open', 'deshacer reabre la ronda');
+t(s.round.state === 'prepared',
+  'deshacer deja la ronda PREPARADA: el presentador debe pulsar Iniciar otra vez');
 t(s.round.answers.length === 0, 'deshacer borra las respuestas de esa ronda');
+
+console.log('\n=== 10b. Deshacer después de repetir no roba puntos ajenos ===');
+{
+  // Ronda 1: Ana acierta y suma 10.
+  let x = E.estadoInicial();
+  x.players = [
+    { id:'p1', name:'Ana', score:0, totalMs:0, correct:0, joinedAt:1000, waiting:false, kicked:false },
+    { id:'p2', name:'Beto', score:0, totalMs:0, correct:0, joinedAt:1001, waiting:false, kicked:false }
+  ];
+  x = E.prepararPartida(x, BANCO, 5);
+  x = E.abrirPregunta(x, T0).estado;
+  x = E.iniciarCuenta(x, T0).estado;
+  x = E.responder(x, { playerId:'p1', roundId:x.round.id, optionIdx:x.round.correctIdx }, T0+500).estado;
+  x = E.cerrarRonda(x, T0+1000).estado;
+  x = E.revelarRespuesta(x, T0+1100).estado;
+  t(x.players.find(p=>p.id==='p1').score === E.PUNTOS_POR_ACIERTO, 'Ana gana 10 en la ronda 1');
+
+  // El presentador repite la pregunta (sin deshacer antes).
+  x = E.repetirPregunta(x, T0+2000).estado;
+  t(x.round.state === 'open', 'la repetición está abierta');
+  t(x.round.id !== x.history.at(-1).id, 'la repetición es una ronda NUEVA, no la del historial');
+
+  // No se puede deshacer una pregunta en curso: primero se cierra.
+  const enCurso = E.deshacer(x, T0+2500);
+  t(!!enCurso.error && /en curso/i.test(enCurso.error),
+    'deshacer rechaza una pregunta abierta (hay que cerrarla antes)');
+
+  // Se cierra la repetición (nadie respondió) y ahora sí se deshace.
+  x = E.cerrarRonda(x, T0+2700).estado;
+  const d = E.deshacer(x, T0+3000).estado;
+  t(d.players.find(p=>p.id==='p1').score === E.PUNTOS_POR_ACIERTO,
+    'Ana CONSERVA sus 10 puntos: no se le quitan por deshacer una repetición');
+  t(d.history.length === 1, 'la ronda 1 sigue en el historial');
+  t(d.round.id === x.round.id, 'se reabre la ronda que se estaba jugando');
+}
 
 console.log('\n=== 11. Saltar y repetir ===');
 r = E.saltarPregunta(s, T0 + 34000);
