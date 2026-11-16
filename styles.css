@@ -905,3 +905,166 @@ body.tv .opcion { font-size: var(--t-xl); }
   margin: .1em 0;
   line-height: 1;
 }
+
+/* =====================================================================
+   MENÚ — portada, título con trofeo, acciones y tarjetas de juego
+   ===================================================================== */
+.menu-cuerpo {
+  gap: clamp(.7rem, 2vh, 1.1rem);
+  margin-top: clamp(.8rem, 3vh, 1.6rem);
+  padding-bottom: 1rem;
+}
+
+.menu-titulo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  font-size: clamp(1.3rem, .9rem + 2vw, 2rem);
+}
+.menu-titulo h1 {
+  margin: 0;
+  font-size: 1em;
+  letter-spacing: .06em;
+  color: #fff;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, .5);
+}
+.menu-titulo span { font-size: .85em; }
+
+.menu-lema {
+  margin: -.3rem 0 0;
+  text-align: center;
+  font-size: var(--t-sm);
+  color: var(--tinta-suave);
+}
+
+.menu-acciones {
+  display: flex;
+  flex-direction: column;
+  gap: .55rem;
+  width: 100%;
+  max-width: 480px;
+  margin-inline: auto;
+}
+
+/* botón dorado: acción principal del presentador */
+.boton-oro {
+  background: linear-gradient(180deg, #f7d95e, #d9a520);
+  color: #2a1f00;
+  box-shadow: 0 4px 0 #8a6a0f, var(--sombra);
+}
+/* botón de contorno: acciones secundarias */
+.boton-contorno {
+  background: transparent;
+  color: var(--tu-100);
+  border: 2px solid rgba(110, 227, 238, .55);
+  box-shadow: none;
+  width: 100%;
+}
+.boton-contorno:not(:disabled):hover {
+  background: rgba(46, 196, 212, .12);
+  border-color: var(--tu-300);
+}
+/* botón verde: crear */
+.boton-verde {
+  background: linear-gradient(180deg, #3fae86, #1f7a56);
+  color: #fff;
+  box-shadow: 0 4px 0 #14543b, var(--sombra);
+  max-width: 480px;
+  margin: .3rem auto 0;
+}
+
+.menu-seccion {
+  margin: .3rem 0 -.1rem;
+  font-size: var(--t-sm);
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--tu-100);
+  text-align: center;
+}
+
+/* --- tarjetas de juego --- */
+.menu-juegos {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  width: 100%;
+  max-width: 480px;
+  margin-inline: auto;
+}
+.juego-tarjeta {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: .75rem;
+  padding: .7em .9em;
+  border-radius: 14px;
+  border: 1px solid rgba(110, 227, 238, .22);
+  background: rgba(255, 255, 255, .05);
+  color: var(--tinta);
+  box-shadow: none;
+  text-align: left;
+  width: 100%;
+}
+.juego-tarjeta.listo {
+  background: linear-gradient(135deg, rgba(0, 160, 176, .18), rgba(255, 255, 255, .05));
+  border-color: rgba(110, 227, 238, .4);
+}
+.juego-tarjeta:disabled { opacity: .6; }
+.juego-tarjeta .icono {
+  width: 2.4em; height: 2.4em;
+  display: grid; place-items: center;
+  border-radius: 12px;
+  background: rgba(46, 196, 212, .16);
+  font-size: 1.15rem;
+  flex: 0 0 auto;
+}
+.juego-tarjeta .texto {
+  display: flex;
+  flex-direction: column;
+  gap: .1rem;
+  min-width: 0;
+}
+.juego-tarjeta .nombre {
+  font-weight: 800;
+  font-size: var(--t-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.juego-tarjeta .desc {
+  font-size: var(--t-xs);
+  color: var(--tinta-suave);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.juego-tarjeta .insignia {
+  font-size: var(--t-xs);
+  font-weight: 800;
+  padding: .28em .6em;
+  border-radius: 999px;
+  background: rgba(31, 191, 117, .2);
+  color: #9df0c4;
+  border: 1px solid rgba(31, 191, 117, .45);
+  white-space: nowrap;
+}
+.juego-tarjeta:disabled .insignia {
+  background: rgba(255, 255, 255, .08);
+  color: var(--tinta-suave);
+  border-color: rgba(255, 255, 255, .16);
+}
+
+/* --- pie --- */
+.menu-pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(110, 227, 238, .14);
+  font-size: var(--t-xs);
+  color: var(--tinta-suave);
+}

@@ -139,13 +139,13 @@ function filaClasificacion({ position, name, subtitle, score, yo }) {
 function vistaMenu() {
   const juegos = [
     { slug: 'seleccion-simple', icono: '🎯', nombre: 'Selección simple',
-      desc: 'Una pregunta, cuatro opciones y una sola correcta. Gana el primero que acierta.',
-      listo: true },
+      desc: 'Una pregunta, 4 opciones y una sola correcta.', listo: true },
     { slug: 'completar-versiculo', icono: '📖', nombre: 'Completar el versículo',
-      desc: 'Se muestra un versículo con un hueco y hay que completarlo.', listo: false },
+      desc: 'Se muestra un versículo con un hueco.', listo: false },
     { slug: 'respuesta-abierta', icono: '💬', nombre: 'Respuesta abierta',
-      desc: 'El presentador lee la pregunta y cada quien escribe su respuesta.', listo: false }
+      desc: 'El presentador lee y cada quien escribe.', listo: false }
   ];
+  const disponibles = juegos.filter(j => j.listo).length;
 
   return `
     <header class="menu-cabecera">
@@ -155,39 +155,55 @@ function vistaMenu() {
       </div>
     </header>
 
-    <main class="crecer columna" style="gap:1.2rem; margin-top:1.4rem">
-      <div class="columna" style="gap:.6rem">
-        <button class="boton-grande" data-ir="host">🎤 Soy el presentador</button>
-        <button class="boton-grande boton-secundario" data-ir="join">🙋 Soy participante</button>
-        <button class="boton boton-secundario" data-ir="tv" style="width:100%">
+    <main class="crecer columna menu-cuerpo">
+      <div class="menu-titulo">
+        <span aria-hidden="true">🏆</span>
+        <h1>DESAFÍO BÍBLICO</h1>
+        <span aria-hidden="true">⭐</span>
+      </div>
+      <p class="menu-lema">2 Corintios · Concurso de preguntas</p>
+
+      <div class="menu-acciones">
+        <button class="boton-grande boton-oro" data-ir="host">
+          🎤 Jugar como presentador
+        </button>
+        <button class="boton-grande boton-contorno" data-ir="join">
+          🙋 Jugar como participante
+        </button>
+        <button class="boton boton-contorno" data-ir="tv">
           📺 Pantalla para el televisor
         </button>
       </div>
 
-      <div class="columna" style="gap:.7rem; margin-top:.5rem">
-        <h2 style="font-size:var(--t-lg); margin:0">Juegos</h2>
+      <h2 class="menu-seccion">
+        ${disponibles} juego${disponibles === 1 ? '' : 's'} disponible${disponibles === 1 ? '' : 's'}
+      </h2>
+
+      <div class="menu-juegos">
         ${juegos.map(j => `
-          <button class="juego-card${j.listo ? ' listo' : ''}" ${j.listo ? '' : 'disabled'}>
+          <button class="juego-tarjeta${j.listo ? ' listo' : ''}" ${j.listo ? '' : 'disabled'}>
             <span class="icono" aria-hidden="true">${j.icono}</span>
-            <span class="columna" style="gap:.15rem; flex:1">
-              <span>${esc(j.nombre)}</span>
-              <span class="chico tenue">${esc(j.desc)}</span>
-              <span class="etiqueta">${j.listo ? 'Disponible' : 'Próximamente'}</span>
+            <span class="texto">
+              <span class="nombre">${esc(j.nombre)}</span>
+              <span class="desc">${esc(j.desc)}</span>
             </span>
+            <span class="insignia">${j.listo ? 'Abierto' : 'Pronto'}</span>
           </button>`).join('')}
       </div>
 
-      <p class="mini tenue centro" style="text-align:center; margin-top:auto; padding-top:1rem">
-        ${esLocalDisponible()
-          ? 'Modo local activo: funciona sin internet.'
-          : 'Tu navegador no admite el modo local.'}
-      </p>
+      <button class="boton-grande boton-verde" data-ir="host">
+        ✚ Nuevo juego
+      </button>
+
+      <footer class="menu-pie">
+        <span>v1.0</span>
+        <span class="fila" style="gap:.35rem">
+          <span class="punto-vivo${esLocalDisponible() ? '' : ' apagado'}"></span>
+          ${esLocalDisponible() ? 'Modo local' : 'Sin modo local'}
+        </span>
+      </footer>
     </main>`;
 }
-
-/* ------------------------------------------------------------------ */
-/* VISTA: presentador                                                  */
-/* ------------------------------------------------------------------ */
 function vistaHost() {
   const s = app.estado;
 
