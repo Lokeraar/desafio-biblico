@@ -616,193 +616,231 @@ body.tv .opcion { font-size: var(--t-xl); }
 }
 
 /* =====================================================================
-   CEREMONIA — escenario de premiación
-   Fondo verde → turquesa → negro, marco dorado, confeti y podio.
+   CEREMONIA — Tabla de clasificación
+   ---------------------------------------------------------------------
+   Se revela por toques: 3.º → 2.º → 1.º (con confeti) → resto.
+   Es una LISTA, no un podio.
+
+   LAYOUT — la clave para que el pie nunca tape la lista:
+     .pantalla-ceremonia  columna, altura fija de la ventana
+       .marco-oro         columna, flex 1, min-height 0  ← permite encoger
+         .titulo          alto fijo
+         .lista-ceremonia flex 1, min-height 0, overflow-y auto  ← el scroll
+         .ceremonia-footer alto fijo, sin posicionamiento absoluto
+   Sin `min-height: 0` en los dos contenedores flex, la lista crece y empuja
+   el pie fuera de la pantalla. Ese fue el defecto.
    ===================================================================== */
 
 .pantalla-ceremonia {
   position: fixed;
   inset: 0;
   z-index: 60;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding: clamp(.8rem, 2.5vw, 1.8rem);
+  padding: clamp(.5rem, 2vw, 1.2rem);
   background:
     radial-gradient(120% 90% at 50% 0%, #1b6f4a 0%, #0f5a63 42%, #07222b 72%, #04151b 100%);
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: clamp(.6rem, 1.6vh, 1.2rem);
+  /* la pantalla NO hace scroll: lo hace la lista de dentro */
+  overflow: hidden;
 }
 
-/* --- marco dorado con esquinas ornamentadas --- */
 .marco-oro {
   position: relative;
-  width: min(100%, 1100px);
+  width: min(100%, 900px);
+  margin-inline: auto;
   flex: 1;
-  min-height: 0;
-  border: clamp(2px, .5vw, 4px) solid #d9a520;
-  border-radius: 10px;
-  padding: clamp(.7rem, 2vw, 1.6rem);
+  min-height: 0;            /* imprescindible para que el hijo pueda encoger */
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: clamp(.5rem, 1.5vh, 1rem);
+  align-items: stretch;
+  gap: clamp(.4rem, 1.2vh, .8rem);
+  border: clamp(2px, .5vw, 4px) solid #d9a520;
+  border-radius: 10px;
+  padding: clamp(.6rem, 2vw, 1.2rem);
+  background: linear-gradient(180deg, rgba(0, 0, 0, .2), rgba(0, 0, 0, .4));
   box-shadow:
     0 0 0 2px rgba(0, 0, 0, .5) inset,
     0 0 26px rgba(217, 165, 32, .35),
     0 18px 50px rgba(0, 0, 0, .55);
-  background: linear-gradient(180deg, rgba(0, 0, 0, .18), rgba(0, 0, 0, .34));
+  overflow: hidden;
 }
-/* las cuatro esquinas ornamentadas */
+
+/* esquinas ornamentadas */
 .marco-oro::before,
-.marco-oro::after {
-  content: '';
-  position: absolute;
-  width: clamp(22px, 5vw, 46px);
-  height: clamp(22px, 5vw, 46px);
-  border: clamp(2px, .45vw, 4px) solid #f0c040;
-  border-radius: 4px;
-  pointer-events: none;
-}
-.marco-oro::before {
-  top: -4px; left: -4px;
-  border-right-color: transparent;
-  border-bottom-color: transparent;
-}
-.marco-oro::after {
-  bottom: -4px; right: -4px;
-  border-left-color: transparent;
-  border-top-color: transparent;
-}
-.marco-esquinas { position: absolute; inset: 0; pointer-events: none; }
+.marco-oro::after,
 .marco-esquinas::before,
 .marco-esquinas::after {
   content: '';
   position: absolute;
-  width: clamp(22px, 5vw, 46px);
-  height: clamp(22px, 5vw, 46px);
+  width: clamp(20px, 4.5vw, 40px);
+  height: clamp(20px, 4.5vw, 40px);
   border: clamp(2px, .45vw, 4px) solid #f0c040;
   border-radius: 4px;
+  pointer-events: none;
 }
-.marco-esquinas::before {
-  top: -4px; right: -4px;
-  border-left-color: transparent;
-  border-bottom-color: transparent;
-}
-.marco-esquinas::after {
-  bottom: -4px; left: -4px;
-  border-right-color: transparent;
-  border-top-color: transparent;
-}
+.marco-oro::before { top: -4px; left: -4px; border-right-color: transparent; border-bottom-color: transparent; }
+.marco-oro::after  { bottom: -4px; right: -4px; border-left-color: transparent; border-top-color: transparent; }
+.marco-esquinas { position: absolute; inset: 0; pointer-events: none; }
+.marco-esquinas::before { top: -4px; right: -4px; border-left-color: transparent; border-bottom-color: transparent; }
+.marco-esquinas::after  { bottom: -4px; left: -4px; border-right-color: transparent; border-top-color: transparent; }
 
-/* --- título --- */
+/* --- título: imagen WebP, no depende de fuentes --- */
 .titulo-ceremonia {
-  font-size: clamp(1.3rem, 1rem + 1.8vw, 2.4rem);
-  font-weight: 800;
-  text-align: center;
-  letter-spacing: .01em;
   margin: 0;
-  color: #fff;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, .6);
-}
-.titulo-ceremonia .oro {
-  display: block;
-  font-size: 1.18em;
-  color: #f5c93b;
-  text-shadow: 0 0 22px rgba(245, 201, 59, .5), 0 3px 12px rgba(0, 0, 0, .6);
-  letter-spacing: .04em;
-}
-
-/* --- podio de tres niveles --- */
-.escenario {
-  flex: 1;
-  min-height: clamp(190px, 34vh, 320px);
-  width: 100%;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding-bottom: .3rem;
-}
-.podio-tres {
-  display: grid;
-  grid-template-columns: 1fr 1.15fr 1fr;
-  align-items: end;
-  gap: clamp(.4rem, 1.4vw, 1rem);
-  width: min(100%, 640px);
-  height: 100%;
-}
-.peldano {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  height: 100%;
-  opacity: 0;
-  transform: translateY(26px);
-  transition: opacity .45s ease, transform .45s cubic-bezier(.2,.9,.3,1.2);
-}
-.peldano.visible { opacity: 1; transform: none; }
-
-.peldano .figura {
-  font-size: clamp(1.5rem, 1rem + 2.4vw, 3rem);
-  line-height: 1;
-  margin-bottom: clamp(.2rem, .8vh, .5rem);
-  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, .5));
-}
-.peldano .figura.hueco { visibility: hidden; }
-
-.peldano .plataforma {
-  width: 100%;
-  height: var(--alto, 50%);
-  min-height: 34px;
-  border-radius: 8px 8px 0 0;
-  display: grid;
-  place-items: center;
-  background: linear-gradient(180deg, #2b7f96, #164b5c);
-  border: 2px solid rgba(255, 255, 255, .18);
-  border-bottom: 0;
-  box-shadow: 0 -6px 22px rgba(0, 0, 0, .35) inset;
-}
-.peldano.pos-1 .plataforma {
-  background: linear-gradient(180deg, #3fae86, #17624a);
-  border-color: rgba(245, 201, 59, .6);
-}
-.peldano.pos-3 .plataforma {
-  background: linear-gradient(180deg, #7a6338, #4a3a1c);
-}
-
-.peldano .num-puesto {
-  font-size: clamp(1.1rem, .8rem + 1.4vw, 2rem);
-  font-weight: 800;
-  color: #fff;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, .55);
-}
-.peldano.pos-1 .num-puesto { color: #fff6d0; }
-
-.peldano .etiqueta {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: .1rem;
-  padding-top: clamp(.25rem, .8vh, .5rem);
-  min-height: 2.4em;
+  line-height: 0;
+  flex: 0 0 auto;
   text-align: center;
 }
-.peldano .etiqueta .nombre {
+.titulo-svg {
+  display: inline-block;
+  width: clamp(190px, 60vw, 380px);
+  height: auto;
+  filter: drop-shadow(0 4px 18px rgba(0, 0, 0, .55));
+}
+
+.felicitacion {
+  flex: 0 0 auto;
+  margin: 0;
+  text-align: center;
+  font-size: clamp(.95rem, .8rem + 1.2vw, 1.35rem);
   font-weight: 800;
-  font-size: clamp(.8rem, .62rem + .8vw, 1.15rem);
+  color: #f5c93b;
+  text-shadow: 0 0 20px rgba(245, 201, 59, .45), 0 2px 10px rgba(0, 0, 0, .6);
+  animation: aparecer .5s ease both;
+}
+
+.pista-ceremonia {
+  flex: 0 0 auto;
+  margin: 0;
+  text-align: center;
+  font-size: var(--t-xs);
+  color: rgba(255, 255, 255, .6);
+  animation: pulso 2s ease-in-out infinite;
+}
+
+/* --- LA LISTA: es lo único que hace scroll --- */
+.lista-ceremonia {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  /* Hug content hasta que necesita scroll: así con 3 filas no queda un
+     hueco muerto, y con 20 filas se recorre. */
+  flex: 0 1 auto;
+  min-height: 0;            /* imprescindible junto a overflow */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(.3rem, .9vh, .55rem);
+  width: 100%;
+  /* se insinúa que hay más abajo */
+  mask-image: linear-gradient(to bottom, #000 94%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 94%, transparent 100%);
+}
+
+/* --- una fila revelada --- */
+.fila-rev {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: clamp(.5rem, 2vw, .9rem);
+  padding: clamp(.4rem, 1.2vh, .7rem) clamp(.6rem, 2vw, 1rem);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .07);
+  border: 1px solid rgba(255, 255, 255, .1);
+  opacity: 0;
+  transform: translateY(18px) scale(.97);
+  animation: entrarFila .45s cubic-bezier(.2, .9, .3, 1.15) forwards;
+}
+@keyframes entrarFila {
+  to { opacity: 1; transform: none; }
+}
+.fila-rev.yo {
+  border-color: var(--tu-300);
+  background: rgba(46, 196, 212, .18);
+}
+/* las tres primeras, con más peso visual */
+.fila-rev.del-podio {
+  background: linear-gradient(135deg, rgba(0, 160, 176, .2), rgba(255, 255, 255, .06));
+  border-color: rgba(245, 201, 59, .35);
+}
+.fila-rev.del-podio:nth-child(3) {
+  /* el primero se revela al final: se resalta más */
+  background: linear-gradient(135deg, rgba(245, 201, 59, .26), rgba(0, 160, 176, .18));
+  border-color: var(--amarillo);
+  box-shadow: 0 0 34px rgba(245, 201, 59, .22);
+}
+
+.rev-puesto {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  min-width: 2.4em;
+  justify-content: center;
+}
+.rev-figura { display: flex; }
+.rev-figura svg { display: block; height: auto; max-height: clamp(34px, 7vh, 54px); }
+.rev-num {
+  font-size: clamp(1.1rem, .9rem + 1vw, 1.6rem);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  color: #f5c93b;
+}
+
+.rev-datos {
+  display: flex;
+  flex-direction: column;
+  gap: .1rem;
+  min-width: 0;
+}
+.rev-nombre {
+  font-weight: 800;
+  font-size: clamp(.95rem, .82rem + .7vw, 1.25rem);
   color: #fff;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, .6);
-  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.peldano .etiqueta .puntos {
-  font-size: clamp(.7rem, .58rem + .6vw, .95rem);
+.rev-sub {
+  font-size: clamp(.68rem, .6rem + .35vw, .82rem);
+  color: var(--tinta-suave);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rev-puntos {
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  font-size: clamp(1.05rem, .9rem + 1vw, 1.7rem);
+  color: var(--raya);
+  text-align: right;
+  white-space: nowrap;
+}
+.rev-puntos .rev-pts {
+  font-size: .6em;
   font-weight: 700;
-  color: #f5c93b;
+  color: var(--tinta-suave);
+}
+
+/* --- PIE: siempre visible, nunca encima de la lista --- */
+.ceremonia-footer {
+  flex: 0 0 auto;
+  margin-top: auto;         /* siempre al fondo del marco */
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  justify-content: center;
+  padding-top: clamp(.4rem, 1.2vh, .8rem);
+  border-top: 1px solid rgba(245, 201, 59, .25);
+}
+.ceremonia-footer .boton {
+  flex: 1 1 auto;
+  min-width: min(140px, 44%);
+  font-size: clamp(.78rem, .7rem + .4vw, .95rem);
+  padding: .65em 1em;
 }
 
 /* --- confeti --- */
@@ -827,80 +865,43 @@ body.tv .opcion { font-size: var(--t-xl); }
   8%   { opacity: .95; }
   100% { transform: translateY(105vh) rotate(600deg); opacity: .85; }
 }
+
 @media (prefers-reduced-motion: reduce) {
   .confeti i { animation: none; display: none; }
+  .fila-rev { opacity: 1; transform: none; animation: none; }
 }
 
-/* --- cinco siguientes bajo el podio --- */
-.siguientes {
-  width: min(100%, 640px);
-  margin-top: clamp(.3rem, 1vh, .7rem);
-  padding-top: clamp(.3rem, 1vh, .6rem);
-  border-top: 1px solid rgba(217, 165, 32, .35);
-  opacity: 0;
-  animation: aparecer .5s ease .35s forwards;
-}
-.siguientes-lista {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+/* =====================================================================
+   Cabecera de la sala: QR a la izquierda, código una sola vez a la derecha
+   ===================================================================== */
+.sala-cabecera {
   display: grid;
-  gap: clamp(.15rem, .5vh, .35rem);
-}
-.siguiente {
-  display: grid;
-  grid-template-columns: 2rem minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  gap: .7rem;
-  padding: .32em .7em;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, .06);
-  font-size: clamp(.72rem, .6rem + .5vw, .92rem);
+  gap: clamp(.8rem, 3vw, 1.4rem);
+  padding: clamp(.7rem, 2vw, 1rem);
+  border-radius: var(--radio);
+  background: rgba(255, 255, 255, .05);
+  border: 1px solid rgba(110, 227, 238, .18);
+  width: 100%;
+  max-width: 460px;
+  margin-inline: auto;
 }
-.siguiente .s-puesto {
-  font-variant-numeric: tabular-nums;
-  font-weight: 800;
-  color: rgba(255, 255, 255, .55);
-  text-align: center;
+.sala-cabecera .qr-caja {
+  max-width: clamp(96px, 26vw, 130px);
+  margin: 0;
+  padding: .35rem;
 }
-.siguiente .s-nombre {
-  font-weight: 700;
-  color: #eaf6f7;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.siguiente .s-puntos {
-  font-variant-numeric: tabular-nums;
-  font-weight: 800;
-  color: #f5c93b;
-}
-.s-mas {
-  margin: .35em 0 0;
-  text-align: center;
-  font-size: clamp(.65rem, .55rem + .4vw, .8rem);
-  color: rgba(255, 255, 255, .45);
-}
-
-/* controles dentro del marco de la ceremonia */
-.ceremonia-controles {
+.sala-datos {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: .5rem;
-  width: min(100%, 340px);
-  margin-top: auto;
-  padding-top: clamp(.4rem, 1.2vh, .8rem);
+  gap: .15rem;
+  min-width: 0;
+  text-align: left;
 }
-.ceremonia-controles .boton { width: 100%; }
-.mini-ceremonia {
-  padding: .5em 1em;
-  font-size: var(--t-sm);
-  opacity: .75;
-}
-.pista-ceremonia {
-  margin: 0 0 .2em;
-  font-size: var(--t-sm);
-  color: rgba(255, 255, 255, .72);
-  text-align: center;
+.sala-datos .codigo-sala {
+  font-size: clamp(1.6rem, 1rem + 3vw, 2.4rem);
+  letter-spacing: .12em;
+  margin: .1em 0;
+  line-height: 1;
 }

@@ -115,7 +115,35 @@ document.querySelectorAll('[data-ir]').length     // los botones que toca
 
 Si eso da 0, la app no arrancó, por más 200 que muestre el log.
 
-### 9. Varias pestañas con el presentador abierto (pendiente)
+### 9. `Page.captureScreenshot` se cuelga en Android (RESUELTO — causa raíz)
+
+**Síntoma.** Toda captura por CDP expiraba con `CDP command timed out`,
+incluso con una página trivial. `Runtime.evaluate` sí funcionaba.
+
+**Causa raíz.** El foco estaba en **Termux**, no en el navegador. Android no
+produce fotogramas para una app de fondo, así que el compositor nunca entrega
+la imagen y la orden de captura espera para siempre.
+
+```
+$ dumpsys window | grep mCurrentFocus
+mCurrentFocus=Window{... com.termux/com.termux.app.TermuxActivity}
+```
+
+**Solución.** Traer el navegador al primer plano antes de capturar, y
+verificar el foco:
+
+```python
+subprocess.run(['am','start','-n','com.brave.browser/com.google.android.apps.chrome.Main'])
+time.sleep(1.5)   # dar tiempo al compositor
+```
+
+Implementado en `.logs/shot3.py`. Con eso la captura sale en ~2 s.
+
+**Regla.** Antes de capturar: navegador al frente y `mCurrentFocus` apuntando
+a él. Si la pantalla está bloqueada, desbloquear con el PIN indicado en
+`AGENTS.md`.
+
+### 10. Varias pestañas con el presentador abierto (pendiente)
 
 **Qué pasó.** Al recargar la pantalla del presentador varias veces, el
 `BroadcastChannel` acumula hosts. Las pestañas viejas siguen respondiendo y
@@ -141,7 +169,24 @@ la base de datos y no hay canal compartido.
 | Partida completa | `node src/lib/partida.test.mjs` | 32 pruebas |
 | Códigos QR | `node src/lib/qr.test.mjs` | decodificación real |
 | SQL | `psql ... -f supabase/tests/smoke.sql` | todos los `ok` |
-| Pantalla | Brave por CDP | ver captura, no suponer |
+| Pantalla | Brave por CDP + captura | **ver la imagen**, no suponer |
+
+### Verificación visual: la que vale
+
+`ui.test.mjs` se intentó con jsdom y **no sirve**: jsdom no ejecuta los
+manejadores de clic de forma fiable y da falsos negativos en cascada. Se
+eliminó en vez de dejarlo roto.
+
+La verificación de interfaz que **sí** funciona es una captura real:
+
+```bash
+cd ~ && cdp-start                       # puente CDP
+cd proyecto && python3 .logs/serve.py & # servidor sin caché
+python3 .logs/shot3.py "http://127.0.0.1:8091/#/host" .shots/x.png 390 780
+```
+
+Luego **abrir la imagen** y mirarla. Una captura de 0 bytes o un error de
+tiempo significa que el navegador no está en primer plano (ver lección 9).
 
 Para ver el juego de verdad hace falta un navegador que **aplique CSS**:
 

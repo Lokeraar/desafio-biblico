@@ -10,7 +10,7 @@
   /* página de demostración: solo para ver la ceremonia sin jugar */
   body { margin: 0; }
   .demo-barra {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 999;
+    position: relative; z-index: 999;
     display: flex; gap: .5rem; padding: .5rem; flex-wrap: wrap;
     background: rgba(0,0,0,.65); backdrop-filter: blur(6px);
   }
@@ -43,11 +43,12 @@ const tabla = nombres.map((name, i) => ({
   correct: 12 - i
 }));
 
-const controles = '<button class="boton-grande">Revelar siguiente</button>';
+const footer = '<button class="boton">Revelar siguiente</button>' +
+                 '<button class="boton boton-secundario">← Menú</button>';
 
 function pintar(paso) {
   document.getElementById('salida').innerHTML =
-    ceremoniaHTML(tabla, paso, { controles });
+    ceremoniaHTML(tabla, paso, { footer });
 }
 
 document.querySelectorAll('[data-paso]').forEach(b => {
