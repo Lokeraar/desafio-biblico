@@ -1113,6 +1113,10 @@ body.tv .opcion { font-size: var(--t-xl); }
   display: flex;
   align-items: center;
   justify-content: space-between;
+  /* En un teléfono los tres botones no caben junto al nombre: en vez de
+     aplastarlo hasta desaparecer, el nombre ocupa su propia línea y los
+     botones bajan debajo. */
+  flex-wrap: wrap;
   gap: .6rem;
   padding: .45em .7em;
   border-radius: var(--radio-sm);
@@ -1123,10 +1127,13 @@ body.tv .opcion { font-size: var(--t-xl); }
   display: flex;
   align-items: baseline;
   gap: .2rem;
+  flex: 1 1 100%;
+  width: 100%;
   min-width: 0;
   overflow: hidden;
 }
 .tema-fila strong {
+  flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1138,9 +1145,9 @@ body.tv .opcion { font-size: var(--t-xl); }
 }
 /* en pantallas angostas los botones bajan de línea en vez de encogerse */
 .tema-fila .fila {
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   flex-wrap: wrap;
-  justify-content: flex-end;
+  justify-content: flex-start;
 }
 
 /* Ficha de pregunta dentro de la lista */
