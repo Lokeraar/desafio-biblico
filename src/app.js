@@ -1578,6 +1578,24 @@ document.addEventListener('click', async ev => {
         try { localStorage.removeItem(CLAVE_HOST); } catch { /* modo privado */ }
       }
 
+      /*
+       * Si el que pulsa es un PARTICIPANTE (o el televisor), también hay que
+       * soltar su sesión.
+       *
+       * Aquí estaba el defecto que dejaba a la gente atrapada: este caso
+       * limpiaba el host y el estado, pero nunca `app.yo`. Al volver a
+       * `#/join`, `vistaJugador()` ve `yo` con valor y NO muestra el
+       * formulario de entrada; como `estado` es null, se queda en
+       * «Conectando…» para siempre, sin forma de escribir un nombre ni un
+       * código. Y como la sala vieja está cerrada, su sondeo no le va a
+       * devolver nada nunca.
+       */
+      app.cliente?.cerrar?.();
+      app.cliente = null;
+      app.yo = null;
+      app.miRespuesta = null;
+      guardarSesion();
+
       app.host?.destruir?.();
       app.host = null;
       app.estado = null;
@@ -1840,15 +1858,19 @@ addEventListener('pagehide', () => {
       }).then(r => {
         if (!r?.error) {
           /*
-           * La partida terminó mientras no mirábamos.
+           * Solo se olvida la sesión si la sala está CERRADA.
            *
-           * Recargar la página ya no debe devolver a nadie a la tabla de
-           * clasificación de una partida cerrada: se olvida la sesión y se
-           * vuelve al formulario, que es donde se empieza. La ceremonia se
-           * ve una vez, no cada vez que se recarga el teléfono.
+           * Aquí estaba la regresión: también se borraba con 'ceremony', y
+           * eso mataba la tabla justo cuando el jugador quería mirarla con
+           * calma o enseñársela a alguien. Recargar durante la ceremonia
+           * devolvía al formulario de entrada y se perdía el resultado.
+           *
+           * Ya no hace falta cubrir 'ceremony': desde que «Menú» y «Jugar de
+           * nuevo» cierran la sala de verdad, una partida abandonada llega
+           * aquí como 'closed', que es lo único que debe limpiar la sesión.
            */
           const fin = app.estado?.status;
-          if (fin === 'ceremony' || fin === 'closed') {
+          if (fin === 'closed') {
             app.yo = null;
             app.cliente?.cerrar?.();
             app.cliente = null;
@@ -1914,8 +1936,15 @@ addEventListener('pagehide', () => {
          * tabla de clasificación de la partida anterior, como si siguiera
          * viva. Ahora se olvida la sala y el panel vuelve a pedir crear una.
          */
+        /*
+         * Solo se olvida si la sala está CERRADA.
+         *
+         * Con 'ceremony' aquí, recargar el panel durante la ceremonia se
+         * llevaba por delante la tabla y la sesión del presentador, que es
+         * justo lo que necesita para revelar el podio.
+         */
         const fin = app.estado?.status;
-        if (fin === 'ceremony' || fin === 'closed') {
+        if (fin === 'closed') {
           localStorage.removeItem(CLAVE_HOST);
           host.destruir?.();
           app.host = null;
