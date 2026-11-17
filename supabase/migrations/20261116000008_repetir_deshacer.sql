@@ -101,14 +101,21 @@ begin
   -- los jugadores un reloj que ya venció mientras el presentador releía la
   -- pregunta. En 'prepared' se ve la pregunta y el presentador decide cuándo
   -- arranca la cuenta otra vez.
+  --
+  -- `rounds` no tiene columna `revealed_at`: el estado 'revealed' se guarda
+  -- solo en `state`. Poner aquí esa columna hacía fallar el UPDATE entero.
+  --
+  -- `deadline` es NOT NULL, así que no puede quedar en null: se pone la hora
+  -- actual, igual que hace `host_open_question` al crear una ronda en
+  -- 'prepared'. Lo que marca que la cuenta NO ha arrancado es `opened_at`
+  -- en null, no `deadline`.
   update public.rounds
      set state = 'prepared',
          winner_player_id = null,
          no_winner = false,
          closed_at = null,
-         revealed_at = null,
          opened_at = null,
-         deadline = null,
+         deadline = clock_timestamp(),
          paused_at = null,
          paused_total_ms = 0
    where id = v_round.id;

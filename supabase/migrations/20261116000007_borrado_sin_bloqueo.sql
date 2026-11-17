@@ -23,6 +23,19 @@
 -- =====================================================================
 
 -- ¿Alguna pregunta de este tema está dentro de una ronda viva?
+--
+-- Dos condiciones, y hacen falta las dos:
+--
+--   · La ronda está en un estado del que todavía se puede deshacer o
+--     repetir: 'prepared', 'open', 'closed' o 'revealed'. 'revealed' tiene
+--     que estar: la migración 08 permite deshacer y repetir justo después
+--     de revelar, así que esa pregunta todavía se necesita.
+--
+--   · Su SALA sigue viva. Sin esta parte, una sala abandonada que quedó en
+--     'closed' con su ronda a medio camino bloqueaba el tema para siempre:
+--     nadie puede ya deshacer ni repetir en una sala cerrada, pero el
+--     guardia la seguía contando. Ese era el defecto que esta migración
+--     venía a arreglar, y sin esta condición lo dejaba a medias.
 create or replace function public.tema_con_partida(p_topic uuid)
 returns boolean
 language sql stable security definer
@@ -32,12 +45,10 @@ as $$
     select 1
       from public.rounds r
       join public.questions q on q.id = r.question_id
+      join public.rooms rm on rm.id = r.room_id
      where q.topic_id = p_topic
-       -- 'prepared': el presentador ya la mostró y está por arrancar.
-       -- 'open': los jugadores la están contestando.
-       -- 'closed': ya hay veredicto, pero todavía se puede revelar o
-       -- deshacer, y las dos cosas necesitan la pregunta.
-       and r.state in ('prepared','open','closed')
+       and r.state in ('prepared','open','closed','revealed')
+       and rm.status <> 'closed'
   );
 $$;
 
@@ -49,9 +60,12 @@ language sql stable security definer
 set search_path = public, pg_temp
 as $$
   select exists (
-    select 1 from public.rounds r
+    select 1
+      from public.rounds r
+      join public.rooms rm on rm.id = r.room_id
      where r.question_id = p_question
-       and r.state in ('prepared','open','closed')
+       and r.state in ('prepared','open','closed','revealed')
+       and rm.status <> 'closed'
   );
 $$;
 

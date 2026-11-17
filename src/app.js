@@ -718,7 +718,7 @@ function vistaJugador() {
         <div class="columna" style="gap:.8rem; max-width:340px; width:100%">
           <div class="campo">
             <label for="codigo">Código de la sala ${ayuda('Son los cinco caracteres que muestra la pantalla del presentador. Se pueden escribir con espacios: «B 7 3 W S» es lo mismo que «B73WS».')}</label>
-            <input id="codigo" type="text" maxlength="8" autocapitalize="characters"
+            <input id="codigo" type="text" maxlength="12" autocapitalize="characters"
                    autocomplete="off" placeholder="Ej.: B73WS" value="${esc(codigoInicial)}"
                    enterkeyhint="next">
           </div>
@@ -977,7 +977,7 @@ function vistaTV() {
         <div class="columna" style="gap:.8rem; max-width:340px; width:100%">
           <div class="campo">
             <label for="codigo-tv">Código de la sala ${ayuda('Son los cinco caracteres que muestra el presentador. Se pueden escribir con espacios: «B 7 3 W S» es lo mismo que «B73WS».')}</label>
-            <input id="codigo-tv" type="text" maxlength="8" autocapitalize="characters"
+            <input id="codigo-tv" type="text" maxlength="12" autocapitalize="characters"
                    autocomplete="off" placeholder="Ej.: B73WS" value="${esc(codigoInicial)}"
                    enterkeyhint="go">
           </div>
