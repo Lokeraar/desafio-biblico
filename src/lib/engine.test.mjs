@@ -354,12 +354,18 @@ if (!cambiada.error) {
   t(e.planIndex === base.planIndex, 'el plan NO avanza: no se gastó el turno');
 }
 
-console.log('\n=== 21. Cambiar dos veces seguidas ===');
-let dos = E.cambiarPregunta(partidaLista(), T0).estado;
-const p1 = dos.round.prompt;
-dos = E.cambiarPregunta(dos, T0 + 100).estado;
-t(dos.round.prompt !== p1, 'la segunda vez también cambia de pregunta');
-t(dos.round.ordinal === ordinalAntes, 'el número sigue igual tras dos cambios');
+console.log('\n=== 21. Cambiar varias veces AVANZA por el banco (no rebota) ===');
+// Este era el bug: la rechazada se intercambiaba con la siguiente, así que el
+// segundo cambio devolvía a la pregunta original y el botón era un vaivén.
+let dos = partidaLista();
+const vistas = [dos.round.prompt];
+for (let i = 0; i < 3; i++) {
+  dos = E.cambiarPregunta(dos, T0 + 100 * (i + 1)).estado;
+  vistas.push(dos.round.prompt);
+}
+t(new Set(vistas).size === 4, 'cuatro vistas, cuatro preguntas distintas');
+t(vistas[2] !== vistas[0], 'el segundo cambio NO vuelve a la original');
+t(dos.round.ordinal === ordinalAntes, 'el número sigue igual tras tres cambios');
 
 console.log('\n=== 22. Cambiar sin pregunta en pantalla ===');
 const enLobby = E.prepararPartida(E.estadoInicial(), BANCO, 5);

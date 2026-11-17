@@ -170,8 +170,15 @@ begin
      set used = true
    where room_id = p_room and question_id = v_qid;
 
+  -- La rechazada NO puede conservar su `position`: la selección ordena por
+  -- ella, así que en el siguiente cambio volvería a ser la primera de la
+  -- lista y el botón se quedaría rebotando entre dos preguntas. Se la manda
+  -- al final para que el banco avance de verdad.
   update public.game_questions
-     set used = false
+     set used = false,
+         position = (select coalesce(max(g2.position), 0) + 1
+                       from public.game_questions g2
+                      where g2.room_id = p_room)
    where room_id = p_room and question_id = v_round.question_id;
 
   update public.rooms set status = 'question', paused = false where id = p_room;

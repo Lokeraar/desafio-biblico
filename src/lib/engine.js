@@ -335,11 +335,16 @@ export function cambiarPregunta(estado, t = ahora()) {
   }));
   const barajadas = shuffle(conIndice);
 
-  // Se intercambian: la nueva pasa al sitio de la actual y la actual al
-  // final del plan, para poder volver a salir.
+  // OJO con el orden: intercambiar las dos posiciones convertía el botón en
+  // un vaivén. Con el plan [A,B,C…], el primer cambio daba B y el segundo
+  // volvía a A, porque A quedaba justo en la casilla siguiente.
+  //
+  // Lo correcto: se SACA la actual del plan y se empuja al final, así la
+  // siguiente del banco ocupa su lugar y nunca vuelve a ser la que se acaba
+  // de descartar.
   const plan = estado.plan.slice();
-  plan[siguiente] = plan[actual];
-  plan[actual] = pregunta;
+  const rechazada = plan.splice(actual, 1)[0];
+  plan.push(rechazada);
 
   const nueva = {
     ...round,

@@ -32,24 +32,46 @@ declare
   v_seqs bigint[];
   v_opts jsonb;
   v_topic uuid;
+  v_host2 jsonb;
+  v_q1 uuid; v_q2 uuid; v_q3 uuid; v_ord int;
 begin
 
 raise notice '=== 1. Sala y banco ===';
 -- La firma cambió en la migración 02: ahora exige el tema. Se toma el
-  -- primero que tenga preguntas, que es lo que el panel ofrece por defecto.
-  select t.id into v_topic
-    from public.topics t
-   where t.game_slug = 'seleccion-simple'
-     and exists (select 1 from public.questions q where q.topic_id = t.id)
-   order by t.created_at
-   limit 1;
-  perform public.t_assert(v_topic is not null, 'hay un tema con preguntas');
+-- primero que tenga preguntas, que es lo que el panel ofrece por defecto.
+select t.id into v_topic
+  from public.topics t
+ where t.game_slug = 'seleccion-simple'
+   and exists (select 1 from public.questions q where q.topic_id = t.id)
+ order by t.created_at
+ limit 1;
+perform public.t_assert(v_topic is not null, 'hay un tema con preguntas');
 
-  v_host  := public.host_create_room(v_topic, 'seleccion-simple', 15);
+v_host  := public.host_create_room(v_topic, 'seleccion-simple', 15);
 v_room  := (v_host->>'room_id')::uuid;
 v_token := v_host->>'host_token';
 v_code  := v_host->>'code';
 perform public.t_assert(length(v_code) = 5, 'el código de sala tiene 5 caracteres');
+
+-- Duración de ronda: se guarda la pedida y el rango 5–30 se respeta.
+perform public.t_assert((v_host->>'round_seconds')::int = 15,
+                        'la sala guarda los 15 s pedidos');
+begin
+  perform public.host_create_room(v_topic, 'seleccion-simple', 45);
+  v_err := 'sin_error';
+exception when others then v_err := sqlerrm;
+end;
+perform public.t_assert(v_err = 'tiempo_invalido', '45 s se rechaza (máximo 30)');
+begin
+  perform public.host_create_room(v_topic, 'seleccion-simple', 3);
+  v_err := 'sin_error';
+exception when others then v_err := sqlerrm;
+end;
+perform public.t_assert(v_err = 'tiempo_invalido', '3 s se rechaza (mínimo 5)');
+v_host2 := public.host_create_room(v_topic, 'seleccion-simple', 8);
+perform public.t_assert((v_host2->>'round_seconds')::int = 8, 'acepta 8 s');
+update public.rooms set status='closed', ended_at=clock_timestamp()
+ where id = (v_host2->>'room_id')::uuid;
 perform public.t_assert((select count(*) from public.questions where game_slug='seleccion-simple') = 25,
                         'el banco tiene 25 preguntas');
 
@@ -190,6 +212,36 @@ perform public.t_assert((v_state->'round'->>'correct_key') = v_correct,
                         'tras REVELAR, la correcta sí se publica');
 perform public.t_assert((v_state->'round'->>'winner_id')::uuid = v_id1,
                         'el estado público anuncia al ganador');
+
+raise notice '=== 7-bis. Cambiar pregunta sin gastar el turno ===';
+-- La ronda ya está revelada: se abre una nueva para probar el cambio.
+v_round := (public.host_open_question(v_room, v_token, null)->>'round_id')::uuid;
+v_q1 := (select question_id from public.rounds where id = v_round);
+v_ord := (select ordinal from public.rounds where id = v_round);
+
+perform public.host_cambiar_pregunta(v_room, v_token);
+v_q2 := (select question_id from public.rounds where id = v_round);
+perform public.host_cambiar_pregunta(v_room, v_token);
+v_q3 := (select question_id from public.rounds where id = v_round);
+
+perform public.t_assert(v_q2 is distinct from v_q1, 'cambiar pone otra pregunta');
+-- El bug que tuvo: dos cambios devolvían a la original porque la rechazada
+-- conservaba su posición y volvía a ser la primera de la lista.
+perform public.t_assert(v_q3 is distinct from v_q1,
+                        'un segundo cambio NO vuelve a la original');
+perform public.t_assert((select ordinal from public.rounds where id = v_round) = v_ord,
+                        'el número de pregunta NO cambia al cambiar de pregunta');
+perform public.t_assert((select state from public.rounds where id = v_round) = 'prepared',
+                        'queda preparada: el reloj espera al presentador');
+perform public.t_assert((select count(*) from public.answers where round_id = v_round) = 0,
+                        'sin respuestas: las de la anterior se descartan');
+
+-- La ronda del cambio quedó en 'prepared'. Hay que cerrarla Y revelarla
+-- antes de abrir otra: `host_open_question` rechaza con `ronda_abierta` si
+-- sigue viva, y con `ronda_sin_revelar` si está cerrada sin revelar.
+-- (`host_skip_question` no sirve aquí: solo actúa sobre rondas 'open'.)
+perform public.host_close_round(v_room, v_token);
+perform public.host_revelar(v_room, v_token);
 
 raise notice '=== 8. Nadie acierta ===';
 v_round := (public.host_open_question(v_room, v_token, null)->>'round_id')::uuid;
