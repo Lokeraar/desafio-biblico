@@ -181,6 +181,37 @@ estar, y prohibido atribuirle al usuario algo que no escribió.
 **Cómo se detecta a tiempo:** si voy a nombrar algo y no puedo señalar el
 archivo o la línea donde está, no lo nombro.
 
+### 12. Un cerrojo de transacción NO corta la recursión
+
+Al cerrar por inactividad, el barrido escribe en `rooms` y `rounds`. Esas
+tablas tienen disparadores de difusión que llaman a `room_state`, y
+`room_state` llama al barrido: un ciclo.
+
+Puse un `pg_try_advisory_xact_lock` pensando que lo cortaba. **No lo hace**:
+los cerrojos de transacción los puede volver a tomar la MISMA transacción, así
+que la llamada anidada también entraba y la pila desbordaba. El síntoma no era
+un mensaje claro sino un error de Postgres en la lectura del estado.
+
+Lo que sí corta es un ajuste de sesión (`current_setting('desafio.barrido')`):
+es visible para la llamada anidada, así que la detiene en seco.
+
+**Moraleja:** cuando algo se llama a sí mismo, el cerrojo tiene que ser algo que
+la propia llamada pueda VER, no algo que pueda volver a tomar.
+
+### 13. Un `update` de prueba puede disparar el efecto que se quiere medir
+
+En la prueba del barrido envejecía una sala con `update public.rooms set
+last_activity_at = ... - interval '31 minutes'`. Dos disparadores arruinaban la
+prueba sin avisar:
+
+- `rooms_actividad` pisaba la hora con la de ahora (es su trabajo).
+- `rooms_broadcast` llamaba a `room_state`, que lanzaba el barrido: la sala se
+  cerraba ANTES de la comprobación, así que la prueba pasaba sin probar nada.
+
+Para medir de verdad hay que apagar los dos y comprobar el filtro por partes.
+
+---
+
 ## Cómo se valida este proyecto
 
 | Qué | Comando | Criterio |
@@ -247,11 +278,41 @@ captura real del menú cargado desde la URL pública.
 
 ## Pendiente
 
-- **Modo nube con Supabase.** Hoy solo funciona el modo local: varias pestañas
-  del MISMO dispositivo. Para que varios teléfonos se conecten hace falta crear
-  el proyecto, aplicar `supabase/migrations/*.sql` y añadir el cliente.
-- **Probar con puntos reales.** Las capturas de la ceremonia muestran 0 pts en
-  todos porque en la prueba nadie respondió: no se jugó ninguna ronda. Falta
-  una partida de verdad donde alguien acierte y sume 10.
+- **Probar en un teléfono de verdad.** Todo lo verificado hasta hoy es con
+  suites automáticas, Postgres local y llamadas RPC al proyecto real: ninguna
+  partida se jugó con gente y teléfonos. Es lo único que falta y no hay forma
+  de reemplazarlo con pruebas.
+- **Una sola pestaña de presentador a la vez** (ver lección 10).
 - **README**, al cerrar el proyecto.
-- Una sola pestaña de presentador a la vez (ver lección 10).
+
+---
+
+## Cierre automático por inactividad
+
+Si el presentador deja la sala abandonada 30 minutos, la sala se cierra sola y
+los participantes vuelven al menú con el motivo en pantalla. Sin esto se
+quedaban en «espera la respuesta» para siempre y el tema quedaba bloqueado
+para crear partidas nuevas.
+
+Lo que hay que saber antes de tocarlo:
+
+- **Cuenta la acción, no el sondeo.** Un presentador ausente deja la pestaña
+  abierta y sondeando cada segundo: si la lectura contara como actividad, la
+  sala nunca se cerraría justo en el caso que hay que resolver. La señal son
+  disparadores sobre `rooms` (crear, pausar, cambiar estado) y sobre `rounds`
+  (abrir, revelar, repetir, deshacer, cambiar pregunta).
+- **`player_answer` no late a propósito.** Que los jugadores contesten no es
+  actividad del presentador.
+- **No hay `pg_cron`.** El barrido se ejecuta al leer el estado (`room_state`),
+  que es justo cuando alguien está mirando. Cuesta un `UPDATE` indexado
+  (`rooms_inactivas_idx`, parcial sobre salas vivas).
+- **La recursión se corta con un ajuste de sesión**, no con un cerrojo de
+  transacción (ver lección 12).
+- **El motivo no se borra solo** en pantalla: es la única explicación que el
+  jugador expulsado va a recibir.
+- **`close_reason` es `null`** cuando cerró el presentador: ahí manda el texto
+  de siempre y no hay que anunciar una expulsión automática.
+
+Verificado con una prueba de punta a punta contra el proyecto real: leer el
+estado de una sala envejecida la devuelve `closed` con motivo `inactividad`,
+sin que nadie llame al barrido.
