@@ -940,7 +940,7 @@ function salaEsperaHTML(s) {
       </p>
 
       <div class="qr-caja qr-tv" title="Escanéalo para entrar a la sala">
-        ${qrSVG(urlSala(s.code), { nivel: 'L', escala: 10, margen: 2 })}
+        ${qrSVG(urlSala(s.code), { nivel: 'M', escala: 10, margen: 4 })}
       </div>
 
       <div class="codigo-tv">${esc(s.code)}</div>
