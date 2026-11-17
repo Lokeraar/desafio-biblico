@@ -119,22 +119,29 @@ export function ceremoniaHTML(tabla, paso, { miId = null, footer = '', vacio = '
   const primero = tabla[0] ?? null;
   const resto = tabla.slice(3);
 
-  // Se REVELA en orden 3.º → 2.º → 1.º, pero se COLOCA en orden de ranking:
-  // el 1.º arriba del todo, como en cualquier tabla de clasificación.
-  // Así, al aparecer el ganador, lo hace en el primer renglón.
+  // Se REVELA de abajo hacia arriba y se COLOCA en orden de ranking: el 1.º
+  // arriba del todo, como en cualquier tabla de clasificación.
+  //
+  // La cantidad de pasos depende de cuántos jugadores haya, no de un 3 fijo.
+  // Con un solo participante, exigir «paso 3» hacía que su nombre no
+  // apareciera NUNCA: el presentador tocaba y la pantalla seguía vacía, y
+  // parecía que se habían perdido los puntos. Con dos pasaba lo mismo con el
+  // primer lugar. Ahora el primero sale siempre en el último paso que
+  // corresponde a esa tabla.
   const visibles = new Set();
-  if (paso >= 1 && tercero) visibles.add(tercero.position);
-  if (paso >= 2 && segundo) visibles.add(segundo.position);
-  if (paso >= 3 && primero) visibles.add(primero.position);
+  const puestos = puestosRevelados(tabla.length, paso);
+  for (const pos of puestos) visibles.add(pos);
 
   const muestraResto = paso >= 4;
-  if (muestraResto) for (const p of resto) visibles.add(p.position);
 
   const filas = tabla
     .filter(p => visibles.has(p.position))
     .map(p => ({ p, puesto: p.position <= 3 }));
 
-  const confirmacion = paso >= 3 && primero
+  // La felicitación sale cuando el PRIMER puesto ya está a la vista, sea
+  // cual sea el número de pasos que hizo falta.
+  const primeroVisible = primero && visibles.has(primero.position);
+  const confirmacion = primeroVisible
     ? `<p class="felicitacion">🎉 ¡Felicitaciones, ${esc(primero.name)}!</p>`
     : '';
 
@@ -142,7 +149,7 @@ export function ceremoniaHTML(tabla, paso, { miId = null, footer = '', vacio = '
     <div class="pantalla-ceremonia" role="region" aria-label="Tabla de clasificación">
       <div class="marco-oro">
         <span class="marco-esquinas"></span>
-        ${paso >= 3 ? confetiHTML() : ''}
+        ${primeroVisible ? confetiHTML() : ''}
 
         ${titulo}
         ${confirmacion}
@@ -153,13 +160,44 @@ export function ceremoniaHTML(tabla, paso, { miId = null, footer = '', vacio = '
           ).join('')}
         </ul>
 
-        ${paso >= 3 && resto.length && !muestraResto
+        ${primeroVisible && resto.length && !muestraResto
           ? `<p class="pista-ceremonia">Toca para ver el resto de la tabla</p>`
           : ''}
 
         ${footer ? `<div class="ceremonia-footer">${footer}</div>` : ''}
       </div>
     </div>`;
+}
+
+/**
+ * Qué puestos se ven en cada paso, según cuántos jugadores haya.
+ *
+ * La idea es la misma siempre: el suspenso va de abajo hacia arriba, y el
+ * primer lugar queda para el final. Lo que cambia es cuántos escalones hay.
+ *
+ *   1 jugador → paso 1 muestra el 1.º (no hay nada más que esperar)
+ *   2 jugadores → paso 1 el 2.º, paso 2 el 1.º
+ *   3 jugadores → paso 1 el 3.º, 2 el 2.º, 3 el 1.º
+ *   8 jugadores → los tres primeros como arriba, y el 4.º paso el resto
+ */
+function puestosRevelados(cuantos, paso) {
+  const puestos = new Set();
+  if (!cuantos || paso < 1) return puestos;
+
+  if (cuantos <= 3) {
+    // Se destapa el último y se sube: con 2, el paso 1 muestra el 2.º.
+    for (let k = 1; k <= paso; k++) {
+      const puesto = cuantos - k + 1;
+      if (puesto >= 1) puestos.add(puesto);
+    }
+    return puestos;
+  }
+
+  if (paso >= 1) puestos.add(3);
+  if (paso >= 2) puestos.add(2);
+  if (paso >= 3) puestos.add(1);
+  if (paso >= 4) for (let p = 4; p <= cuantos; p++) puestos.add(p);
+  return puestos;
 }
 
 /** Cuántos pasos tiene la ceremonia para esta tabla. */

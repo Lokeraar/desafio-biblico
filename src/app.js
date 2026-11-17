@@ -9,7 +9,7 @@
 import { BANCO } from './lib/bank.js';
 import * as E from './lib/engine.js';
 import {
-  esc, validarNombre, segundos, EMOJI, normalizeName, normalizarCodigo
+  esc, validarNombre, segundos, normalizeName, normalizarCodigo
 } from './lib/util.js';
 import { crearHostLocal, crearClienteLocal, esLocalDisponible } from './lib/local.js';
 import { crearHostNube, crearClienteNube, admin, rpc, resolverSala, mirarSala } from './lib/cloud.js';
@@ -227,30 +227,6 @@ function traducirError(codigo) {
     sala_inexistente: 'Esa sala no existe.'
   };
   return frases[codigo] ?? String(codigo ?? 'Algo salió mal.');
-}
-
-/**
- * Fila de la tabla de clasificación.
- * Una sola grilla, un solo eje: puesto, nombre y puntaje centrados entre sí.
- * La caja del puesto tiene ancho fijo, así la medalla y el número ocupan
- * lo mismo y la columna no se mueve según el puesto.
- */
-function filaClasificacion({ position, name, subtitle, score, yo }) {
-  const medalla = position <= 3 ? EMOJI[position] : null;
-  return `
-    <li class="fila-clasif${yo ? ' yo' : ''}">
-      <div class="puesto">
-        ${medalla
-          ? `<span class="emoji" aria-hidden="true">${medalla}</span>`
-          : `<span class="num">${position}</span>`}
-        <span class="sr-solo">Puesto ${position}:</span>
-      </div>
-      <div class="datos">
-        <span class="nombre">${esc(name)}</span>
-        ${subtitle ? `<span class="sub">${esc(subtitle)}</span>` : ''}
-      </div>
-      <div class="puntos">${score}</div>
-    </li>`;
 }
 
 /* ------------------------------------------------------------------ */
@@ -989,7 +965,6 @@ function vistaTV() {
   }
 
   const r = s.round;
-  const top = s.players.slice(0, 5);
 
   /*
    * Sala cerrada: el presentador se fue. Se avisa y se deja de consultar,
@@ -1067,16 +1042,14 @@ function vistaTV() {
             ${r.noWinner ? 'Nadie acertó' : `🎉 ${esc(s.players.find(p => p.id === r.winnerId)?.name ?? '')}`}
           </p>` : ''}
       ` : `<p class="tenue centro" style="text-align:center">Esperando la primera pregunta…</p>`}
-
-      ${top.length ? `
-        <div class="columna" style="gap:.5rem; max-width:760px; width:100%; margin-inline:auto">
-          <h2 style="font-size:var(--t-sm); margin:0" class="tenue">Marcador</h2>
-          <ul class="podio-lista">
-            ${top.map((p, i) => filaClasificacion({
-              position: i + 1, name: p.name, score: p.score
-            })).join('')}
-          </ul>
-        </div>` : ''}
+      ${/*
+          Sin marcador a propósito.
+          Antes el televisor mostraba los cinco primeros con sus puntos
+          mientras se jugaba, y eso arruinaba el suspenso: todo el salón veía
+          quién iba ganando antes de la ceremonia. Los puntos se conocen solo
+          al final, en la tabla de clasificación que se revela de abajo hacia
+          arriba.
+       */''}
     </main>`;
 }
 
@@ -1578,7 +1551,13 @@ document.addEventListener('click', async ev => {
 
       // Un solo sondeo vivo: si se transmite otra sala, la anterior se suelta.
       app.tv?.parar();
-      app.tv = mirarSala(sala.roomId, {
+      // El mando se guarda en una variable LOCAL, no se lee de `app.tv`
+      // después del `await`. `app.tv` es estado global y puede cambiar
+      // mientras se espera: si la persona sale al menú, `render()` lo pone en
+      // null; si transmite otra sala, apunta a otro sondeo. Leerlo después
+      // del await daba «Cannot read properties of null» o cerraba el sondeo
+      // equivocado y mostraba un error que no existía.
+      const tv = mirarSala(sala.roomId, {
         onEstado: est => {
           if (!est) return;
           app.estado = est;
@@ -1587,14 +1566,25 @@ document.addEventListener('click', async ev => {
           render();
         }
       });
+      app.tv = tv;
 
-      await app.tv.primero;
+      await tv.primero;
+
+      // Si mientras se esperaba la persona salió del televisor o pidió otra
+      // sala, este sondeo ya no es el vigente: se suelta y no se toca nada
+      // más. Sin esta comprobación se mostraría un error en una pantalla que
+      // ya no está en pantalla.
+      if (app.tv !== tv) {
+        tv.parar();
+        break;
+      }
+
       // La primera consulta es la que dice si la sala se puede ver. Si falló,
       // no hay nada que transmitir: se suelta el mando y se avisa con el
       // motivo real, en vez de dejar un sondeo vivo contra una sala rota.
-      const fallo = app.tv.ultimoError();
+      const fallo = tv.ultimoError();
       if (fallo) {
-        app.tv.parar();
+        tv.parar();
         app.tv = null;
         app.estado = null;
         ponerAviso('error', traducirError(fallo));

@@ -92,6 +92,29 @@ console.log('\n=== 10. Resalta al jugador propio ===');
 const conmigo = ceremoniaHTML(t8, 4, { miId: 'p2' });
 t(conmigo.includes('fila-rev yo'), 'la fila propia se resalta');
 
+
+/* ------------------------------------------------------------------ */
+console.log('\n=== 19. UN solo jugador: aparece en el primer toque ===');
+// Antes exigía «paso >= 3» y con un solo jugador el nombre no salía NUNCA:
+// el presentador tocaba y la tabla seguía vacía, como si se hubieran
+// perdido los puntos.
+const t1 = tablaDe(1);
+t(totalPasos(t1) === 1, '1 jugador → 1 paso');
+const u1 = ceremoniaHTML(t1, 1);
+t(u1.includes('Jugador 1'), 'el único clasificado YA aparece en el primer toque');
+t(u1.includes('Felicitaciones'), 'y se le felicita de una vez');
+
+console.log('\n=== 20. DOS jugadores: 2.º y luego 1.º ===');
+const t2 = tablaDe(2);
+t(totalPasos(t2) === 2, '2 jugadores → 2 pasos');
+const d1 = ceremoniaHTML(t2, 1);
+t(d1.includes('Jugador 2'), 'paso 1: aparece el 2.º');
+t(!d1.includes('Jugador 1'), 'paso 1: el 1.º todavía no');
+const d2 = ceremoniaHTML(t2, 2);
+t(d2.includes('Jugador 1') && d2.includes('Jugador 2'), 'paso 2: aparecen los dos');
+t(d2.includes('Felicitaciones'), 'paso 2: se felicita al ganador');
+t(!d1.includes('Felicitaciones'), 'paso 1: todavía no hay felicitación');
+
 console.log('\n===============================');
 console.log(` ${ok} correctas, ${fail} fallas`);
 console.log('===============================');
