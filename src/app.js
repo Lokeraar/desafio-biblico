@@ -942,7 +942,12 @@ function vistaTV() {
       </main>`;
     }
 
-    const codigoInicial = app.formTV.codigo ?? codigoDeUrl() ?? '';
+    // `?? ` no basta: una cadena vacía (el campo recién limpiado) es un
+    // valor válido y debe ganarle al código de la URL. Con `??` el campo se
+    // volvía a llenar con el de la dirección y la limpieza no se veía.
+    const codigoInicial = app.formTV.codigo != null
+      ? app.formTV.codigo
+      : (codigoDeUrl() ?? '');
     return `
       <main class="crecer columna centro" style="gap:1rem">
         <h1>Desafío Bíblico</h1>
@@ -1030,7 +1035,7 @@ function vistaTV() {
           ${r.options.map((o, i) => {
             const esCorrecta = r.state === 'revealed' && i === r.correctIdx;
             return `
-            <div class="opcion${esCorrecta ? ' correcta' : ' apagada'}" role="presentation">
+            <div class="opcion${esCorrecta ? ' correcta' : ''}" role="presentation">
               <span class="letra">${'ABCD'[i]}</span>
               <span>${esc(o)}</span>
             </div>`;
@@ -1057,6 +1062,9 @@ function vistaTV() {
 /* Render                                                              */
 /* ------------------------------------------------------------------ */
 let timerReloj = null;
+// Último HTML dibujado. Evita reescribir el DOM cuando nada cambió: eso
+// reiniciaba el confeti de la ceremonia en cada vuelta del sondeo.
+let htmlAnterior = '';
 // Cerrando sala: evita mandar dos veces la orden si se toca el botón dos
 // veces mientras viaja la respuesta del servidor.
 let cerrando = false;
@@ -1155,7 +1163,19 @@ function render() {
   // cerrarlo no se pierde lo que el usuario estaba escribiendo debajo.
   if (app.modal) html += modalActivo();
 
-  $app.innerHTML = html;
+  /*
+   * Solo se reescribe el DOM si el HTML cambió.
+   *
+   * `innerHTML = html` destruye y recrea TODOS los nodos. En la ceremonia
+   * el sondeo de la nube vuelve a dibujar cada segundo; con los resultados
+   * ya en pantalla, cada uno de esos redibujados reiniciaba el confeti y
+   * hacía parpadear la tabla. Comparar antes de escribir deja la pantalla
+   * quieta cuando nada cambió, que es la mayor parte del tiempo.
+   */
+  if (html !== htmlAnterior) {
+    $app.innerHTML = html;
+    htmlAnterior = html;
+  }
   document.body.classList.toggle('tv', vista === 'tv');
 
   // Al salir de la pantalla del televisor se suelta su sondeo: una consulta
@@ -1429,10 +1449,33 @@ document.addEventListener('click', async ev => {
       break;
     }
     case 'salir-host': {
+      /*
+       * Si el que sale es el PRESENTADOR, la partida termina de verdad.
+       *
+       * Antes solo se soltaba la pestaña: la sala quedaba viva en el
+       * servidor y, al recargar, cualquiera de las tres pantallas volvía a
+       * la tabla de clasificación de una partida ya terminada. Ahora se
+       * cierra en el servidor antes de salir.
+       *
+       * `cerrarSala` se espera con tope: si la red falla no se puede dejar
+       * al presentador atrapado en una pantalla que ya quiso abandonar.
+       */
+      const eraPresentador = Boolean(app.host);
+      if (eraPresentador) {
+        try {
+          await Promise.race([
+            app.host?.cerrarSala?.(),
+            new Promise(r => setTimeout(r, 4000))
+          ]);
+        } catch { /* la sala se quedará abierta; no se bloquea la salida */ }
+        try { localStorage.removeItem(CLAVE_HOST); } catch { /* modo privado */ }
+      }
+
       app.host?.destruir?.();
       app.host = null;
       app.estado = null;
       app.podioPaso = 0;
+      app.tablaCompleta = false;
       ir('menu');
       break;
     }
@@ -1549,6 +1592,12 @@ document.addEventListener('click', async ev => {
         return;
       }
 
+      // El código ya cumplió: se limpia el campo para que el siguiente que
+      // vaya a transmitir no herede el de la sala anterior. Se usa cadena
+      // vacía y no null: `codigoInicial` cae al código de la URL cuando es
+      // null, y eso volvía a rellenar el campo que se acababa de limpiar.
+      app.formTV = { codigo: '' };
+
       // Un solo sondeo vivo: si se transmite otra sala, la anterior se suelta.
       app.tv?.parar();
       // El mando se guarda en una variable LOCAL, no se lee de `app.tv`
@@ -1598,7 +1647,7 @@ document.addEventListener('click', async ev => {
       app.tv?.parar();
       app.tv = null;
       app.estado = null;
-      app.formTV = { codigo: null };
+      app.formTV = { codigo: '' };
       render();
       break;
     }
@@ -1682,7 +1731,26 @@ addEventListener('pagehide', () => {
         token: sesion.token,
         roomId: sesion.roomId
       }).then(r => {
-        if (!r?.error) return;
+        if (!r?.error) {
+          /*
+           * La partida terminó mientras no mirábamos.
+           *
+           * Recargar la página ya no debe devolver a nadie a la tabla de
+           * clasificación de una partida cerrada: se olvida la sesión y se
+           * vuelve al formulario, que es donde se empieza. La ceremonia se
+           * ve una vez, no cada vez que se recarga el teléfono.
+           */
+          const fin = app.estado?.status;
+          if (fin === 'ceremony' || fin === 'closed') {
+            app.yo = null;
+            app.cliente?.cerrar?.();
+            app.cliente = null;
+            app.estado = null;
+            guardarSesion();
+            render();
+          }
+          return;
+        }
 
         if (SESION_MUERTA.has(r.error)) {
           app.yo = null;
@@ -1728,6 +1796,21 @@ addEventListener('pagehide', () => {
           // La sala ya no existe o el token dejó de valer: se limpia y el
           // presentador puede crear una nueva.
           localStorage.removeItem(CLAVE_HOST);
+          app.host = null;
+          app.estado = null;
+          render();
+          return;
+        }
+        /*
+         * La partida ya había terminado: no se reabre.
+         * Recargar después de volver al menú devolvía al presentador a la
+         * tabla de clasificación de la partida anterior, como si siguiera
+         * viva. Ahora se olvida la sala y el panel vuelve a pedir crear una.
+         */
+        const fin = app.estado?.status;
+        if (fin === 'ceremony' || fin === 'closed') {
+          localStorage.removeItem(CLAVE_HOST);
+          host.destruir?.();
           app.host = null;
           app.estado = null;
           render();

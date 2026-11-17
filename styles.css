@@ -326,6 +326,45 @@ input:focus, textarea:focus, select:focus {
   border-color: var(--tu-300);
   box-shadow: 0 0 0 3px rgba(46,196,212,.22);
 }
+
+/*
+ * El desplegable de temas.
+ *
+ * Un `select` no hereda el tema: el navegador dibuja la caja y la lista de
+ * opciones con sus colores de sistema, y quedaba gris claro sobre el fondo
+ * oscuro, como un control ajeno al proyecto. Se le quita la apariencia
+ * nativa, se le pone una flecha propia y se pintan las opciones con la
+ * misma paleta.
+ */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: rgba(0, 0, 0, .32);
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--tu-100) 50%),
+    linear-gradient(135deg, var(--tu-100) 50%, transparent 50%);
+  background-position:
+    right 1.15em center,
+    right .8em center;
+  background-size: .42em .42em, .42em .42em;
+  background-repeat: no-repeat;
+  padding-right: 2.4em;
+  cursor: pointer;
+  text-overflow: ellipsis;
+}
+select:hover:not(:disabled) { border-color: rgba(110, 227, 238, .5); }
+select:disabled { opacity: .45; cursor: not-allowed; }
+
+/* La lista desplegada: sin esto las opciones salen blancas sobre blanco. */
+select option {
+  background: var(--fondo-2);
+  color: var(--tinta);
+}
+select option:checked,
+select option:hover {
+  background: var(--tu-800);
+  color: var(--tinta);
+}
 label { font-weight: 700; font-size: var(--t-sm); color: var(--tu-100); }
 .campo { display: flex; flex-direction: column; gap: .35rem; text-align: left; }
 
