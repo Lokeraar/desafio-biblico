@@ -90,6 +90,7 @@ const app = {
   podioPaso: 0,      // 0 = oculto, 1 = 3.º, 2 = 2.º, 3 = 1.º
   miRespuesta: null, // { roundId, idx } — lo que este teléfono ya contestó
   cantidadPreguntas: 10,
+  segundosRonda: 15,   // duración de cada pregunta (5–30)
   // Mando del sondeo del televisor. Existe para poder soltarlo: un sondeo
   // que nadie detiene sigue consultando desde una pantalla ya abandonada.
   tv: null,
@@ -352,6 +353,16 @@ function vistaHost() {
           </select>
         </div>
 
+        <div class="campo" style="max-width:340px; width:100%">
+          <label for="seg">Segundos por pregunta ${ayuda(
+            'Cuánto tiempo tienen para responder. Son juegos de reacción rápida: '
+            + 'por encima de 30 segundos la espera se hace larga sin aportar nada.')}</label>
+          <select id="seg" ${puedeCrear ? '' : 'disabled'}>
+            ${[5, 10, 15, 20, 25, 30].map(n =>
+              `<option value="${n}" ${n === app.segundosRonda ? 'selected' : ''}>${n} segundos</option>`).join('')}
+          </select>
+        </div>
+
         ${avisoHTML()}
         <button class="boton-grande" data-accion="crear-sala"
                 style="max-width:320px" ${puedeCrear ? '' : 'disabled'}
@@ -546,8 +557,8 @@ function controlesHostHTML(r, enPausa) {
           ${ayuda('Arranca el reloj y abre las respuestas. Antes de esto nadie puede contestar.')}
         </button>
         <div class="fila envolver" style="gap:.5rem">
-          <button class="boton boton-secundario" data-accion="saltar" style="flex:1">
-            ⏭ Saltar ${ayuda('Cierra la pregunta sin dar el punto y muestra la correcta.')}
+          <button class="boton boton-secundario" data-accion="cambiar-pregunta" style="flex:1">
+            🔄 Cambiar pregunta ${ayuda('Pone otra pregunta del banco sin gastar el turno: sigue siendo la misma pregunta del concurso y nadie suma ni pierde puntos por la anterior.')}
           </button>
         </div>
       </div>`;
@@ -564,8 +575,8 @@ function controlesHostHTML(r, enPausa) {
               ? 'El reloj vuelve a correr con los segundos que quedaban.'
               : 'Congela el reloj y bloquea las respuestas.')}
           </button>
-          <button class="boton boton-secundario" data-accion="saltar" style="flex:1">
-            ⏭ Saltar ${ayuda('Cierra sin dar el punto y muestra la correcta.')}
+          <button class="boton boton-secundario" data-accion="cambiar-pregunta" style="flex:1">
+            🔄 Cambiar pregunta ${ayuda('Pone otra pregunta del banco sin gastar el turno. El reloj vuelve a cero y las respuestas de esta se descartan.')}
           </button>
         </div>
         <button class="boton-grande" data-accion="cerrar">
@@ -1431,7 +1442,7 @@ document.addEventListener('click', async ev => {
           topicId: app.temaElegido,
           onEstado: est => { app.estado = est; render(); }
         });
-        const r = await host.crear(app.cantidadPreguntas);
+        const r = await host.crear(app.cantidadPreguntas, app.segundosRonda);
         if (r.error) {
           ponerAviso('error', traducirError(r.error));
           break;
@@ -1452,7 +1463,7 @@ document.addEventListener('click', async ev => {
         preguntas: BANCO,
         onEstado: est => { app.estado = est; render(); }
       });
-      app.host.preparar(app.cantidadPreguntas);
+      app.host.preparar(app.cantidadPreguntas, app.segundosRonda);
       // Por defecto, el presentador es quien orquesta: no necesita cuenta.
       app.estado = app.host.estado();
       render();
@@ -1537,6 +1548,12 @@ document.addEventListener('click', async ev => {
     case 'reanudar': await accionHost('reanudar'); break;
     case 'cerrar': await accionHost('cerrar'); break;
     case 'saltar': await accionHost('saltar'); break;
+    /*
+     * Cambiar pregunta: otra pregunta del banco, mismo turno.
+     * `accionHost` ya espera y traduce el error; si el banco se agotó, el
+     * presentador lo ve en pantalla en vez de que el botón no haga nada.
+     */
+    case 'cambiar-pregunta': await accionHost('cambiarPregunta'); break;
     case 'repetir': await accionHost('repetir'); break;
     case 'deshacer': await accionHost('deshacer'); break;
     case 'expulsar': await accionHost('expulsar', el.dataset.id); break;
@@ -1596,7 +1613,7 @@ document.addEventListener('click', async ev => {
       app.podioPaso = 0;
       app.tablaCompleta = false;
       app.host.crearOtraSala();
-      app.host.preparar(app.cantidadPreguntas);
+      app.host.preparar(app.cantidadPreguntas, app.segundosRonda);
       break;
     }
     case 'salir-host': {
@@ -2074,6 +2091,12 @@ document.addEventListener('change', ev => {
   }
   if (ev.target.id === 'cant') {
     app.cantidadPreguntas = Number(ev.target.value) || 10;
+    render();
+  }
+  if (ev.target.id === 'seg') {
+    // Se acota aquí también: el servidor rechaza fuera de 5–30, y no tiene
+    // sentido dejar elegir en pantalla algo que la base va a negar.
+    app.segundosRonda = Math.min(30, Math.max(5, Number(ev.target.value) || 15));
     render();
   }
 });

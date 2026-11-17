@@ -325,6 +325,55 @@ t(E.abrirPregunta(cerradaLobby, T0 + 1).error !== undefined,
   'no se puede abrir otra pregunta en una sala cerrada');
 
 /* ------------------------------------------------------------------ */
+console.log('\n=== 20. Cambiar pregunta NO gasta el turno ===');
+function partidaLista() {
+  let s2 = E.estadoInicial();
+  s2.players = [
+    { id:'p1', name:'Ana', score:0, totalMs:0, correct:0, joinedAt:T0, waiting:false, kicked:false }
+  ];
+  s2 = E.prepararPartida(s2, BANCO, 5);
+  return E.abrirPregunta(s2, T0).estado;
+}
+
+const base = partidaLista();
+const ordinalAntes = base.round.ordinal;
+const idAntes = base.round.id;
+const promptAntes = base.round.prompt;
+
+const cambiada = E.cambiarPregunta(base, T0 + 100);
+t(!cambiada.error, 'cambiar no da error');
+if (!cambiada.error) {
+  const e = cambiada.estado;
+  t(e.round.id === idAntes, 'SIGUE siendo la misma ronda (mismo id)');
+  t(e.round.ordinal === ordinalAntes, 'SIGUE siendo el mismo número de pregunta');
+  t(e.round.prompt !== promptAntes, 'la pregunta es otra');
+  t(e.round.state === 'prepared', 'vuelve a prepared: el reloj espera al presentador');
+  t(e.round.answers.length === 0, 'sin respuestas: las de la anterior se descartan');
+  t(e.history.length === base.history.length, 'no se añade nada al historial');
+  t(e.players[0].score === base.players[0].score, 'nadie gana ni pierde puntos');
+  t(e.planIndex === base.planIndex, 'el plan NO avanza: no se gastó el turno');
+}
+
+console.log('\n=== 21. Cambiar dos veces seguidas ===');
+let dos = E.cambiarPregunta(partidaLista(), T0).estado;
+const p1 = dos.round.prompt;
+dos = E.cambiarPregunta(dos, T0 + 100).estado;
+t(dos.round.prompt !== p1, 'la segunda vez también cambia de pregunta');
+t(dos.round.ordinal === ordinalAntes, 'el número sigue igual tras dos cambios');
+
+console.log('\n=== 22. Cambiar sin pregunta en pantalla ===');
+const enLobby = E.prepararPartida(E.estadoInicial(), BANCO, 5);
+t(E.cambiarPregunta(enLobby).error !== undefined, 'sin ronda, devuelve error');
+
+console.log('\n=== 23. La duración de ronda se respeta ===');
+let corta = E.estadoInicial({ roundSeconds: 8 });
+corta = E.prepararPartida(corta, BANCO, 2);
+corta = E.abrirPregunta(corta, T0).estado;
+t(corta.round.durationMs === 8000, 'la ronda nace con 8 s de ventana');
+const visCorta = E.estadoVisible(corta);
+t(visCorta.round.deadlineMs === 8000, 'la proyección publica los mismos 8 s');
+
+/* ------------------------------------------------------------------ */
 console.log('\n===============================');
 console.log(` ${ok} correctas, ${fail} fallas`);
 console.log('===============================');

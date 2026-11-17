@@ -303,6 +303,74 @@ export function revelarRespuesta(estado, t = ahora()) {
  * No pasa por 'closed' porque no hay suspenso que sostener: se salta justamente
  * para ver la respuesta.
  */
+/**
+ * Cambia la pregunta en pantalla por otra del banco SIN gastar el turno.
+ *
+ * Es distinto de `saltarPregunta`: aquel cierra la ronda y avanza a la
+ * siguiente, gastando una de las preguntas preparadas. Aquí la ronda sigue
+ * siendo la misma —mismo id, mismo número— y solo cambia la pregunta.
+ *
+ * El reloj vuelve a cero y las respuestas se borran: nadie contestó la
+ * pregunta que se está mostrando. La pregunta que se quita vuelve al final
+ * del plan, así que se puede volver a encontrar más adelante.
+ */
+export function cambiarPregunta(estado, t = ahora()) {
+  const round = estado.round;
+  if (!round || (round.state !== 'prepared' && round.state !== 'open')) {
+    return { error: 'No hay una pregunta en pantalla que cambiar.' };
+  }
+  if (cerrada(estado)) return { error: 'La sala está cerrada.' };
+
+  // La pregunta en pantalla vive en planIndex - 1 (abrirPregunta ya avanzó).
+  const actual = Math.max(0, (estado.planIndex ?? 0) - 1);
+  const siguiente = actual + 1;
+
+  if (!estado.plan[siguiente]) {
+    return { error: 'No quedan preguntas para cambiar.' };
+  }
+
+  const pregunta = estado.plan[siguiente];
+  const conIndice = pregunta.options.map((texto, i) => ({
+    texto, esCorrecta: i === pregunta.correct
+  }));
+  const barajadas = shuffle(conIndice);
+
+  // Se intercambian: la nueva pasa al sitio de la actual y la actual al
+  // final del plan, para poder volver a salir.
+  const plan = estado.plan.slice();
+  plan[siguiente] = plan[actual];
+  plan[actual] = pregunta;
+
+  const nueva = {
+    ...round,
+    // Mismo id y mismo ordinal: es la MISMA pregunta del concurso.
+    prompt: pregunta.prompt,
+    reference: pregunta.reference ?? null,
+    options: barajadas.map(o => o.texto),
+    correctIdx: barajadas.findIndex(o => o.esCorrecta),
+    openedAt: null,
+    durationMs: estado.roundSeconds * 1000,
+    pausedAt: null,
+    pausedTotal: 0,
+    answers: [],
+    state: 'prepared',
+    winnerId: null,
+    noWinner: false
+  };
+
+  return {
+    estado: {
+      ...estado,
+      status: 'question',
+      paused: false,
+      round: nueva,
+      plan,
+      planIndex: actual + 1,
+      lastPlayed: { ...estado.lastPlayed, [pregunta.prompt]: t }
+    }
+  };
+}
+
 export function saltarPregunta(estado, t = ahora()) {
   const round = estado.round;
   if (!round || (round.state !== 'open' && round.state !== 'prepared')) return { estado };

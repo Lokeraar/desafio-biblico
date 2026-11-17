@@ -307,10 +307,13 @@ export function crearHostNube({ topicId, onEstado, gameSlug = 'seleccion-simple'
     nube: true,
 
     /** Crea la sala en el servidor. Debe llamarse una vez. */
-    async crear(cantidad = 10) {
+    async crear(cantidad = 10, segundosRonda = 15) {
       const { dato, error } = await rpc('host_create_room', {
         p_topic: topicId,
-        p_game_slug: gameSlug
+        p_game_slug: gameSlug,
+        // Segundos por pregunta. El servidor valida 5–30; se manda lo que
+        // eligió el presentador, no un valor fijo.
+        p_round_seconds: segundosRonda
       });
       if (error) return { error };
 
@@ -357,6 +360,11 @@ export function crearHostNube({ topicId, onEstado, gameSlug = 'seleccion-simple'
     pausar: () => accion('host_pause'),
     reanudar: () => accion('host_resume'),
     saltar: () => accion('host_skip_question'),
+    /**
+     * Cambia la pregunta en pantalla por otra del banco, manteniendo el
+     * MISMO turno: la ronda y su número no cambian, solo la pregunta.
+     */
+    cambiarPregunta: () => accion('host_cambiar_pregunta'),
     repetir: () => accion('host_repeat_question'),
     deshacer: () => accion('host_undo'),
     terminar: () => accion('host_end_game'),

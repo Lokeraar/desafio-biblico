@@ -130,7 +130,12 @@ export function crearHostLocal({ preguntas, onEstado }) {
     code: () => estado.code,
     estado: () => vistaHostCompleta(estado),
     // acciones del presentador
-    preparar: (cantidad) => { estado = E.prepararPartida(estado, preguntas, cantidad); difundir(); },
+    // `segundos` es la duración de cada pregunta; sin él se queda en 15.
+    preparar: (cantidad, segundos) => {
+      estado = E.prepararPartida(estado, preguntas, cantidad);
+      if (segundos) estado = { ...estado, roundSeconds: segundos };
+      difundir();
+    },
     abrir: () => { const r = E.abrirPregunta(estado); if (r.error) return r.error; estado = r.estado; difundir(); return null; },
     pausar: () => { estado = E.pausar(estado).estado; difundir(); },
     reanudar: () => { estado = E.reanudar(estado).estado; difundir(); },
@@ -138,6 +143,14 @@ export function crearHostLocal({ preguntas, onEstado }) {
     cerrar: () => { estado = E.cerrarRonda(estado).estado; difundir(); },
     revelar: () => { estado = E.revelarRespuesta(estado).estado; difundir(); },
     saltar: () => { estado = E.saltarPregunta(estado).estado; difundir(); },
+    // Cambia la pregunta SIN gastar el turno: misma ronda, otra pregunta.
+    cambiarPregunta: () => {
+      const r = E.cambiarPregunta(estado);
+      if (r.error) return r.error;
+      estado = r.estado;
+      difundir();
+      return null;
+    },
     repetir: () => { const r = E.repetirPregunta(estado); if (r.error) return r.error; estado = r.estado; difundir(); return null; },
     deshacer: () => { const r = E.deshacer(estado); if (r.error) return r.error; estado = r.estado; difundir(); return null; },
     terminar: () => { estado = E.terminarJuego(estado).estado; difundir(); },
