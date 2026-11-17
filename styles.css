@@ -1379,3 +1379,74 @@ body.tv .opcion-fila input[type="radio"]:checked {
 }
 body.tv .tarjeta-config { padding: 1.4rem; }
 
+
+/* =====================================================================
+   TABLET Y PC — letra más grande y respuestas en dos columnas
+   ---------------------------------------------------------------------
+   En un teléfono caben cuatro respuestas apiladas y la letra grande haría
+   falta desplazarse para verlas todas. En una pantalla ancha sobra sitio y
+   las respuestas quedan pequeñas y lejos del centro.
+
+   A partir de tablet se reparte en DOS columnas. El orden lo da la propia
+   rejilla, que llena fila por fila:
+
+       A (izquierda)      B (derecha)
+       C (izquierda)      D (derecha)
+
+   que es el orden natural de lectura y no necesita reordenar nada.
+   ===================================================================== */
+@media (min-width: 768px) {
+  /* Escala tipográfica: sube toda la base y, con ella, lo que va en em.
+     El cuerpo se queda en un tamaño cómodo de leer a distancia; los
+     títulos crecen más porque su clamp ya arranca alto. */
+  :root {
+    --t-xs:   clamp(.9rem, .85rem + .25vw, 1.05rem);
+    --t-sm:   clamp(1.05rem, .95rem + .35vw, 1.25rem);
+    --t-base: clamp(1.25rem, 1.1rem + .5vw, 1.55rem);
+    --t-lg:   clamp(1.5rem, 1.3rem + .8vw, 1.9rem);
+    --t-xl:   clamp(1.9rem, 1.5rem + 1.6vw, 2.6rem);
+    --t-2xl:  clamp(2.4rem, 1.8rem + 2.6vw, 3.6rem);
+    --t-3xl:  clamp(3rem, 2.2rem + 3.6vw, 4.8rem);
+  }
+
+  /* La pantalla puede usar más ancho: con dos columnas de respuestas hace
+     falta sitio, y dejar el texto en 1200 px desperdicia la pantalla. */
+  .pantalla { max-width: 1400px; }
+
+  /* Las cuatro respuestas, en dos columnas iguales.
+     `grid-auto-flow: row` es el valor por omisión y es el que da el orden
+     A-B / C-D. Se deja explícito para que nadie lo cambie sin darse cuenta. */
+  .opciones {
+    grid-template-columns: 1fr 1fr;
+    grid-auto-flow: row;
+    gap: clamp(.8rem, 1.6vw, 1.4rem);
+  }
+
+  /* Cada respuesta respira más: más alto para el dedo y para el ojo. */
+  .opcion {
+    padding: clamp(1rem, 2vw, 1.5rem) clamp(1.1rem, 2.2vw, 1.7rem);
+    font-size: var(--t-base);
+    align-items: center;
+  }
+
+  /* La letra (A/B/C/D) crece con el texto, no se queda enana al lado. */
+  .opcion .letra {
+    width: 2.1em; height: 2.1em;
+    font-size: var(--t-base);
+  }
+
+  /* El enunciado manda: es lo que se lee desde el otro lado del salón. */
+  .enunciado { font-size: var(--t-2xl); }
+}
+
+/* En un PC de escritorio ancho se puede ir un paso más allá sin romper
+   nada: pantalla más amplia y respuestas todavía más cómodas. */
+@media (min-width: 1280px) {
+  .pantalla { max-width: 1600px; }
+  .opciones { gap: 1.6rem; }
+  .opcion { padding: 1.7rem 2rem; }
+}
+
+/* El televisor ya tiene su propia escala y su propio diseño de pantalla
+   completa; se deja como estaba para no cambiar lo que ya funciona. */
+body.tv .opciones { grid-template-columns: 1fr; }
