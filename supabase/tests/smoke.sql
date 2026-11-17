@@ -31,10 +31,21 @@ declare
   v_err text;
   v_seqs bigint[];
   v_opts jsonb;
+  v_topic uuid;
 begin
 
 raise notice '=== 1. Sala y banco ===';
-v_host  := public.host_create_room('seleccion-simple');
+-- La firma cambió en la migración 02: ahora exige el tema. Se toma el
+  -- primero que tenga preguntas, que es lo que el panel ofrece por defecto.
+  select t.id into v_topic
+    from public.topics t
+   where t.game_slug = 'seleccion-simple'
+     and exists (select 1 from public.questions q where q.topic_id = t.id)
+   order by t.created_at
+   limit 1;
+  perform public.t_assert(v_topic is not null, 'hay un tema con preguntas');
+
+  v_host  := public.host_create_room(v_topic, 'seleccion-simple', 15);
 v_room  := (v_host->>'room_id')::uuid;
 v_token := v_host->>'host_token';
 v_code  := v_host->>'code';
@@ -94,8 +105,12 @@ raise notice '=== 4. FUGAS DE INFORMACIÓN (lo más importante) ===';
 v_state := public.room_state(v_room);
 perform public.t_assert((v_state->'round'->>'correct_key') is null,
                         'LA CORRECTA NO VIAJA en room_state con la ronda abierta');
-perform public.t_assert((v_state->'round'->'answers') is null,
-                        'room_state no expone las respuestas');
+-- El campo `answers` EXISTE pero va vacío; lo que importa es que no
+-- viaje ninguna respuesta, no la forma del campo.
+perform public.t_assert(
+  (v_state->'round'->'answers') is null
+  or jsonb_array_length(v_state->'round'->'answers') = 0,
+  'room_state no expone las respuestas');
 perform public.t_assert((v_state->'round'->'correct_key') = 'null'::jsonb,
                         'correct_key es null (la clave existe pero el dato no viaja)');
 perform public.t_assert((v_state->'round'->>'answered') = '0',
@@ -115,6 +130,9 @@ end;
 perform public.t_assert(v_err = 'no_autorizado', 'token de presentador falso rechazado');
 
 raise notice '=== 5. Respuestas y orden por secuencia ===';
+-- Desde que la cuenta se inicia a mano, la ronda nace en 'prepared' y nadie
+-- puede responder hasta que el presentador arranca el reloj.
+perform public.host_iniciar(v_room, v_token);
 v_wrong := case v_correct when 'a' then 'b' else 'a' end;
 
 -- Ana responde bien; Beto responde mal después
@@ -145,23 +163,37 @@ perform public.t_assert(v_seqs[1] <> v_seqs[2], 'sin empates: los números son d
 raise notice '=== 6. Cierre y ganador ===';
 v_close := public.host_close_round(v_room, v_token);
 perform public.t_assert((v_close->>'winner_id')::uuid = v_id1, 'gana el primero que acertó (Ana)');
-perform public.t_assert((select score from public.players where id=v_id1) = 1, 'Ana suma 1 punto');
+-- Los puntos los decide `puntos_por_acierto()`, no un número escrito aquí:
+-- cuando cambiaron de 1 a 10, esta prueba seguía esperando 1.
+perform public.t_assert(
+  (select score from public.players where id=v_id1) = public.puntos_por_acierto(),
+  'Ana suma los puntos de un acierto');
 perform public.t_assert((select score from public.players where id=v_id2) = 0, 'Beto no suma');
 
 -- idempotencia: cerrar dos veces no suma otro punto
 v_close2 := public.host_close_round(v_room, v_token);
-perform public.t_assert((select score from public.players where id=v_id1) = 1,
-                        'cerrar dos veces NO duplica el punto (idempotente)');
+perform public.t_assert(
+  (select score from public.players where id=v_id1) = public.puntos_por_acierto(),
+  'cerrar dos veces NO duplica el punto (idempotente)');
 
 raise notice '=== 7. Revelación tras el cierre ===';
+-- Cerrar NO revela: ese es el momento de suspenso del presentador. Lo que
+-- se comprueba es que tras cerrar la correcta SIGUE sin viajar, y que solo
+-- aparece después de `host_revelar`.
+v_state := public.room_state(v_room);
+perform public.t_assert((v_state->'round'->>'correct_key') is null,
+                        'tras CERRAR la correcta sigue oculta (suspenso)');
+
+perform public.host_revelar(v_room, v_token);
 v_state := public.room_state(v_room);
 perform public.t_assert((v_state->'round'->>'correct_key') = v_correct,
-                        'tras cerrar, la correcta sí se revela');
+                        'tras REVELAR, la correcta sí se publica');
 perform public.t_assert((v_state->'round'->>'winner_id')::uuid = v_id1,
                         'el estado público anuncia al ganador');
 
 raise notice '=== 8. Nadie acierta ===';
 v_round := (public.host_open_question(v_room, v_token, null)->>'round_id')::uuid;
+perform public.host_iniciar(v_room, v_token);
 v_hstate := public.host_state(v_room, v_token);
 v_correct := v_hstate->'round'->>'correct_key';
 v_wrong := case v_correct when 'a' then 'b' else 'a' end;
@@ -169,26 +201,33 @@ perform public.player_answer(v_id1, v_t1, v_round, v_wrong);
 perform public.player_answer(v_id2, v_t2, v_round, v_wrong);
 v_close := public.host_close_round(v_room, v_token);
 perform public.t_assert((v_close->>'no_winner')::boolean = true, 'se marca sin ganador');
-perform public.t_assert((select score from public.players where id=v_id1) = 1, 'nadie suma en ronda sin acierto');
+perform public.t_assert((select score from public.players where id=v_id1) = public.puntos_por_acierto(), 'nadie suma en ronda sin acierto');
+-- Cerrar no revela; para abrir otra pregunta hay que revelar esta primero.
+perform public.host_revelar(v_room, v_token);
 
 raise notice '=== 9. Deshacer devuelve el punto ===';
 v_round := (public.host_open_question(v_room, v_token, null)->>'round_id')::uuid;
+perform public.host_iniciar(v_room, v_token);
 v_hstate := public.host_state(v_room, v_token);
 v_correct := v_hstate->'round'->>'correct_key';
 perform public.player_answer(v_id2, v_t2, v_round, v_correct);
 perform public.host_close_round(v_room, v_token);
-perform public.t_assert((select score from public.players where id=v_id2) = 1, 'Beto suma tras acertar');
+perform public.t_assert(
+  (select score from public.players where id=v_id2) = public.puntos_por_acierto(),
+  'Beto suma tras acertar');
 perform public.host_undo(v_room, v_token);
 perform public.t_assert((select score from public.players where id=v_id2) = 0, 'deshacer le quita el punto');
 perform public.t_assert((select count(*) from public.answers where round_id=v_round) = 0,
                         'deshacer borra las respuestas de esa ronda');
 
 raise notice '=== 10. Pausa congela el reloj ===';
--- deshacer deja la ronda abierta otra vez: la reutilizamos para probar la pausa
-v_round := v_round;
+-- Deshacer deja la ronda en 'prepared', NO en 'open': el reloj no debe
+-- correr hasta que el presentador vuelva a pulsar «Iniciar». Se reutiliza
+-- esa misma ronda iniciando la cuenta aquí.
 perform public.t_assert(
-  (select state from public.rounds where id = v_round) = 'open',
-  'deshacer reabre la ronda');
+  (select state from public.rounds where id = v_round) = 'prepared',
+  'deshacer deja la ronda lista, sin reloj corriendo');
+perform public.host_iniciar(v_room, v_token);
 perform pg_sleep(0.3);
 perform public.host_pause(v_room, v_token);
 begin
@@ -205,32 +244,30 @@ perform public.t_assert(true, 'al reanudar se puede responder de nuevo');
 -- cerramos la ronda de la prueba de pausa antes de seguir
 perform public.host_skip_question(v_room, v_token);
 
-raise notice '=== 11. Entrada tardía y sala de espera ===';
-v_late := public.player_join(v_code, 'Carla Díaz');
-v_id3 := (v_late->>'player_id')::uuid;
-perform public.t_assert((v_late->>'is_waiting')::boolean = true,
-                        'quien entra con la partida empezada queda en espera');
-v_round := (public.host_open_question(v_room, v_token, null)->>'round_id')::uuid;
+raise notice '=== 11. Nadie entra con la partida empezada ===';
+-- Cambio de diseño (migración 06): antes, quien llegaba tarde entraba a la
+-- sala de espera y el presentador podía admitirlo. Ahora se rechaza de
+-- plano: a una partida ya empezada no se entra.
 begin
-  perform public.player_answer(v_id3, v_late->>'player_token', v_round, 'a');
+  perform public.player_join(v_code, 'Carla Díaz');
   v_err := 'sin_error';
 exception when others then v_err := sqlerrm;
 end;
-perform public.t_assert(v_err = 'en_espera', 'el de la sala de espera no puede responder');
-perform public.host_admit_player(v_room, v_token, v_id3);
-perform public.player_answer(v_id3, v_late->>'player_token', v_round, 'b');
-perform public.t_assert(true, 'tras ser admitido, sí puede responder');
+perform public.t_assert(v_err = 'partida_ya_iniciada',
+                        'con la partida en marcha, no se entra');
+perform public.t_assert(
+  (select count(*) from public.players where room_id = v_room) = 2,
+  'la sala se quedó con los dos jugadores que entraron en el lobby');
 
 raise notice '=== 12. Tabla final y desempate ===';
--- Ana 1 punto, Beto 0, Carla 0. Entre Beto y Carla desempata el ingreso.
+-- Ana tiene un acierto; Beto no. Dos jugadores, sin Carla.
 perform public.host_end_game(v_room, v_token);
 v_final := public.final_scoreboard(v_room);
 v_rows  := v_final->'rows';
-perform public.t_assert(jsonb_array_length(v_rows) = 3, 'la tabla tiene 3 jugadores');
+perform public.t_assert(jsonb_array_length(v_rows) = 2, 'la tabla tiene 2 jugadores');
 perform public.t_assert((v_rows->0->>'name') = 'Ana Pérez', 'Ana queda primera');
 perform public.t_assert((v_rows->0->>'position') = '1', 'la posición 1 es la primera');
-perform public.t_assert((v_rows->1->>'name') = 'Beto Ruiz', 'Beto segundo (entró antes que Carla)');
-perform public.t_assert((v_rows->2->>'name') = 'Carla Díaz', 'Carla tercera');
+perform public.t_assert((v_rows->1->>'name') = 'Beto Ruiz', 'Beto segundo');
 
 raise notice '=== 13. Sala cerrada rechaza entradas ===';
 begin
@@ -244,10 +281,18 @@ raise notice '=== 14. La difusión no expone datos a los jugadores ===';
 perform public.t_assert(
   (select count(*) from realtime.messages where topic = 'room:' || v_room::text) > 0,
   'se emitieron eventos de estado');
+-- La CLAVE viaja siempre (como null cuando no se puede revelar), así que
+-- buscar `correct_key` a secas siempre encuentra algo.
+--
+-- Lo que importa: que un evento público NUNCA lleve la correcta con valor
+-- mientras la ronda no esté revelada. Los de rondas 'revealed' sí la
+-- llevan, y eso es correcto: revelar es justamente publicarla.
 perform public.t_assert(
   (select count(*) from realtime.messages
-    where topic = 'room:' || v_room::text and payload::text like '%correct_key":"%a"') = 0
-  or true, 'revisión de payload público');
+    where topic = 'room:' || v_room::text
+      and payload->'round'->>'state' is distinct from 'revealed'
+      and payload::text ~ '"correct_key"\s*:\s*"[a-d]"') = 0,
+  'ningún evento público no revelado lleva la correcta con valor');
 perform public.t_assert(
   (select count(*) from realtime.messages where topic like 'host:%') > 0,
   'se emitieron eventos al canal del presentador');
