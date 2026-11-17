@@ -24,18 +24,24 @@
 
 -- ¿Alguna pregunta de este tema está dentro de una ronda viva?
 --
--- Dos condiciones, y hacen falta las dos:
+-- Hacen falta TRES condiciones, y las tres se ganaron a pulso:
 --
 --   · La ronda está en un estado del que todavía se puede deshacer o
 --     repetir: 'prepared', 'open', 'closed' o 'revealed'. 'revealed' tiene
 --     que estar: la migración 08 permite deshacer y repetir justo después
 --     de revelar, así que esa pregunta todavía se necesita.
 --
---   · Su SALA sigue viva. Sin esta parte, una sala abandonada que quedó en
---     'closed' con su ronda a medio camino bloqueaba el tema para siempre:
---     nadie puede ya deshacer ni repetir en una sala cerrada, pero el
---     guardia la seguía contando. Ese era el defecto que esta migración
---     venía a arreglar, y sin esta condición lo dejaba a medias.
+--   · Su SALA se está jugando: 'question' o 'reveal'. Una lista positiva y
+--     no `<> 'closed'`. Con `<> 'closed'` toda partida TERMINADA (que queda
+--     en 'ceremony') seguía bloqueando el tema para siempre, porque sus
+--     rondas siguen en la tabla. Eso cambiaba un bloqueo de 6 horas por uno
+--     eterno, que es peor que el defecto original.
+--
+--   · La sala es reciente. Una pestaña cerrada a media pregunta deja la
+--     sala en 'question' y nadie la cierra nunca; sin este plazo el tema
+--     volvía a quedar bloqueado para siempre. Es el mismo criterio de la
+--     migración 03, con un plazo más corto: una partida de iglesia dura
+--     minutos, no seis horas.
 create or replace function public.tema_con_partida(p_topic uuid)
 returns boolean
 language sql stable security definer
@@ -48,7 +54,8 @@ as $$
       join public.rooms rm on rm.id = r.room_id
      where q.topic_id = p_topic
        and r.state in ('prepared','open','closed','revealed')
-       and rm.status <> 'closed'
+       and rm.status in ('question','reveal')
+       and rm.created_at > clock_timestamp() - interval '2 hours'
   );
 $$;
 
@@ -65,7 +72,8 @@ as $$
       join public.rooms rm on rm.id = r.room_id
      where r.question_id = p_question
        and r.state in ('prepared','open','closed','revealed')
-       and rm.status <> 'closed'
+       and rm.status in ('question','reveal')
+       and rm.created_at > clock_timestamp() - interval '2 hours'
   );
 $$;
 
