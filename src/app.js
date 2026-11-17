@@ -771,8 +771,14 @@ function vistaJugador() {
         <div class="aviso espera centro" style="text-align:center">
           El presentador cerró la sala.
         </div>
+        ${/*
+          Sin afirmar si la partida llegó al final o no: `closed` cubre los
+          dos casos (cerrada a media partida y cerrada después de la
+          ceremonia), y decir «no llegó al final» cuando sí terminó sería
+          mentirle al jugador que acaba de ver la tabla.
+        */''}
         <p class="tenue centro chico" style="text-align:center; max-width:32ch">
-          Esta partida no llegó al final, así que no hay tabla de posiciones.
+          Gracias por participar. Puedes volver al menú y entrar a otra sala.
         </p>
         <button class="boton boton-secundario" data-ir="menu">← Menú</button>
       </main>`;
@@ -1515,6 +1521,26 @@ document.addEventListener('click', async ev => {
       break;
     }
     case 'jugar-host': {
+      /*
+       * «Jugar de nuevo» también cierra la partida anterior.
+       *
+       * Solo destruía el host de esta pestaña. La sala quedaba en
+       * 'ceremony' en el servidor, así que los participantes y el televisor
+       * seguían viendo la tabla de clasificación de una partida que el
+       * presentador ya había dado por terminada: su sondeo seguía recibiendo
+       * 'ceremony' y no tenían forma de salir de ahí solos.
+       *
+       * «Menú» sí la cerraba; este botón se quedó sin ese paso.
+       */
+      if (app.host) {
+        try {
+          await Promise.race([
+            app.host.cerrarSala?.(),
+            new Promise(r => setTimeout(r, 4000))
+          ]);
+        } catch { /* se sale igual: no se atrapa al presentador aquí */ }
+        try { localStorage.removeItem(CLAVE_HOST); } catch { /* modo privado */ }
+      }
       app.podioPaso = 0;
       app.estado = null;
       app.host?.destruir?.();
