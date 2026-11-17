@@ -523,12 +523,27 @@ body.tv .opcion { font-size: var(--t-xl); }
   position: fixed; inset: 0; z-index: 100;
   background: rgba(3, 12, 14, .78);
   backdrop-filter: blur(6px);
-  display: grid; place-items: center;
+  /* Se centra con `margin: auto` del hijo, NO con `place-items: center`.
+     Con el centrado de grid y el contenido más alto que la pantalla (el
+     formulario de pregunta en un teléfono, sobre todo con el teclado
+     abierto) el modal se desborda por arriba y por abajo y no hay forma de
+     llegar a «Guardar»: el borde superior queda fuera del área visible y
+     sin scroll. Con flex y `margin:auto` se centra cuando cabe y arranca
+     desde arriba, desplazable, cuando no cabe. */
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 1.2rem;
   animation: aparecer .2s ease forwards;
 }
 .modal {
   width: 100%; max-width: 420px;
+  /* Empuja el modal al centro cuando sobra altura y lo deja alcanzable
+     desde arriba cuando falta. */
+  margin: auto;
+  flex: 0 0 auto;
   background: linear-gradient(160deg, var(--fondo-2), var(--tu-900));
   border: 1px solid var(--tu-600);
   border-radius: var(--radio);

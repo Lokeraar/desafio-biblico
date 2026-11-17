@@ -42,6 +42,15 @@ export function nuevoCodigo(n = 5) {
   return out;
 }
 
+/**
+ * Deja un código de sala como lo guarda el servidor: mayúsculas y sin
+ * espacios. En el televisor el código se muestra espaciado («B 7 3 W S») y
+ * la gente lo dicta y lo escribe igual; sin limpiarlo, la sala no aparecía.
+ */
+export function normalizarCodigo(valor) {
+  return String(valor ?? '').replace(/\s+/g, '').toUpperCase();
+}
+
 export function idUnico() {
   if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
   return 'id-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -88,7 +97,9 @@ export function validarNombre(nombre) {
 
 /* ---------- formato ---------- */
 export function segundos(ms) {
-  return Math.max(0, Math.ceil(ms / 1000));
+  // Un `undefined` o `NaN` no debe llegar nunca a la pantalla: se vio
+  // «Lista · NaNs» cuando la nube no mandaba la duración de la ronda.
+  return Number.isFinite(ms) ? Math.max(0, Math.ceil(ms / 1000)) : 0;
 }
 
 export function segundosConDecimal(ms) {

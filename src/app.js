@@ -9,10 +9,10 @@
 import { BANCO } from './lib/bank.js';
 import * as E from './lib/engine.js';
 import {
-  esc, validarNombre, segundos, EMOJI, normalizeName
+  esc, validarNombre, segundos, EMOJI, normalizeName, normalizarCodigo
 } from './lib/util.js';
 import { crearHostLocal, crearClienteLocal, esLocalDisponible } from './lib/local.js';
-import { crearHostNube, crearClienteNube, admin, rpc } from './lib/cloud.js';
+import { crearHostNube, crearClienteNube, admin, rpc, resolverSala, mirarSala } from './lib/cloud.js';
 import { hayNube } from './config.js';
 import {
   selectorTema, modalClave, modalCambiarClave, modalTemas,
@@ -73,6 +73,16 @@ const app = {
   podioPaso: 0,      // 0 = oculto, 1 = 3.º, 2 = 2.º, 3 = 1.º
   miRespuesta: null, // { roundId, idx } — lo que este teléfono ya contestó
   cantidadPreguntas: 10,
+  // Mando del sondeo del televisor. Existe para poder soltarlo: un sondeo
+  // que nadie detiene sigue consultando desde una pantalla ya abandonada.
+  tv: null,
+  // Lo que la persona ya escribió en la pantalla de entrada. Se guarda
+  // porque cada aviso vuelve a dibujar el formulario y, sin esto, un error
+  // como «Esa sala no existe» borraba el código recién dictado.
+  formJoin: { codigo: null, nombre: '' },
+  // Lo mismo para el código del televisor: un código mal escrito no debe
+  // desaparecer del campo al mostrar el error.
+  formTV: { codigo: null },
 
   // --- administración (temas y preguntas) ---
   temas: [],           // [{ id, name, questions }]
@@ -135,11 +145,44 @@ function ponerAviso(tipo, texto, ms = 4000) {
 }
 
 /**
+ * Ejecuta una acción del presentador y muestra su error, si lo hay.
+ *
+ * `await` es obligatorio aunque el modo local responda al instante: en la
+ * nube `abrir`, `iniciar`, `saltar`… devuelven una promesa. Sin esperarla,
+ * `if (e)` comparaba una PROMESA contra la verdad, que siempre es cierta, y
+ * el aviso de error acababa pintando «[object Promise]» en pantalla.
+ *
+ * Se aceptan las tres formas que devuelven los transportes: 
+ * null (todo bien), un texto (el error) o { error }.
+ */
+async function accionHost(nombre, ...args) {
+  try {
+    const r = await app.host?.[nombre]?.(...args);
+    const error = typeof r === 'string' ? r : (r?.error ?? null);
+    if (error) ponerAviso('error', traducirError(error));
+    return error;
+  } catch (e) {
+    const texto = e?.message ?? 'Algo salió mal.';
+    ponerAviso('error', traducirError(texto));
+    return texto;
+  }
+}
+
+/**
  * Traduce los códigos del motor a frases que se entiendan.
  * La base devuelve códigos en español (`nombre_ocupado`), pero un código
  * suelto en pantalla no le dice nada a nadie.
  */
 function traducirError(codigo) {
+  const texto = String(codigo ?? '');
+  // Error de despliegue, no del usuario: PostgREST responde en inglés cuando
+  // la función todavía no está publicada en el proyecto. Un televisor no
+  // debe mostrar «Could not find the function…», pero tampoco se puede
+  // fingir que la sala no existe: se dice lo que pasa y se deja de intentar.
+  if (/Could not find the function/i.test(texto)) {
+    return 'El servidor todavía no tiene esta función. Avisa a quien organiza el concurso.';
+  }
+
   const frases = {
     clave_incorrecta: 'La clave no es correcta.',
     clave_bloqueada: 'Demasiados intentos. Espera 10 minutos.',
@@ -174,6 +217,9 @@ function traducirError(codigo) {
     nada_que_iniciar: 'No hay ninguna pregunta preparada.',
     partida_terminada: 'La partida ya terminó.',
     sala_cerrada: 'El presentador cerró la sala. Vuelve a entrar cuando abra otra.',
+    // Entrar a una partida que ya arrancó no se permite: el que llega tarde
+    // quedaría mirando una pantalla que no puede jugar.
+    partida_ya_iniciada: 'La partida ya comenzó. Espera a que abran otra sala.',
     ronda_abierta: 'Ya hay una pregunta abierta.',
     expulsado: 'No formas parte de esta partida.',
     en_espera: 'Estás en la sala de espera.',
@@ -659,6 +705,9 @@ function vistaJugador() {
   const yo = app.yo;
 
   if (!yo) {
+    // El código se precarga desde el QR y también se puede escribir a mano:
+    // quien recibe el código dictado por voz no tiene enlace que escanear.
+    const codigoInicial = app.formJoin.codigo ?? codigoDeUrl() ?? '';
     return `
       <div class="fila-entre">
         <button class="boton boton-secundario" data-ir="menu">← Volver</button>
@@ -668,15 +717,23 @@ function vistaJugador() {
         ${codigoDeUrl() ? `<div class="aviso info">Sala ${esc(codigoDeUrl())}</div>` : ''}
         <div class="columna" style="gap:.8rem; max-width:340px; width:100%">
           <div class="campo">
+            <label for="codigo">Código de la sala ${ayuda('Son los cinco caracteres que muestra la pantalla del presentador. Se pueden escribir con espacios: «B 7 3 W S» es lo mismo que «B73WS».')}</label>
+            <input id="codigo" type="text" maxlength="8" autocapitalize="characters"
+                   autocomplete="off" placeholder="Ej.: B73WS" value="${esc(codigoInicial)}"
+                   enterkeyhint="next">
+          </div>
+          <div class="campo">
             <label for="nombre">Tu nombre ${ayuda('Escribe tu nombre y apellido, o un alias respetuoso. No se permiten nombres repetidos ni ofensivos.')}</label>
             <input id="nombre" type="text" maxlength="40" autocomplete="name"
-                   placeholder="Ej.: Ana Pérez" enterkeyhint="done">
+                   placeholder="Ej.: Ana Pérez" value="${esc(app.formJoin.nombre)}" enterkeyhint="done">
           </div>
           ${avisoHTML()}
           <button class="boton-grande" data-accion="unirse">Entrar</button>
         </div>
         <p class="mini tenue" style="text-align:center; max-width:32ch">
-          Escribe tu nombre tal como quieres que aparezca en la tabla.
+          ${hayNube
+            ? 'Escribe tu nombre tal como quieres que aparezca en la tabla.'
+            : 'En este dispositivo se juega en el mismo aparato que el presentador, así que el código no hace falta.'}
         </p>
       </main>`;
   }
@@ -888,12 +945,45 @@ function vistaJugador() {
 /* VISTA: televisor                                                    */
 /* ------------------------------------------------------------------ */
 function vistaTV() {
-  const s = app.estado;
+  // El televisor solo se cree su PROPIO sondeo. `app.estado` lo comparten
+  // todas las vistas: sin esta condición, abrir el televisor después del
+  // panel del presentador mostraba el estado del host —con la respuesta
+  // correcta incluida— en una pantalla que ve todo el público.
+  const s = app.tv ? app.estado : null;
   if (!s) {
-    return `
-      <main class="crecer columna centro">
+    // Sin estado no hay nada que proyectar: el televisor pide el código a
+    // mano. Antes solo decía «Esperando la partida…» y nunca se conectaba a
+    // ningún lado, así que la pantalla se quedaba esperando para siempre.
+    if (!hayNube) {
+      return `
+      <main class="crecer columna centro" style="gap:1rem">
         <h1>Desafío Bíblico</h1>
-        <p class="tenue">Esperando la partida…</p>
+        <p class="tenue" style="text-align:center; max-width:34ch">
+          El televisor necesita el modo en línea. Sin conexión a la nube solo
+          funciona el modo local, en este mismo dispositivo.
+        </p>
+        <button class="boton boton-secundario" data-ir="menu">← Menú</button>
+      </main>`;
+    }
+
+    const codigoInicial = app.formTV.codigo ?? codigoDeUrl() ?? '';
+    return `
+      <main class="crecer columna centro" style="gap:1rem">
+        <h1>Desafío Bíblico</h1>
+        <p class="tenue" style="text-align:center; max-width:34ch">
+          Escribe el código que muestra la pantalla del presentador y este
+          televisor sigue la partida.
+        </p>
+        <div class="columna" style="gap:.8rem; max-width:340px; width:100%">
+          <div class="campo">
+            <label for="codigo-tv">Código de la sala ${ayuda('Son los cinco caracteres que muestra el presentador. Se pueden escribir con espacios: «B 7 3 W S» es lo mismo que «B73WS».')}</label>
+            <input id="codigo-tv" type="text" maxlength="8" autocapitalize="characters"
+                   autocomplete="off" placeholder="Ej.: B73WS" value="${esc(codigoInicial)}"
+                   enterkeyhint="go">
+          </div>
+          ${avisoHTML()}
+          <button class="boton-grande" data-accion="tv-transmitir">Transmitir</button>
+        </div>
         <button class="boton boton-secundario" data-ir="menu">← Menú</button>
       </main>`;
   }
@@ -901,9 +991,32 @@ function vistaTV() {
   const r = s.round;
   const top = s.players.slice(0, 5);
 
+  /*
+   * Sala cerrada: el presentador se fue. Se avisa y se deja de consultar,
+   * porque ya no va a llegar nada nuevo por más que se pregunte.
+   */
+  if (s.status === 'closed') {
+    return `
+      <main class="crecer columna centro" style="gap:1rem">
+        <h1>Desafío Bíblico</h1>
+        <div class="aviso espera centro" style="text-align:center">
+          El presentador cerró la sala.
+        </div>
+        <p class="tenue centro chico" style="text-align:center; max-width:32ch">
+          Esta pantalla puede conectarse a otra sala con su código.
+        </p>
+        <button class="boton boton-secundario" data-accion="tv-otra-sala">Escribir otro código</button>
+        <button class="boton boton-secundario" data-ir="menu">← Menú</button>
+      </main>`;
+  }
+
   if (s.status === 'ceremony') {
-    // el televisor no tiene botones: solo muestra
-    return ceremoniaHTML(E.tablaFinal(s), app.podioPaso, {});
+    // El televisor no tiene botones de juego: solo muestra. Se deja el Menú
+    // porque ninguna pantalla del proyecto puede quedarse sin camino de
+    // vuelta, ni siquiera la del televisor al terminar la partida.
+    return ceremoniaHTML(E.tablaFinal(s), app.podioPaso, {
+      footer: '<button class="boton boton-secundario" data-ir="menu">← Menú</button>'
+    });
   }
 
   return `
@@ -1071,6 +1184,16 @@ function render() {
 
   $app.innerHTML = html;
   document.body.classList.toggle('tv', vista === 'tv');
+
+  // Al salir de la pantalla del televisor se suelta su sondeo: una consulta
+  // viva desde una vista abandonada gasta datos y batería sin que nadie
+  // esté mirando la pantalla. También se olvida el estado para que al volver
+  // a #/tv no se muestre una partida congelada sin nadie que la actualice.
+  if (vista !== 'tv' && app.tv) {
+    app.tv.parar();
+    app.tv = null;
+    app.estado = null;
+  }
 
   // Al entrar a la vista del presentador, se cargan los temas una vez.
   // La bandera evita un bucle: si la lista vuelve vacía, render() no debe
@@ -1256,28 +1379,24 @@ document.addEventListener('click', async ev => {
       break;
     }
 
-    case 'abrir': {
-      const err = app.host.abrir();
-      if (err) ponerAviso('error', err);
-      break;
-    }
-    case 'iniciar': { const e = app.host.iniciar(); if (e) ponerAviso('error', e); break; }
-    case 'revelar': app.host.revelar(); break;
-    case 'pausar': app.host.pausar(); break;
-    case 'reanudar': app.host.reanudar(); break;
-    case 'cerrar': app.host.cerrar(); break;
-    case 'saltar': app.host.saltar(); break;
-    case 'repetir': { const e = app.host.repetir(); if (e) ponerAviso('error', e); break; }
-    case 'deshacer': { const e = app.host.deshacer(); if (e) ponerAviso('error', e); break; }
-    case 'expulsar': app.host.expulsar(el.dataset.id); break;
-    case 'admitir': app.host.admitir(el.dataset.id); break;
+    case 'abrir': await accionHost('abrir'); break;
+    case 'iniciar': await accionHost('iniciar'); break;
+    case 'revelar': await accionHost('revelar'); break;
+    case 'pausar': await accionHost('pausar'); break;
+    case 'reanudar': await accionHost('reanudar'); break;
+    case 'cerrar': await accionHost('cerrar'); break;
+    case 'saltar': await accionHost('saltar'); break;
+    case 'repetir': await accionHost('repetir'); break;
+    case 'deshacer': await accionHost('deshacer'); break;
+    case 'expulsar': await accionHost('expulsar', el.dataset.id); break;
+    case 'admitir': await accionHost('admitir', el.dataset.id); break;
     case 'pedir-terminar': app.confirmar = 'terminar'; render(); break;
     case 'pedir-cerrar-sala': app.confirmar = 'sala'; render(); break;
     case 'cancelar-confirmar': app.confirmar = null; render(); break;
     case 'confirmar-terminar': {
       app.confirmar = null;
       app.podioPaso = 0;
-      app.host.terminar();
+      await accionHost('terminar');
       break;
     }
     /*
@@ -1347,8 +1466,18 @@ document.addEventListener('click', async ev => {
 
     /* --- jugador --- */
     case 'unirse': {
-      const inp = document.getElementById('nombre');
-      const nombre = inp?.value ?? '';
+      const inpNombre = document.getElementById('nombre');
+      const inpCodigo = document.getElementById('codigo');
+      const nombre = inpNombre?.value ?? '';
+
+      // Lo escrito se guarda ANTES de cualquier aviso: mostrar un error
+      // vuelve a dibujar la pantalla, y sin esto el código dictado y el
+      // nombre se borraban justo cuando la persona debía corregirlos.
+      app.formJoin = {
+        codigo: inpCodigo ? inpCodigo.value : app.formJoin.codigo,
+        nombre
+      };
+
       const problema = validarNombre(nombre);
       if (problema) { ponerAviso('error', problema); return; }
 
@@ -1356,7 +1485,9 @@ document.addEventListener('click', async ev => {
       // habla con Supabase, no con una pestaña del mismo aparato. Sin esto
       // el QR servía de adorno y solo funcionaba el modo local.
       if (hayNube) {
-        const codigo = codigoDeUrl();
+        // Manda lo escrito; el QR queda como respaldo para quien llega
+        // escaneando y no toca el campo.
+        const codigo = normalizarCodigo(inpCodigo?.value) || codigoDeUrl();
         if (!codigo) { ponerAviso('error', 'Falta el código de la sala.'); return; }
 
         if (!app.cliente || !app.cliente.nube) {
@@ -1376,6 +1507,7 @@ document.addEventListener('click', async ev => {
           token: r.player_token,
           roomId: r.room_id
         };
+        app.formJoin = { codigo: null, nombre: '' };
         guardarSesion();
         render();
         break;
@@ -1419,6 +1551,68 @@ document.addEventListener('click', async ev => {
       break;
     }
 
+    /* --- televisor --- */
+    case 'tv-transmitir': {
+      const inp = document.getElementById('codigo-tv');
+      // Se guarda lo escrito: si el código está mal, el aviso vuelve a
+      // dibujar la pantalla y sin esto el campo quedaba vacío.
+      app.formTV = { codigo: inp ? inp.value : app.formTV.codigo };
+
+      const codigo = normalizarCodigo(inp?.value) || codigoDeUrl();
+      if (!codigo) { ponerAviso('error', 'Falta el código de la sala.'); return; }
+
+      if (!hayNube) {
+        ponerAviso('error', 'El televisor necesita el modo en línea.');
+        return;
+      }
+
+      // El televisor no ocupa puesto de jugador: traduce el código a su
+      // sala y mira el estado público, sin nombre y sin token.
+      const sala = await resolverSala(codigo);
+      if (sala.error) { ponerAviso('error', traducirError(sala.error)); return; }
+
+      if (sala.status === 'closed') {
+        ponerAviso('error', traducirError('sala_cerrada'));
+        return;
+      }
+
+      // Un solo sondeo vivo: si se transmite otra sala, la anterior se suelta.
+      app.tv?.parar();
+      app.tv = mirarSala(sala.roomId, {
+        onEstado: est => {
+          if (!est) return;
+          app.estado = est;
+          // La sala cerrada ya tiene su propia pantalla con el aviso; no hace
+          // falta repetirlo por encima. `mirarSala` deja de consultar solo.
+          render();
+        }
+      });
+
+      await app.tv.primero;
+      // La primera consulta es la que dice si la sala se puede ver. Si falló,
+      // no hay nada que transmitir: se suelta el mando y se avisa con el
+      // motivo real, en vez de dejar un sondeo vivo contra una sala rota.
+      const fallo = app.tv.ultimoError();
+      if (fallo) {
+        app.tv.parar();
+        app.tv = null;
+        app.estado = null;
+        ponerAviso('error', traducirError(fallo));
+        return;
+      }
+      render();
+      break;
+    }
+
+    case 'tv-otra-sala': {
+      app.tv?.parar();
+      app.tv = null;
+      app.estado = null;
+      app.formTV = { codigo: null };
+      render();
+      break;
+    }
+
     /* --- ceremonia --- */
     case 'revelar-podio': revelarSiguientePodio(); break;
     case 'ver-tabla-completa': app.tablaCompleta = true; render(); break;
@@ -1435,12 +1629,18 @@ function revelarSiguientePodio() {
   }
 }
 
-/* Enter para entrar con el teclado */
+/* Enter para entrar con el teclado.
+   Vale tanto desde el nombre como desde el código: quien escribe el código
+   dictado pulsa Enter ahí mismo y espera entrar, no que el foco salte. */
 document.addEventListener('keydown', ev => {
-  if (ev.key === 'Enter' && rutaActual().vista === 'join') {
-    const inp = document.getElementById('nombre');
-    if (inp && document.activeElement === inp) {
+  if (ev.key === 'Enter') {
+    const vista = rutaActual().vista;
+    const activo = document.activeElement;
+    if (vista === 'join' && (activo?.id === 'nombre' || activo?.id === 'codigo')) {
       document.querySelector('[data-accion="unirse"]')?.click();
+    }
+    if (vista === 'tv' && activo?.id === 'codigo-tv') {
+      document.querySelector('[data-accion="tv-transmitir"]')?.click();
     }
   }
   if (ev.key === 'Escape' && app.confirmar) {
@@ -1452,6 +1652,16 @@ document.addEventListener('keydown', ev => {
 /* ------------------------------------------------------------------ */
 /* Arranque                                                            */
 /* ------------------------------------------------------------------ */
+/*
+ * La pantalla del televisor se cierra o se recarga a menudo (es un aparato
+ * que se apaga y se enciende). Al salir de la página hay que soltar el
+ * sondeo: si la pestaña se va con el sondeo vivo, la siguiente se encuentra
+ * dos y la anterior sigue consultando desde una pantalla que ya no existe.
+ */
+addEventListener('pagehide', () => {
+  app.tv?.parar();
+  app.tv = null;
+});
 (function iniciar() {
   const sesion = leerSesion();
 

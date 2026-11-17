@@ -3,7 +3,8 @@
    la clave original de cada una (la posición 1 puede ser 'd'), y el cliente
    enviaba la letra de la POSICIÓN. El servidor la comparaba contra la clave
    real, así que daba incorrecto siempre y nadie sumaba puntos. */
-import { estadoDesdeServidor } from './cloud.js';
+import { estadoDesdeServidor, resolverSala, mirarSala } from './cloud.js';
+import { normalizarCodigo } from './util.js';
 
 let ok = 0, fail = 0;
 const t = (c, m) => { if (c) { ok++; console.log('  ok   ' + m); } else { fail++; console.log('  FALLA ' + m); } };
@@ -85,6 +86,92 @@ const sinOpciones = estadoDesdeServidor({ room_id: 'r', code: 'X', players: [], 
 t(sinOpciones.round.optionKeys.length === 0, 'sin opciones, optionKeys queda vacío');
 t(sinOpciones.round.correctIdx === null, 'sin correct_key no inventa una correcta');
 t(estadoDesdeServidor(null) === null, 'un payload nulo devuelve null');
+
+/* ==================================================================
+   Televisor: resolver un código de sala y mirar sin ser jugador.
+   El televisor NO ocupa puesto de jugador: estas pruebas fijan que
+   consulte `room_by_code` / `room_state` y que se pueda detener.
+   ================================================================== */
+
+console.log('\n=== 7. El código se limpia antes de buscar la sala ===');
+t(normalizarCodigo('b 7 3 w s') === 'B73WS', 'los espacios internos desaparecen');
+t(normalizarCodigo('  abc12  ') === 'ABC12', 'los extremos se recortan');
+t(normalizarCodigo(null) === '', 'un valor nulo da cadena vacía');
+
+// fetch falso: las pruebas no tocan la red, solo miran lo que se envía.
+const fetchReal = globalThis.fetch;
+let enviadas = [];
+function falso(respuesta) {
+  globalThis.fetch = async (url, opciones) => {
+    enviadas.push({ url: String(url), cuerpo: JSON.parse(opciones.body) });
+    return {
+      ok: respuesta.ok ?? true,
+      status: respuesta.status ?? 200,
+      text: async () => JSON.stringify(respuesta.cuerpo ?? null)
+    };
+  };
+}
+
+console.log('\n=== 8. resolverSala pide el código normalizado ===');
+enviadas = [];
+falso({ cuerpo: { room_id: 'r-9', code: 'B73WS', status: 'lobby' } });
+const sala = await resolverSala('b 7 3 w s');
+t(enviadas[0].url.endsWith('/rpc/room_by_code'), 'llama a la RPC room_by_code');
+t(enviadas[0].cuerpo.p_code === 'B73WS', 'manda el código sin espacios y en mayúsculas');
+t(sala.roomId === 'r-9' && sala.code === 'B73WS' && sala.status === 'lobby',
+  'devuelve id, código y estado');
+t(Object.keys(sala).sort().join(',') === 'code,roomId,status',
+  'no expone jugadores ni la respuesta correcta');
+
+console.log('\n=== 9. Un código que no existe llega como error ===');
+enviadas = [];
+falso({ ok: false, status: 400, cuerpo: { message: 'sala_inexistente' } });
+const noExiste = await resolverSala('ZZZZZ');
+t(noExiste.error === 'sala_inexistente', 'propaga sala_inexistente');
+
+console.log('\n=== 10. mirarSala sondea sin jugador y no filtra la correcta ===');
+enviadas = [];
+falso({ cuerpo: bruto({ state: 'open', correct_key: 'd' }) });
+const recibidos = [];
+const tv = mirarSala('r-9', { onEstado: e => recibidos.push(e) });
+await tv.primero;
+t(enviadas[0].url.endsWith('/rpc/room_state'), 'usa room_state');
+t(enviadas[0].cuerpo.p_room === 'r-9' && !('p_token' in enviadas[0].cuerpo),
+  'room_state toma solo p_room');
+t(recibidos.length === 1, 'entrega el estado al televisor');
+t(recibidos[0].round.correctIdx === null, 'con la ronda abierta no llega la correcta');
+t(Array.isArray(recibidos[0].players) && recibidos[0].players.length === 1,
+  'el marcador sí se ve en la pantalla');
+t(recibidos[0].roomId === 'r1', 'el estado conserva el id de la sala');
+
+console.log('\n=== 11. parar() detiene el sondeo ===');
+const antesDeParar = enviadas.length;
+tv.parar();
+await new Promise(r => setTimeout(r, 1600));   // más que un ciclo de sondeo
+t(enviadas.length === antesDeParar, 'después de parar no hay más consultas');
+t(tv.activo() === false, 'el sondeo queda marcado como inactivo');
+
+// Se restaura fetch para no dejar la red falsa puesta.
+globalThis.fetch = fetchReal;
+
+/* ==================================================================
+   PRESERVE: lo que ya funcionaba tiene que seguir funcionando.
+   ================================================================== */
+
+console.log('\n=== 12. El estado que ve el televisor es el mismo que ve un jugador ===');
+const tvBruto = bruto({ state: 'revealed', correct_key: 'd' });
+const comoJugador = estadoDesdeServidor(tvBruto, { completo: false });
+const comoTV = estadoDesdeServidor(tvBruto, { completo: false });
+t(JSON.stringify(comoTV) === JSON.stringify(comoJugador),
+  'ninguna opción de la proyección pública cambia por ser televisor');
+t(comoTV.round.correctIdx === 0,
+  'al revelar, el televisor sí ve la correcta (es parte del espectáculo)');
+t(comoTV.status === 'question' && comoTV.code === 'ABC12',
+  'el estado conserva el código y el estado de la sala');
+
+console.log('\n=== 13. El código normal no cambia ===');
+t(normalizarCodigo('B73WS') === 'B73WS', 'un código ya limpio se queda igual');
+t(normalizarCodigo('abc12') === 'ABC12', 'se pasa a mayúsculas como antes');
 
 console.log('\n===============================');
 console.log(`  ${ok} correctas, ${fail} fallas`);

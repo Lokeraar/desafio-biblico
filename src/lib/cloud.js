@@ -17,6 +17,7 @@
 // Si algún día hace falta, se cambia SOLO este archivo.
 
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../config.js';
+import { normalizarCodigo } from './util.js';
 
 const CABECERAS = {
   apikey: SUPABASE_ANON_KEY,
@@ -31,10 +32,61 @@ const MS_SONDEO_JUGADOR = 1400;
 // es un silencio, y un silencio no se puede diagnosticar.
 const MS_TOPE_PETICION = 8000;
 
+/*
+ * Desfase entre el reloj de ESTE teléfono y el del servidor.
+ *
+ * El servidor manda `opened_at` y `deadline` con SU reloj, y el navegador
+ * calcula el tiempo restante restando contra `Date.now()`. Si el teléfono va
+ * atrasado —se midió uno 38 s en este proyecto— la resta da negativo y el
+ * temporizador se queda congelado hasta que el reloj del teléfono alcanza el
+ * `opened_at` del servidor. El presentador lo ve como «tarda 10 segundos en
+ * arrancar» y no es la red: es que los dos relojes no coinciden.
+ *
+ * La cabecera `Date` de la respuesta HTTP trae la hora del servidor en cada
+ * consulta. Comparando con el momento de recibirla se obtiene el desfase sin
+ * necesitar una llamada extra, y se corrige una sola vez (una media móvil
+ * suave, para no reaccionar a un pico de red).
+ */
+let desfaseRelojMs = 0;
+let desfaseMedido = false;
+
+/** Hora «del servidor» según el último desfase conocido. */
+export function ahoraServidor() {
+  return Date.now() + desfaseRelojMs;
+}
+
+/** El desfase detectado, para diagnóstico. */
+export function desfaseConServidor() {
+  return { ms: Math.round(desfaseRelojMs), medido: desfaseMedido };
+}
+
+function aprenderDesfase(res, enviadoEn) {
+  const cabecera = res.headers?.get?.('date');
+  if (!cabecera) return;
+  const servidor = Date.parse(cabecera);
+  if (!Number.isFinite(servidor)) return;
+
+  // La cabecera `Date` tiene resolución de un segundo y el viaje de ida y
+  // vuelta se come parte del intervalo: se toma el punto medio del viaje
+  // como instante local equivalente.
+  const medio = (enviadoEn + Date.now()) / 2;
+  const desfase = servidor - medio;
+
+  // Se descartan lecturas absurdas (un reloj muy roto o una respuesta
+  // cacheada de hace horas) en vez de corregir con ellas.
+  if (Math.abs(desfase) > 6 * 60 * 60 * 1000) return;
+
+  // Media móvil: la primera medida entra completa y las siguientes pesan
+  // poco, así un pico de red no mueve el reloj de golpe.
+  desfaseRelojMs = desfaseMedido ? desfaseRelojMs * 0.7 + desfase * 0.3 : desfase;
+  desfaseMedido = true;
+}
+
 /** Llama a una función RPC de Supabase y normaliza los errores. */
 export async function rpc(nombre, args = {}) {
   const corte = new AbortController();
   const reloj = setTimeout(() => corte.abort(), MS_TOPE_PETICION);
+  const enviadoEn = Date.now();
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${nombre}`, {
       method: 'POST',
@@ -42,6 +94,8 @@ export async function rpc(nombre, args = {}) {
       body: JSON.stringify(args),
       signal: corte.signal
     });
+
+    aprenderDesfase(res, enviadoEn);
 
     const texto = await res.text();
     let cuerpo = null;
@@ -73,6 +127,19 @@ function aMs(iso) {
   if (!iso) return null;
   const n = Date.parse(iso);
   return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * Convierte una hora DEL SERVIDOR al reloj de este teléfono.
+ *
+ * Hace falta porque la resta del temporizador se hace contra `Date.now()`, y
+ * con 38 s de desfase (medido en este proyecto) el reloj arrancaba congelado.
+ * Restarle el desfase deja `openedAt` en la misma escala que el reloj local,
+ * así que el tiempo restante sale bien aunque el teléfono vaya mal.
+ */
+function aMsLocal(iso) {
+  const n = aMs(iso);
+  return n == null ? null : n - desfaseRelojMs;
 }
 
 /**
@@ -119,8 +186,14 @@ export function estadoDesdeServidor(bruto, { completo = false } = {}) {
       optionKeys: opciones.map(o => (typeof o === 'string' ? null : o.k)),
       // Solo viene cuando el servidor decide que ya se puede publicar.
       correctIdx: idxCorrecto >= 0 ? idxCorrecto : null,
-      openedAt: aMs(r.opened_at),
-      deadline: aMs(r.deadline),
+      openedAt: aMsLocal(r.opened_at),
+      deadline: aMsLocal(r.deadline),
+      // La vista del presentador lee `deadlineMs` (es el nombre que usa el
+      // motor local y `estadoVisible`). Aquí solo se publicaba `durationMs`,
+      // así que `segundos(undefined)` daba NaN y la cabecera mostraba
+      // «Lista · NaNs». Se emiten los dos nombres: uno es el contrato de la
+      // interfaz y el otro lo sigue usando el cálculo del reloj.
+      deadlineMs: (bruto.round_seconds ?? 15) * 1000,
       durationMs: (bruto.round_seconds ?? 15) * 1000,
       pausedAt: null,
       pausedTotal: 0,
@@ -339,7 +412,9 @@ export function crearClienteNube({ onEstado } = {}) {
     /** Entra a la sala con un código y un nombre. */
     async unirse(codigo, nombre) {
       const { dato, error } = await rpc('player_join', {
-        p_code: String(codigo ?? '').trim().toUpperCase(),
+        // El código se dicta y se muestra espaciado («B 7 3 W S»): se manda
+        // limpio o el servidor no encuentra la sala.
+        p_code: normalizarCodigo(codigo),
         p_name: String(nombre ?? '').trim()
       });
       if (error) return { error };
@@ -405,6 +480,102 @@ export function crearClienteNube({ onEstado } = {}) {
     pedirEstado: refrescar,
     id: () => jugador?.id ?? null,
     cerrar: parar
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/* Televisor: mirar una sala sin ser jugador                           */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Convierte un código en la sala del servidor.
+ * Devuelve `{ error }` o `{ roomId, code, status }`. El servidor solo
+ * publica el id, el código y el estado: ni jugadores ni la correcta, porque
+ * esta consulta la puede hacer cualquiera que vea el televisor.
+ */
+export async function resolverSala(codigo) {
+  const limpio = normalizarCodigo(codigo);
+  if (!limpio) return { error: 'codigo_vacio' };
+
+  const { dato, error } = await rpc('room_by_code', { p_code: limpio });
+  if (error) return { error };
+  if (!dato?.room_id) return { error: 'sala_inexistente' };
+
+  return {
+    roomId: dato.room_id,
+    code: dato.code ?? limpio,
+    status: dato.status
+  };
+}
+
+/**
+ * Sonda una sala SIN jugador: el televisor no ocupa puesto ni tiene token.
+ * Usa `room_state`, la misma proyección pública que ve un participante, así
+ * que nunca llega la respuesta correcta antes de revelarla.
+ *
+ * Devuelve el mando del sondeo. Quien llama debe soltarlo con `parar()`
+ * (al cerrar la pestaña y al salir de la pantalla); si no, el televisor
+ * sigue consultando para siempre desde una pantalla que ya nadie mira.
+ */
+export function mirarSala(roomId, { onEstado } = {}) {
+  let activo = true;
+  let sondeo = null;
+  let ultimo = null;
+
+  async function refrescar() {
+    if (!activo || !roomId) return null;
+    const { dato, error } = await rpc('room_state', { p_room: roomId });
+    if (!activo) return null;
+
+    if (error) {
+      ultimo = error;
+      console.warn('[nube] room_state (televisor):', error);
+      // Una sala que ya no existe no va a aparecer por seguir preguntando.
+      if (error === 'sala_inexistente') parar();
+      return null;
+    }
+
+    ultimo = null;
+    const estado = estadoDesdeServidor(dato, { completo: false });
+    onEstado?.(estado);
+
+    // Sala cerrada: el presentador se fue. No hay nada más que esperar y
+    // seguir consultando solo gastaría batería y datos.
+    if (estado?.status === 'closed') parar();
+    return estado;
+  }
+
+  function parar() {
+    activo = false;
+    if (sondeo) { clearInterval(sondeo); sondeo = null; }
+  }
+
+  const primero = refrescar().then(estado => {
+    if (!activo || sondeo) return estado;
+    // Jitter: varios televisores encendidos a la vez no deben consultar al
+    // mismo instante.
+    const desfase = Math.floor(Math.random() * 400);
+    setTimeout(() => {
+      if (activo && !sondeo) sondeo = setInterval(refrescar, MS_SONDEO_JUGADOR);
+    }, desfase);
+    return estado;
+  });
+
+  // Igual que el resto de los transportes: al abandonar la página se suelta
+  // todo solo. Una pestaña que se va no debe dejar un sondeo corriendo.
+  if (typeof addEventListener === 'function') {
+    addEventListener('pagehide', parar, { once: true });
+  }
+
+  return {
+    nube: true,
+    /** Estado de la primera consulta, para saber si la sala se abrió. */
+    primero,
+    refrescar,
+    parar,
+    activo: () => activo,
+    /** Último error del sondeo, útil cuando la primera consulta falla. */
+    ultimoError: () => ultimo
   };
 }
 
