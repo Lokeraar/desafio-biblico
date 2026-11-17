@@ -232,6 +232,9 @@ export function estadoDesdeServidor(bruto, { completo = false } = {}) {
     gameSlug: bruto.game_slug,
     status: bruto.status,
     paused: Boolean(bruto.paused),
+    // Por qué se cerró la sala, cuando lo decidió el servidor y no el
+    // presentador: hoy solo 'inactividad'. Null = la cerró el presentador.
+    closeReason: bruto.close_reason ?? null,
     roundSeconds: bruto.round_seconds ?? 15,
     players,
     round,

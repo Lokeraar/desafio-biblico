@@ -173,6 +173,25 @@ console.log('\n=== 13. El código normal no cambia ===');
 t(normalizarCodigo('B73WS') === 'B73WS', 'un código ya limpio se queda igual');
 t(normalizarCodigo('abc12') === 'ABC12', 'se pasa a mayúsculas como antes');
 
+console.log('\n=== 14. El motivo del cierre llega al cliente ===');
+// El servidor cierra solo las salas abandonadas y deja el motivo en
+// `close_reason`. Si el cliente no lo tradujera, el jugador expulsado
+// volvería al menú sin saber por qué salió de la partida.
+const porInactividad = estadoDesdeServidor(
+  { ...bruto(), status: 'closed', close_reason: 'inactividad' }, { completo: false });
+t(porInactividad.status === 'closed', 'la sala llega cerrada');
+t(porInactividad.closeReason === 'inactividad',
+  'el cliente recibe el motivo de inactividad');
+
+t(abierta.closeReason === null,
+  'una sala viva no tiene motivo de cierre');
+
+// El presentador que pulsa «Menú» cierra la sala sin motivo: ahí manda el
+// texto de siempre y no hay que anunciar una expulsión automática.
+const cerradaAMano = estadoDesdeServidor({ ...bruto(), status: 'closed' }, { completo: false });
+t(cerradaAMano.closeReason === null,
+  'un cierre sin motivo no se confunde con la inactividad');
+
 console.log('\n===============================');
 console.log(`  ${ok} correctas, ${fail} fallas`);
 console.log('===============================');

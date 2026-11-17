@@ -163,6 +163,47 @@ function ponerAviso(tipo, texto, ms = 4000) {
 }
 
 /**
+ * Motivo del cierre para mostrar en pantalla, o null si lo cerró el
+ * presentador (ahí se usa el texto de siempre).
+ */
+function motivoCierre(est) {
+  if (est?.closeReason === 'inactividad') {
+    return 'La sala se cerró sola porque el presentador estuvo 30 minutos sin actividad.';
+  }
+  return null;
+}
+
+/**
+ * Saca al jugador de una sala que cerró el SERVIDOR por inactividad.
+ *
+ * Es distinto de que el presentador pulse «Menú»: ahí él decidió, y el
+ * jugador merece saber por qué se quedó sin partida. Antes de esto, una
+ * sala abandonada dejaba el teléfono en «espera la respuesta» para
+ * siempre, sin explicación y sin camino de vuelta.
+ *
+ * El aviso NO se borra solo (`ms = 0`): es la única explicación que va a
+ * recibir. Si desapareciera a los cuatro segundos, el jugador volvería al
+ * menú sin entender nada.
+ *
+ * Devuelve true si expulsó, para que quien llama sepa que ya navegó.
+ */
+function expulsarSiCerradaPorInactividad(est) {
+  if (!est || est.status !== 'closed') return false;
+  const motivo = motivoCierre(est);
+  if (!motivo) return false;
+
+  app.yo = null;
+  app.cliente?.cerrar?.();
+  app.cliente = null;
+  app.estado = null;
+  guardarSesion();
+
+  ponerAviso('espera', motivo, 0);
+  ir('menu');
+  return true;
+}
+
+/**
  * Ejecuta una acción del presentador y muestra su error, si lo hay.
  *
  * `await` es obligatorio aunque el modo local responda al instante: en la
@@ -277,6 +318,14 @@ function vistaMenu() {
       </div>
       <p class="menu-lema">2 Corintios · Concurso de preguntas</p>
 
+      ${/*
+        El menú es donde aterriza el jugador cuando el servidor cierra la
+        sala por inactividad. Sin este hueco, el aviso con el motivo se
+        guardaba en el estado y no se dibujaba en ninguna parte: el jugador
+        llegaba al menú sin saber por qué había salido de la partida.
+      */''}
+      ${avisoHTML()}
+
       <div class="menu-acciones">
         <button class="boton-grande boton-oro" data-ir="host">
           🎤 Soy presentador
@@ -381,6 +430,28 @@ function vistaHost() {
   /* --- ceremonia: tabla de clasificación escalonada --- */
   if (s.status === 'ceremony') {
     return vistaCeremonia(s);
+  }
+
+  /*
+   * La sala se cerró sin que el presentador lo pidiera: lo hizo el barrido
+   * por inactividad. Sin esta pantalla, el panel seguía dibujando los
+   * botones de una partida que ya no existe y cada pulsación fallaba.
+   *
+   * También se llega aquí si el cierre lo hizo otro dispositivo con el
+   * mismo enlace: en los dos casos lo honesto es decirlo y ofrecer salida.
+   */
+  if (s.status === 'closed') {
+    return `
+      <main class="crecer columna centro" style="gap:1rem">
+        <h1>La sala está cerrada</h1>
+        <div class="aviso espera centro" style="text-align:center">
+          ${motivoCierre(s) ?? 'La sala se cerró.'}
+        </div>
+        <p class="tenue centro chico" style="text-align:center; max-width:34ch">
+          Los participantes ya salieron. Puedes crear otra sala cuando quieras.
+        </p>
+        <button class="boton" data-accion="olvidar-sala-cerrada">Crear otra sala</button>
+      </main>`;
   }
 
   return `
@@ -780,7 +851,7 @@ function vistaJugador() {
     return `
       <main class="crecer columna centro" style="gap:1rem">
         <div class="aviso espera centro" style="text-align:center">
-          El presentador cerró la sala.
+          ${motivoCierre(s) ?? 'El presentador cerró la sala.'}
         </div>
         ${/*
           Sin afirmar si la partida llegó al final o no: `closed` cubre los
@@ -1070,7 +1141,7 @@ function vistaTV() {
       <main class="crecer columna centro" style="gap:1rem">
         <h1>Desafío Bíblico</h1>
         <div class="aviso espera centro" style="text-align:center">
-          El presentador cerró la sala.
+          ${motivoCierre(s) ?? 'El presentador cerró la sala.'}
         </div>
         <p class="tenue centro chico" style="text-align:center; max-width:32ch">
           Esta pantalla puede conectarse a otra sala con su código.
@@ -1588,6 +1659,23 @@ document.addEventListener('click', async ev => {
       if (r.error) ponerAviso('error', traducirError(r.error));
       break;
     }
+    case 'olvidar-sala-cerrada': {
+      /*
+       * El presentador vuelve de una sala que cerró el barrido. La sala ya
+       * está cerrada en el servidor, así que aquí solo se suelta la sesión
+       * local y se deja el panel listo para crear otra.
+       *
+       * No se llama a `host_close_room`: la sala ya no está viva y el
+       * servidor respondería con un error que el presentador no provocó.
+       */
+      app.host?.destruir?.();
+      app.host = null;
+      app.estado = null;
+      app.aviso = null;
+      try { localStorage.removeItem(CLAVE_HOST); } catch { /* modo privado */ }
+      render();
+      break;
+    }
     case 'jugar-host': {
       /*
        * «Jugar de nuevo» cierra la partida anterior antes de abrir otra.
@@ -1657,7 +1745,10 @@ document.addEventListener('click', async ev => {
 
         if (!app.cliente || !app.cliente.nube) {
           app.cliente = crearClienteNube({
-            onEstado: est => { app.estado = est; render(); }
+            onEstado: est => {
+              if (expulsarSiCerradaPorInactividad(est)) return;
+              app.estado = est; render();
+            }
           });
         }
         const r = await app.cliente.unirse(codigo, nombre);
@@ -1867,7 +1958,10 @@ addEventListener('pagehide', () => {
   if (esVistaJugador && sesion && hayNube && sesion.token && sesion.roomId) {
     app.yo = sesion;
     app.cliente = crearClienteNube({
-      onEstado: est => { app.estado = est; render(); }
+      onEstado: est => {
+        if (expulsarSiCerradaPorInactividad(est)) return;
+        app.estado = est; render();
+      }
     });
     // Errores que SÍ significan que la sesión murió. Cualquier otro (red
     // caída, servidor lento) es transitorio: expulsar al jugador por eso

@@ -349,6 +349,100 @@ perform public.t_assert(
   (select count(*) from realtime.messages where topic like 'host:%') > 0,
   'se emitieron eventos al canal del presentador');
 
+raise notice '=== 15. Cierre por inactividad del presentador ===';
+-- Para simular el paso del tiempo hay que apagar DOS disparadores:
+--
+--   rooms_actividad  → su trabajo es refrescar la hora en cada UPDATE, así
+--                      que pisaría el envejecido artificial.
+--   rooms_broadcast  → difunde el estado llamando a `room_state`, y
+--                      `room_state` lanza el barrido. Al envejecer la fila
+--                      se cerraría la sala ANTES de la comprobación, y la
+--                      prueba pasaría sin probar nada.
+--
+-- Esto vale la pena decirlo porque es un efecto real del diseño: el barrido
+-- se dispara solo con leer. Si no se apaga en la prueba, el test mide el
+-- azar de qué disparó primero.
+alter table public.rooms disable trigger rooms_actividad;
+alter table public.rooms disable trigger rooms_broadcast;
+declare
+  v_sala uuid;
+  v_fresca boolean;
+  v_cerradas int;
+  v_tarde uuid;
+  v_viva uuid;
+begin
+  v_sala := (public.host_create_room(v_topic, 'seleccion-simple', 15)->>'room_id')::uuid;
+
+  -- Recién creada late: el barrido no debe tocarla.
+  perform public.barrer_salas_inactivas(30);
+  perform public.t_assert(
+    (select status from public.rooms where id = v_sala) = 'lobby',
+    'el barrido no cierra una sala recién creada');
+
+  -- 31 minutos de silencio: se cierra sola y deja el motivo.
+  update public.rooms set last_activity_at = clock_timestamp() - interval '31 minutes'
+   where id = v_sala;
+  v_cerradas := public.barrer_salas_inactivas(30);
+  perform public.t_assert(v_cerradas >= 1, 'el barrido reporta lo que cerró');
+  perform public.t_assert(
+    (select status from public.rooms where id = v_sala) = 'closed',
+    'una sala con 31 min de silencio se cierra sola');
+  perform public.t_assert(
+    (select close_reason from public.rooms where id = v_sala) = 'inactividad',
+    'el cierre por inactividad deja su motivo');
+
+  -- El jugador se entera por `room_state`, que es lo único que consulta.
+  perform public.t_assert(
+    (public.room_state(v_sala)->>'close_reason') = 'inactividad',
+    'el jugador recibe el motivo del cierre');
+
+  -- El barrido NO debe reactivar lo que acaba de cerrar: si lo hiciera,
+  -- la sala quedaría «activa» al cerrarse y el reloj nunca avanzaría.
+  perform public.t_assert(
+    (select now() - last_activity_at > interval '30 minutes'
+       from public.rooms where id = v_sala),
+    'el barrido no se reactiva a sí mismo');
+
+  -- Una sala con 29 minutos sigue viva: el margen es de 30, no de 29.
+  v_tarde := (public.host_create_room(v_topic, 'seleccion-simple', 15)->>'room_id')::uuid;
+  update public.rooms set last_activity_at = clock_timestamp() - interval '29 minutes'
+   where id = v_tarde;
+  perform public.barrer_salas_inactivas(30);
+  perform public.t_assert(
+    (select status from public.rooms where id = v_tarde) = 'lobby',
+    'con 29 minutos la sala sigue abierta');
+
+  -- Tocar una RONDA debe bastar para refrescar el reloj de la sala. Se
+  -- deja `rooms_actividad` apagado a propósito: si estuviera encendido, el
+  -- propio UPDATE sobre `rooms` refrescaría la hora y la prueba pasaría
+  -- sin demostrar nada sobre el disparador de `rounds`.
+  --
+  -- Sala nueva y viva: `v_room` ya quedó cerrada en la sección 13, y una
+  -- sala cerrada no late (ni debe: nadie va a volver a ella).
+  v_viva := (public.host_create_room(v_topic, 'seleccion-simple', 15)->>'room_id')::uuid;
+  update public.rooms set last_activity_at = clock_timestamp() - interval '45 minutes'
+   where id = v_viva;
+  perform public.t_assert(
+    (select now() - last_activity_at > interval '44 minutes'
+       from public.rooms where id = v_viva),
+    'la sala quedó envejecida para la prueba');
+
+  -- El presentador abre una pregunta: eso escribe en `rounds`, no en `rooms`.
+  insert into public.rounds (room_id, question_id, ordinal, option_order, deadline)
+  select v_viva, q.id, 1, '[{"k":"a","t":"uno"}]'::jsonb,
+         clock_timestamp() + interval '15 seconds'
+    from public.questions q
+   where q.game_slug = 'seleccion-simple' and q.topic_id = v_topic
+   limit 1;
+
+  perform public.t_assert(
+    (select now() - last_activity_at < interval '10 seconds'
+       from public.rooms where id = v_viva),
+    'una acción del presentador reinicia el reloj de actividad');
+end;
+alter table public.rooms enable trigger rooms_broadcast;
+alter table public.rooms enable trigger rooms_actividad;
+
 raise notice '';
 raise notice '===============================';
 raise notice ' TODAS LAS PRUEBAS PASARON';
