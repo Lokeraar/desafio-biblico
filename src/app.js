@@ -35,6 +35,23 @@ function urlSala(codigo) {
   return `${base}#/join?c=${encodeURIComponent(codigo)}`;
 }
 
+/**
+ * El QR de una sala, UNO solo para toda la app.
+ *
+ * El panel del presentador y el televisor dibujaban el mismo QR con
+ * parámetros distintos (`escala: 6, margen: 3` uno y `escala: 10, margen 4`
+ * el otro). Como el margen desplaza el dibujo, salían dos SVG con dibujo
+ * diferente: dos QRs que se leen igual pero que a la vista no coinciden, y
+ * quien compara uno con otro duda de si es el mismo código.
+ *
+ * Aquí se fijan los parámetros de UNA vez. El tamaño en pantalla lo pone el
+ * CSS (`.qr-caja` y `.qr-tv`), así que el dibujo es siempre idéntico y lo
+ * único que cambia es cuánto ocupa.
+ */
+function qrSala(codigo) {
+  return qrSVG(urlSala(codigo), { nivel: 'M', escala: 10, margen: 4 });
+}
+
 /** Lee ?c=CODIGO del hash. */
 function codigoDeUrl() {
   const m = location.hash.match(/[?&]c=([A-Z0-9]+)/i);
@@ -367,7 +384,7 @@ function vistaHost() {
 
       <div class="sala-cabecera">
         <div class="qr-caja" title="Escanéalo para entrar a la sala">
-          ${qrSVG(urlSala(s.code), { nivel: 'M', escala: 6, margen: 3 })}
+          ${qrSala(s.code)}
         </div>
         <div class="sala-datos">
           <span class="mini tenue">Código de la sala</span>
@@ -940,7 +957,7 @@ function salaEsperaHTML(s) {
       </p>
 
       <div class="qr-caja qr-tv" title="Escanéalo para entrar a la sala">
-        ${qrSVG(urlSala(s.code), { nivel: 'M', escala: 10, margen: 4 })}
+        ${qrSala(s.code)}
       </div>
 
       <div class="codigo-tv">${esc(s.code)}</div>
