@@ -1152,8 +1152,12 @@ let timerReloj = null;
 // Último HTML dibujado. Evita reescribir el DOM cuando nada cambió: eso
 // reiniciaba el confeti de la ceremonia en cada vuelta del sondeo.
 let htmlAnterior = '';
-// Cerrando sala: evita mandar dos veces la orden si se toca el botón dos
-// veces mientras viaja la respuesta del servidor.
+// Cerrojo de cierre de sala. Evita DOS problemas distintos:
+//   · mandar dos veces la orden al servidor (doble toque en «Sí, cerrar»);
+//   · que un segundo toque en «Jugar de nuevo» corra mientras el primero
+//     está esperando la respuesta y destruya la sesión NUEVA al terminar.
+// Con `await` de por medio hay una ventana de reentrada que no existía
+// cuando todo era síncrono.
 let cerrando = false;
 
 /* ------------------------------------------------------------------ */
@@ -1312,6 +1316,73 @@ function render() {
       }
     }, 250);
   }
+}
+
+/* ------------------------------------------------------------------ */
+/* Cerrar la sala y salir                                              */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Cierra la partida en el servidor y deja la app en el menú.
+ *
+ * Vive en un solo sitio porque «Menú», «Jugar de nuevo» y el cierre
+ * confirmado necesitan exactamente lo mismo, y tenerlo repetido fue justo
+ * lo que dejó a «Jugar de nuevo» sin cerrar la sala.
+ *
+ * Tres reglas que esta función garantiza:
+ *
+ *   1. NO SE SIMULA EL ÉXITO. Si el servidor responde con error, o no
+ *      contesta en 4 s, se devuelve el fallo y NO se limpia nada. Cerrar la
+ *      pantalla sin cerrar la sala deja a los participantes y al televisor
+ *      mirando una tabla que ya nadie va a actualizar; peor: se pierde el
+ *      token del presentador y ya no hay forma de reintentar.
+ *
+ *   2. UN SOLO CIERRE A LA VEZ. Con `await` en medio, un segundo toque
+ *      entraba mientras el primero esperaba y terminaba destruyendo la
+ *      sesión recién creada.
+ *
+ *   3. SE SUELTA TODO. Presentador, jugador y televisor: el cliente, `yo`,
+ *      la respuesta guardada y la sesión de localStorage. Dejar `yo` vivo
+ *      con el estado en null atrapaba al participante en «Conectando…».
+ */
+async function cerrarYSalir({ aMenu = true } = {}) {
+  if (cerrando) return { error: null, repetido: true };
+  cerrando = true;
+
+  let fallo = null;
+  if (app.host) {
+    // El tope se resuelve con una MARCA, no con una promesa que resuelve:
+    // `Promise.race` con una promesa que resuelve daba éxito falso al
+    // vencer el plazo y se limpiaba la sesión sin haber cerrado nada.
+    const tope = new Promise(res => setTimeout(() => res({ error: 'sin_respuesta' }), 4000));
+    try {
+      const r = await Promise.race([app.host.cerrarSala?.(), tope]);
+      fallo = r?.error ?? null;
+    } catch (e) {
+      fallo = e?.message ?? 'No se pudo cerrar la sala.';
+    }
+  }
+
+  cerrando = false;
+  if (fallo) return { error: fallo };
+
+  // Sala cerrada (o no había sala que cerrar): se suelta todo.
+  try { localStorage.removeItem(CLAVE_HOST); } catch { /* modo privado */ }
+
+  app.cliente?.cerrar?.();
+  app.cliente = null;
+  app.yo = null;
+  app.miRespuesta = null;
+  try { guardarSesion(); } catch { /* modo privado */ }
+
+  app.host?.destruir?.();
+  app.host = null;
+  app.estado = null;
+  app.podioPaso = 0;
+  app.tablaCompleta = false;
+
+  if (aMenu) ir('menu');
+  return { error: null };
 }
 
 /* ------------------------------------------------------------------ */
@@ -1492,59 +1563,32 @@ document.addEventListener('click', async ev => {
      */
     case 'confirmar-cerrar-sala': {
       app.confirmar = null;
-      if (cerrando) break;          // doble toque: no se manda dos veces
-      cerrando = true;
       render();
-
-      let fallo = null;
-      try {
-        const r = await app.host?.cerrarSala?.();
-        fallo = r?.error ?? null;
-      } catch (e) {
-        fallo = e?.message ?? 'No se pudo cerrar la sala.';
-      }
-      cerrando = false;
-
-      if (fallo) {
-        // Si no se cerró, no se simula: el presentador sigue en su sala y
-        // recibe el motivo. Cerrar la pantalla sin cerrar la sala es justo
-        // lo que dejaba jugadores esperando a alguien que ya se fue.
-        ponerAviso('error', traducirError(fallo));
-        break;
-      }
-
-      try { localStorage.removeItem(CLAVE_HOST); } catch { /* modo privado */ }
-      app.host = null;
-      app.estado = null;
-      app.podioPaso = 0;
-      ir('menu');
+      const r = await cerrarYSalir({ aMenu: true });
+      // Si no se cerró, no se simula: el presentador sigue en su sala y
+      // recibe el motivo. Cerrar la pantalla sin cerrar la sala es justo lo
+      // que dejaba jugadores esperando a alguien que ya se fue.
+      if (r.error) ponerAviso('error', traducirError(r.error));
       break;
     }
     case 'jugar-host': {
       /*
-       * «Jugar de nuevo» también cierra la partida anterior.
+       * «Jugar de nuevo» cierra la partida anterior antes de abrir otra.
        *
-       * Solo destruía el host de esta pestaña. La sala quedaba en
-       * 'ceremony' en el servidor, así que los participantes y el televisor
-       * seguían viendo la tabla de clasificación de una partida que el
-       * presentador ya había dado por terminada: su sondeo seguía recibiendo
-       * 'ceremony' y no tenían forma de salir de ahí solos.
+       * Solo destruía el host de esta pestaña: la sala quedaba en 'ceremony'
+       * en el servidor y los participantes y el televisor seguían viendo la
+       * tabla de una partida ya terminada, sin forma de salir solos.
        *
-       * «Menú» sí la cerraba; este botón se quedó sin ese paso.
+       * Va por `cerrarYSalir` para heredar sus dos protecciones: no fingir
+       * éxito si el servidor no contesta, y no dejar que un segundo toque
+       * destruya la sesión nueva.
        */
-      if (app.host) {
-        try {
-          await Promise.race([
-            app.host.cerrarSala?.(),
-            new Promise(r => setTimeout(r, 4000))
-          ]);
-        } catch { /* se sale igual: no se atrapa al presentador aquí */ }
-        try { localStorage.removeItem(CLAVE_HOST); } catch { /* modo privado */ }
+      const r = await cerrarYSalir({ aMenu: false });
+      if (r.error) {
+        ponerAviso('error', traducirError(r.error));
+        break;
       }
       app.podioPaso = 0;
-      app.estado = null;
-      app.host?.destruir?.();
-      app.host = null;
       ir('host');
       break;
     }
@@ -1557,51 +1601,14 @@ document.addEventListener('click', async ev => {
     }
     case 'salir-host': {
       /*
-       * Si el que sale es el PRESENTADOR, la partida termina de verdad.
+       * Toda salida pasa por aquí: la del presentador (cierra la sala en el
+       * servidor) y la del participante o el televisor (suelta su sesión).
        *
-       * Antes solo se soltaba la pestaña: la sala quedaba viva en el
-       * servidor y, al recargar, cualquiera de las tres pantallas volvía a
-       * la tabla de clasificación de una partida ya terminada. Ahora se
-       * cierra en el servidor antes de salir.
-       *
-       * `cerrarSala` se espera con tope: si la red falla no se puede dejar
-       * al presentador atrapado en una pantalla que ya quiso abandonar.
+       * Antes cada botón hacía su propia versión y «Jugar de nuevo» se quedó
+       * sin el paso de cerrar. Ahora hay un solo camino.
        */
-      const eraPresentador = Boolean(app.host);
-      if (eraPresentador) {
-        try {
-          await Promise.race([
-            app.host?.cerrarSala?.(),
-            new Promise(r => setTimeout(r, 4000))
-          ]);
-        } catch { /* la sala se quedará abierta; no se bloquea la salida */ }
-        try { localStorage.removeItem(CLAVE_HOST); } catch { /* modo privado */ }
-      }
-
-      /*
-       * Si el que pulsa es un PARTICIPANTE (o el televisor), también hay que
-       * soltar su sesión.
-       *
-       * Aquí estaba el defecto que dejaba a la gente atrapada: este caso
-       * limpiaba el host y el estado, pero nunca `app.yo`. Al volver a
-       * `#/join`, `vistaJugador()` ve `yo` con valor y NO muestra el
-       * formulario de entrada; como `estado` es null, se queda en
-       * «Conectando…» para siempre, sin forma de escribir un nombre ni un
-       * código. Y como la sala vieja está cerrada, su sondeo no le va a
-       * devolver nada nunca.
-       */
-      app.cliente?.cerrar?.();
-      app.cliente = null;
-      app.yo = null;
-      app.miRespuesta = null;
-      guardarSesion();
-
-      app.host?.destruir?.();
-      app.host = null;
-      app.estado = null;
-      app.podioPaso = 0;
-      app.tablaCompleta = false;
-      ir('menu');
+      const r = await cerrarYSalir({ aMenu: true });
+      if (r.error) ponerAviso('error', traducirError(r.error));
       break;
     }
 
