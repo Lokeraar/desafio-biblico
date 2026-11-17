@@ -657,6 +657,37 @@ body.tv .opcion { font-size: var(--t-xl); }
   text-shadow: 0 4px 18px rgba(0, 0, 0, .55);
 }
 
+/*
+ * Nombres de quienes ya están dentro, en la sala de espera del televisor.
+ * Se leen desde lejos: letra grande y reparto en varias columnas para que
+ * veinte nombres no empujen el QR fuera de la pantalla.
+ */
+.lista-espera-tv {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: .35rem .9rem;
+}
+.lista-espera-tv li {
+  font-size: var(--t-sm);
+  font-weight: 700;
+  color: var(--tinta);
+  background: rgba(110, 227, 238, .09);
+  border: 1px solid rgba(110, 227, 238, .18);
+  border-radius: 999px;
+  padding: .3em .8em;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* En el televisor de verdad, todo un punto más grande */
+body.tv .lista-espera-tv li { font-size: var(--t-base); }
+body.tv .qr-tv { max-width: clamp(220px, 34vmin, 380px); }
+
 /* =====================================================================
    Resto de la clasificación (4.º puesto en adelante)
    Debajo del podio, con scroll propio para no empujar la pantalla.

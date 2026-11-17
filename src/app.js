@@ -930,7 +930,8 @@ function vistaJugador() {
  * escala, para que se lea desde el fondo del salón.
  */
 function salaEsperaHTML(s) {
-  const cuantos = (s.players ?? []).filter(p => !p.kicked).length;
+  const dentro = (s.players ?? []).filter(p => !p.kicked && !p.waiting);
+  const cuantos = dentro.length;
 
   return `
     <div class="columna centro" style="gap:1.2rem; margin-top:.5rem">
@@ -944,11 +945,30 @@ function salaEsperaHTML(s) {
 
       <div class="codigo-tv">${esc(s.code)}</div>
 
-      <p class="tenue centro" style="text-align:center; margin:0">
-        ${cuantos === 0
-          ? 'Nadie ha entrado todavía.'
-          : `${cuantos} participante${cuantos === 1 ? '' : 's'} en la sala.`}
-      </p>
+      ${/*
+        Quiénes están dentro, con nombre.
+        El conteo solo («2 participantes») no le dice nada a quien está en el
+        salón: cada uno quiere confirmar que SU nombre aparece. Se muestran
+        todos mientras quepan; con mucha gente se recorta la lista para no
+        empujar el QR fuera de la pantalla.
+       */''}
+      ${cuantos === 0
+        ? `<p class="tenue centro" style="text-align:center; margin:0">
+             Nadie ha entrado todavía.
+           </p>`
+        : `<div class="columna" style="gap:.4rem; width:100%; max-width:620px">
+             <p class="chico centro" style="text-align:center; margin:0; color:var(--tu-100)">
+               Ya están dentro ${cuantos} participante${cuantos === 1 ? '' : 's'}:
+             </p>
+             <ul class="lista-espera-tv">
+               ${dentro.slice(0, 12).map(p => `<li>${esc(p.name)}</li>`).join('')}
+             </ul>
+             ${cuantos > 12
+               ? `<p class="mini tenue centro" style="text-align:center; margin:0">
+                    y ${cuantos - 12} más…
+                  </p>`
+               : ''}
+           </div>`}
 
       <p class="mini tenue centro" style="text-align:center; margin:0; max-width:38ch">
         La partida empieza en cuanto el presentador lance la primera pregunta.
