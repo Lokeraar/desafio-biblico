@@ -920,6 +920,42 @@ function vistaJugador() {
 /* ------------------------------------------------------------------ */
 /* VISTA: televisor                                                    */
 /* ------------------------------------------------------------------ */
+/**
+ * Sala de espera del televisor: el QR y el código, grandes y juntos.
+ *
+ * Es el único momento en que el televisor tiene algo que pedirle al público.
+ * Antes el código estaba arriba a la derecha en letra pequeña, casi de
+ * adorno, y quien llegaba tarde no sabía qué escribir en el teléfono. Aquí
+ * el QR ocupa el centro y el código va debajo, en el tamaño más grande de la
+ * escala, para que se lea desde el fondo del salón.
+ */
+function salaEsperaHTML(s) {
+  const cuantos = (s.players ?? []).filter(p => !p.kicked).length;
+
+  return `
+    <div class="columna centro" style="gap:1.2rem; margin-top:.5rem">
+      <p class="tenue centro" style="text-align:center; margin:0; font-size:var(--t-lg)">
+        Escanea el QR o escribe el código para entrar
+      </p>
+
+      <div class="qr-caja qr-tv" title="Escanéalo para entrar a la sala">
+        ${qrSVG(urlSala(s.code), { nivel: 'L', escala: 10, margen: 2 })}
+      </div>
+
+      <div class="codigo-tv">${esc(s.code)}</div>
+
+      <p class="tenue centro" style="text-align:center; margin:0">
+        ${cuantos === 0
+          ? 'Nadie ha entrado todavía.'
+          : `${cuantos} participante${cuantos === 1 ? '' : 's'} en la sala.`}
+      </p>
+
+      <p class="mini tenue centro" style="text-align:center; margin:0; max-width:38ch">
+        La partida empieza en cuanto el presentador lance la primera pregunta.
+      </p>
+    </div>`;
+}
+
 function vistaTV() {
   // El televisor solo se cree su PROPIO sondeo. `app.estado` lo comparten
   // todas las vistas: sin esta condición, abrir el televisor después del
@@ -1004,12 +1040,20 @@ function vistaTV() {
     <main class="crecer columna" style="gap:1.5rem">
       <div class="fila-entre">
         <h1 style="font-size:var(--t-xl); margin:0">Desafío Bíblico</h1>
-        <div class="columna" style="align-items:flex-end; gap:.2rem">
-          <span class="mini tenue">Código</span>
-          <span class="chico" style="color:var(--raya); font-weight:800; letter-spacing:.1em">
-            ${esc(s.code)}
-          </span>
-        </div>
+        ${/*
+          El código ya no va aquí arriba, en pequeño y a la derecha.
+          Mientras la sala está en espera el televisor tiene una sola misión:
+          que la gente entre. Para eso el QR y el código van juntos, grandes
+          y centrados más abajo. Cuando la partida arranca, el código pequeño
+          vuelve a la cabecera.
+        */''}
+        ${r ? `
+          <div class="columna" style="align-items:flex-end; gap:.2rem">
+            <span class="mini tenue">Código</span>
+            <span class="chico" style="color:var(--raya); font-weight:800; letter-spacing:.1em">
+              ${esc(s.code)}
+            </span>
+          </div>` : ''}
       </div>
 
       ${r ? `
@@ -1046,7 +1090,7 @@ function vistaTV() {
           <p class="centro" style="text-align:center; font-size:var(--t-xl); color:var(--raya); font-weight:800">
             ${r.noWinner ? 'Nadie acertó' : `🎉 ${esc(s.players.find(p => p.id === r.winnerId)?.name ?? '')}`}
           </p>` : ''}
-      ` : `<p class="tenue centro" style="text-align:center">Esperando la primera pregunta…</p>`}
+      ` : salaEsperaHTML(s)}
       ${/*
           Sin marcador a propósito.
           Antes el televisor mostraba los cinco primeros con sus puntos

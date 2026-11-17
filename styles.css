@@ -634,6 +634,29 @@ body.tv .opcion { font-size: var(--t-xl); }
 }
 .qr-caja svg { width: 100%; height: auto; display: block; }
 
+/*
+ * QR y código de la sala de espera del televisor.
+ * El QR es lo único que el público tiene que mirar en ese momento, así que
+ * crece con la pantalla; en un televisor grande se ve desde el fondo.
+ */
+.qr-tv {
+  max-width: clamp(180px, 38vmin, 340px);
+  padding: clamp(.5rem, 1.6vmin, 1rem);
+}
+
+.codigo-tv {
+  font-size: clamp(2.6rem, 11vmin, 6rem);
+  font-weight: 800;
+  letter-spacing: .14em;
+  line-height: 1;
+  color: var(--raya);
+  /* El espaciado de letras deja aire a la derecha del último carácter;
+     sin compensarlo el código se ve descentrado. */
+  text-indent: .14em;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 4px 18px rgba(0, 0, 0, .55);
+}
+
 /* =====================================================================
    Resto de la clasificación (4.º puesto en adelante)
    Debajo del podio, con scroll propio para no empujar la pantalla.
