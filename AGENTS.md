@@ -87,8 +87,22 @@ cabecera `Authorization: Bearer $SUPABASE_ACCESS_TOKEN`. Respuesta `[]` =
 éxito.
 
 El helper `bash .logs/sql.sh archivo.sql` envía un archivo y muestra el
-resultado. `.logs/` está en `.gitignore`: si se limpia, hay que recrear el
-helper (está documentado en `NOTES.md`).
+resultado. `.logs/` está en `.gitignore`, así que si se limpia hay que
+recrearlo. Su contenido, completo:
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+TOKEN="${SUPABASE_ACCESS_TOKEN:?falta SUPABASE_ACCESS_TOKEN}"
+REF="xodghdateldeobuumhyd"
+Q=$(python3 -c 'import json,sys; print(json.dumps({"query": open(sys.argv[1]).read()}))' "$1")
+curl -sS -m 120 -X POST "https://api.supabase.com/v1/projects/$REF/database/query" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d "$Q"
+echo
+```
+
+Se invoca con `bash`, nunca directo: el almacenamiento compartido no conserva
+el bit de ejecución (ver la regla general de operaciones repetidas).
 
 **Regla dura:** nunca `/tmp`. Todo temporal va en `./.logs/`.
 
