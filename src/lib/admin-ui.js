@@ -57,7 +57,7 @@ export function selectorTema(temas, elegido) {
 
   if (lista.length === 0) {
     return `
-      <div class="campo" style="max-width:340px; width:100%">
+      <div class="campo" style="max-width:var(--ancho-form); width:100%">
         <label>Tema</label>
         <div class="fila" style="gap:.5rem; align-items:center">
           <p class="chico tenue" style="flex:1; margin:0">
@@ -77,7 +77,7 @@ export function selectorTema(temas, elegido) {
   }).join('');
 
   return `
-    <div class="campo" style="max-width:340px; width:100%">
+    <div class="campo" style="max-width:var(--ancho-form); width:100%">
       <label for="sel-tema">Tema de la partida</label>
       <div class="fila" style="gap:.5rem; align-items:center">
         <select id="sel-tema" style="flex:1">
@@ -337,12 +337,12 @@ export function vistaConfig({ hayClave = false } = {}) {
     </div>
     <main class="crecer columna centro" style="gap:1.2rem">
       <h1>⚙️ Configuraciones</h1>
-      <p class="tenue" style="text-align:center; max-width:38ch">
+      <p class="tenue" style="text-align:center">
         La clave maestra protege los temas y las preguntas del juego.
         Solo el presentador la conoce.
       </p>
 
-      <div class="tarjeta-config" style="max-width:420px; width:100%">
+      <div class="tarjeta-config" style="max-width:var(--ancho-form); width:100%">
         <h2 style="font-size:var(--t-md); margin:0 0 .3rem">Clave maestra</h2>
         <p class="chico tenue" style="margin:0 0 .9rem">
           ${hayClave

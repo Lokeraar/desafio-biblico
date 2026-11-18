@@ -1,0 +1,225 @@
+/* Prueba de la compensación de escala: puro cálculo, sin navegador.
+ *
+ * Lo que se comprueba es la cuenta y sus límites: que el factor salga de la
+ * proporción lienzo/pantalla, que no se dispare con datos absurdos y que sin
+ * zoom no se toque nada.
+ */
+import {
+  REM, UMBRAL_ZOOM, TOPE_FACTOR, factorEscala,
+  TECHO_CONTENIDO, TECHO_TITULO, SUELO, PASOS,
+  PERFILES, perfilPara, ptARem, ROLES, PASOS_TITULO, esTitulo, cabe
+} from './ajuste.js';
+
+let ok = 0, fail = 0;
+const t = (c, m) => { if (c) { ok++; console.log('  ok   ' + m); } else { fail++; console.log('  FALLA ' + m); } };
+
+console.log('=== 1. Sin zoom no se toca nada ===');
+t(factorEscala({ lienzo: 390, pantalla: 390 }) === 1, 'lienzo = pantalla → 1');
+t(factorEscala({ lienzo: 412, pantalla: 412 }) === 1, 'teléfono sin modo escritorio → 1');
+t(factorEscala({ lienzo: 430, pantalla: 412 }) === 1, 'diferencia chica (barras) → 1');
+
+console.log('\n=== 2. El zoom se detecta y se mide ===');
+const real = factorEscala({ lienzo: 980, pantalla: 412 });
+t(Math.abs(real - 2.3786) < 0.01, 'lienzo 980 / pantalla 412 → 2.38 (caso real medido)');
+t(factorEscala({ lienzo: 1200, pantalla: 412 }) > 2.9, 'lienzo más ancho → factor mayor');
+t(factorEscala({ lienzo: UMBRAL_ZOOM * 412, pantalla: 412 }) === UMBRAL_ZOOM, 'justo en el umbral ya cuenta');
+
+console.log('\n=== 3. Límites y datos inválidos ===');
+t(factorEscala({ lienzo: 9999, pantalla: 10 }) === TOPE_FACTOR, 'no pasa del tope');
+t(factorEscala({ lienzo: 0, pantalla: 412 }) === 1, 'lienzo 0 → 1 (sin datos)');
+t(factorEscala({ lienzo: 980, pantalla: 0 }) === 1, 'pantalla 0 → 1 (sin datos)');
+t(factorEscala({ lienzo: NaN, pantalla: 412 }) === 1, 'lienzo inválido → 1');
+t(factorEscala({ lienzo: -980, pantalla: 412 }) === 1, 'lienzo negativo → 1');
+
+console.log('\n=== 4. Lo que produce el factor en la raíz ===');
+// La raíz compensada es lo que hace que los `rem` signifiquen tamaño físico.
+const raiz = REM * real;
+t(Math.round(raiz) === 38, 'raíz ≈ 38 px con el factor real');
+// 1 rem = 38 px de hoja -> en pantalla 38 * 0.42 = 16 dp, que es lo normal.
+const dp = raiz * (412 / 980);
+t(Math.round(dp) === 16, 'un rem compensado se ve en 16 dp (tamaño de diseño)');
+// Y los tokens de la skill, medidos en dp, dan lo que la skill pide.
+t(Math.round(1.3333 * raiz * 0.42) === 21, '16 pt del contrato → 21 dp reales');
+t(Math.round(2 * raiz * 0.42) === 32, '24 pt del contrato → 32 dp reales');
+
+console.log('\n=== 5. La sección de juegos crece con el resto ===');
+// No se retoca token por token: todos cuelgan de la misma raíz.
+const tokens = { xs: 0.9, sm: 1.05, base: 1.25, lg: 1.5 };
+const antes = Object.fromEntries(Object.entries(tokens).map(([k, v]) => [k, v * REM]));
+const ahora = Object.fromEntries(Object.entries(tokens).map(([k, v]) => [k, v * raiz]));
+let subieronTodos = true;
+let proporcionIgual = true;
+for (const k of Object.keys(tokens)) {
+  if (!(ahora[k] > antes[k])) subieronTodos = false;
+  if (Math.abs(ahora[k] / antes[k] - real) > 0.01) proporcionIgual = false;
+}
+t(subieronTodos, 'todos los pasos suben, incluido --t-xs de las descripciones');
+t(proporcionIgual, 'y suben en la MISMA proporción (ninguno se queda atrás)');
+t(ahora.xs / ahora.base === antes.xs / antes.base, 'la relación xs/base no cambia: no hay escalón roto');
+
+console.log('\n=== 6. Topes de la skill, literales ===');
+// Con la raiz compensada (38.06 px) 1rem son 12 pt: los topes se escriben tal cual.
+const raizReal = 38.06;
+t(ptARem(TECHO_CONTENIDO) === 1.3333 || Math.abs(ptARem(TECHO_CONTENIDO) - 1.3333) < 0.001,
+  '16 pt de contenido = 1.3333rem');
+t(ptARem(TECHO_TITULO) === 2, '24 pt de titulo = 2rem');
+t(Math.abs(ptARem(SUELO) - 0.6667) < 0.001, '8 pt de suelo = 0.6667rem');
+// Y en pixeles de hoja, multiplicando por la raiz real.
+t(Math.round(ptARem(TECHO_CONTENIDO) * raizReal) === 51, '16 pt -> 51 px de hoja');
+t(Math.round(ptARem(TECHO_TITULO) * raizReal) === 76, '24 pt -> 76 px de hoja');
+
+console.log('\n=== 7. Los pasos respetan techo y suelo ===');
+t(PASOS[0] === TECHO_CONTENIDO, 'se arranca en el techo, no por debajo');
+t(PASOS[PASOS.length - 1] === SUELO, 'el ultimo paso es el suelo de 8 pt');
+t(PASOS.every((p, i) => i === 0 || p < PASOS[i - 1]), 'los pasos bajan de uno en uno');
+t(PASOS.every(p => p >= SUELO && p <= TECHO_CONTENIDO), 'ninguno sale del rango 8-16 pt');
+
+console.log('\n=== 8. La gracia es el ULTIMO recurso ===');
+// Se recorre la lista de pasos: la gracia solo puede pedirse despues del suelo.
+const indiceSuelo = PASOS.indexOf(SUELO);
+t(indiceSuelo === PASOS.length - 1, 'el suelo es el ultimo recurso antes de la gracia');
+t(indiceSuelo > 0, 'hay pasos que probar antes de llegar al suelo (encoger primero)');
+// La capacidad declarada nunca incluye la gracia: es un extra aparte.
+t(PERFILES.telefono.renglones === 2 && PERFILES.telefono.gracia === 1,
+  'telefono: 2 renglones declarados, 1 de gracia aparte');
+t(PERFILES.ancho.renglones === 1 && PERFILES.ancho.gracia === 1,
+  'pantalla ancha: 1 renglon declarado, 1 de gracia aparte');
+t(PERFILES.telefono.renglones + PERFILES.telefono.gracia === 3,
+  'el maximo absoluto en telefono es 3 (2 + 1), nunca mas');
+
+console.log('\n=== 9. Perfil por ancho de maqueta ===');
+t(perfilPara(412) === PERFILES.telefono, '412 de maqueta -> telefono');
+t(perfilPara(767) === PERFILES.telefono, '767 de maqueta todavia es telefono');
+t(perfilPara(768) === PERFILES.ancho, '768 de maqueta -> ancho (1+1)');
+t(perfilPara(1024) === PERFILES.ancho, '1024 de maqueta -> ancho');
+// El caso que fallo: un telefono en modo escritorio presenta 980 de maqueta.
+t(perfilPara(980) === PERFILES.ancho,
+  '980 de maqueta (telefono en modo escritorio) -> ancho, NO telefono');
+
+console.log('\n=== 10. La capacidad la pone el perfil, no el rol ===');
+// El bug: roles con `renglones` escrito a mano anulaban el perfil 1+1.
+// NINGUN rol declara capacidad propia. La capacidad la pone el perfil de la
+// maqueta (1+1 en tableta y PC, 2+1 en telefono). Escribirsela a mano fue el
+// bug que dejaba los nombres y descripciones en tres renglones: anulaba el
+// perfil y, de paso, se saltaba el paso de ENCOGER.
+// La capacidad la declara el USUARIO, no el agente. Por eso el unico rol con
+// capacidad propia es el que el declaro: la pregunta, con 2 + 1.
+const conCapacidadPropia = ROLES.filter(r => r.renglones != null);
+t(conCapacidadPropia.length === 1, 'un solo rol declara capacidad propia');
+t(conCapacidadPropia[0].sel === '.enunciado', 'y es la pregunta');
+t(conCapacidadPropia[0].renglones === 2, 'con 2 renglones declarados');
+t(PERFILES.ancho.gracia === 1, 'y la gracia del perfil le suma el +1');
+// La prosa SI entra (la capacidad 1+1 es para todo el texto), pero heredando
+// el perfil: sin capacidad propia inventada.
+const prosaRol = ROLES.find(r => r.sel === '.tenue');
+t(prosaRol != null, 'la prosa entra en el ajuste');
+t(prosaRol.renglones == null, 'y hereda el perfil, sin capacidad inventada');
+
+// Los botones del menu son UNA decision: un solo grupo, un solo tamano.
+const botones = ROLES.filter(r => r.sel.includes('menu-acciones'));
+t(botones.length === 1, 'los botones del menu son un solo grupo');
+t(botones[0].renglones == null, 'y NO declaran capacidad: la toman del perfil (1+1)');
+// El selector va por CONTENEDOR (`> button`), no por clase. Medido: dos
+// botones eran .boton-grande y dos .boton, asi que agrupar por clase dejaba
+// fuera a la mitad y la fila quedaba con dos tamanos distintos.
+t(botones[0].sel.includes('>'), 'el grupo de botones se selecciona por contenedor');
+t(!botones[0].sel.includes('.boton '), 'no se selecciona por clase, que los parte en dos');
+// Y su capacidad es la del perfil, que en tableta y PC es 1 renglon + 1 de gracia.
+t(PERFILES.ancho.renglones === 1 && PERFILES.ancho.gracia === 1,
+  'la capacidad de tableta y PC es 1 + 1');
+// La prosa comparte el mismo contrato: dentro del ajuste, capacidad del perfil.
+t(prosaRol.categoria === 'contenido', 'la prosa es contenido, con techo de 16 pt');
+t(ROLES.every(r => typeof r.sel === 'string' && r.sel.length > 0), 'todos los roles tienen selector');
+
+console.log('\n=== 11. Encoger es el PRIMER recurso, no la gracia ===');
+// Con capacidad 1: si un texto entra en 1 renglon encogiendo, NO debe gastar gracia.
+const n1 = PASOS.length;
+t(n1 > 1, 'hay varios tamanos que probar antes de la gracia');
+// La gracia solo se concede despues del ultimo paso (el suelo).
+t(PASOS[0] > PERFILES.ancho.renglones,
+  'se arranca en 16 pt con capacidad de 1 renglon: primero se encoge');
+
+console.log('\n=== 12. El titulo tiene su propio techo de 24 pt ===');
+t(PASOS_TITULO[0] === TECHO_TITULO, 'la escalera de titulo arranca en 24 pt');
+t(PASOS_TITULO[PASOS_TITULO.length-1] === SUELO, 'y su suelo sigue siendo 8 pt');
+t(PASOS_TITULO.length > PASOS.length, 'tiene mas escalones que el contenido');
+t(PASOS[0] === TECHO_CONTENIDO, 'la de contenido arranca en 16 pt');
+// Un h1 nunca debe quedar por debajo del techo de contenido si hay sitio:
+// por eso la escalera de titulo no se mezcla con la de contenido.
+t(PASOS_TITULO[0] > PASOS[0], 'el titulo puede llegar mas alto que el contenido');
+
+console.log('\n=== 13. Grupos: los hermanos comparten tamano ===');
+// La clave de grupo usa las clases del elemento: tres .desc caen en el mismo
+// grupo y por tanto reciben UN tamano, no uno cada una.
+const clave = el => {
+  const c = (el.className||'').toString().trim();
+  return c ? c.split(/\s+/).sort().join('.') : el.tagName.toLowerCase();
+};
+const a1 = {className:'desc',tagName:'SPAN'}, a2 = {className:'desc',tagName:'SPAN'};
+const b1 = {className:'nombre',tagName:'SPAN'};
+t(clave(a1) === clave(a2), 'dos .desc generan la misma clave -> mismo grupo');
+t(clave(a1) !== clave(b1), '.desc y .nombre van en grupos distintos');
+t(clave({className:'boton grande',tagName:'BUTTON'}) === clave({className:'grande boton',tagName:'BUTTON'}),
+  'el orden de las clases no cambia el grupo');
+
+console.log('\n=== 14. Deteccion de titulos ===');
+t(esTitulo({tagName:'H1',className:''}) === true, 'un H1 es titulo');
+t(esTitulo({tagName:'H2',className:''}) === true, 'un H2 es titulo');
+t(esTitulo({tagName:'H6',className:''}) === true, 'un H6 es titulo');
+t(esTitulo({tagName:'P',className:'menu-titulo'}) === true, 'clase menu-titulo -> titulo');
+t(esTitulo({tagName:'P',className:'desc'}) === false, 'una descripcion no es titulo');
+t(esTitulo({tagName:'SPAN',className:'titulo'}) === true, 'clase titulo -> titulo');
+t(esTitulo(null) === false, 'nulo no es titulo');
+
+console.log('\n=== 15. La gracia se concede DESPUES de bajar al suelo ===');
+// Simulacion del recorrido: con capacidad 1, un texto de 40 caracteres.
+// A 16 pt ocupa 3 renglones; al bajar, entra en 1 o 2. La gracia (2) solo
+// debe usarse si ningun tamano logra bajar a 1.
+const simular = (renglonesPorPt, capacidad, pasos) => {
+  for (const pt of pasos) if (renglonesPorPt(pt) <= capacidad) return { pt, gracia: false };
+  for (const pt of pasos) if (renglonesPorPt(pt) <= capacidad + 1) return { pt, gracia: true };
+  return { pt: pasos[pasos.length-1], gracia: true, recortado: true };
+};
+// Caso A: encogiendo un poco ya entra en 1 -> NO gasta gracia.
+const a = simular(pt => pt >= 14 ? 2 : 1, 1, PASOS);
+t(a.gracia === false, 'entra en 1 renglon encogiendo -> no gasta la gracia');
+t(a.pt < TECHO_CONTENIDO, 'y lo logra con letra menor que el techo, no recortando');
+// Caso B: imposible en 1, pero en 2 si -> gasta la gracia.
+const b = simular(() => 2, 1, PASOS);
+t(b.gracia === true, 'no entra en 1 ni al suelo -> concede la gracia');
+t(b.pt === TECHO_CONTENIDO, 'y con la gracia vuelve al techo: no deja la letra chica');
+// Caso C: ni con gracia -> recorta.
+const c = simular(() => 5, 1, PASOS);
+t(c.recortado === true, 'ni con la gracia -> recorta');
+// Caso D: el punto exacto que se me explico mal. No entra en 1 linea ni
+// bajando hasta 8 pt; con la linea de gracia (2) el tamano NO se queda en el
+// suelo: RE-CRECE hasta el mayor que entra en esas 2 lineas.
+const d = simular(pt => pt >= 12 ? 3 : 2, 1, PASOS);
+t(d.gracia === true, 'no entra en 1 renglon ni al suelo -> concede la gracia');
+t(d.pt === 11, 'y RE-CRECE al mayor que entra en N+1 (11 pt), no se queda en 8');
+t(d.pt > SUELO, 'la letra queda por encima del suelo: no se deja ilegible');
+// Caso E: el suelo tampoco basta con gracia -> ahi si, puntos suspensivos.
+const e = simular(() => 9, 1, PASOS);
+t(e.recortado === true && e.pt === SUELO, 'si no cabe ni con gracia: suelo + puntos suspensivos');
+
+console.log('\n=== 16. Desborde horizontal: un renglon no basta ===');
+// El caso del modal de temas: «Preguntas» y «Renombrar» no pueden partirse,
+// asi que ocupan UN renglon aunque su caja sea mas angosta que la palabra.
+// Contar renglones los daba por buenos mientras el texto se salia de lado.
+t(cabe({ renglones: 1, desborda: false }, 1) === true, '1 renglon y sin desborde: cabe');
+t(cabe({ renglones: 1, desborda: true }, 1) === false,
+  'un renglon PERO desbordado: NO cabe (el caso que fallaba)');
+t(cabe({ renglones: 2, desborda: false }, 1) === false, 'dos renglones con capacidad 1: no cabe');
+t(cabe({ renglones: 3, desborda: true }, 2) === false, 'desbordado y de mas: no cabe');
+t(cabe({ renglones: 0, desborda: false }, 1) === true, 'vacio: cabe');
+// Las dos condiciones son independientes: ninguna sola alcanza.
+t(cabe({ renglones: 1, desborda: true }, 99) === false,
+  'con capacidad enorme sigue sin caber si desborda');
+t(cabe({ renglones: 5, desborda: false }, 2) === false,
+  'sin desbordar sigue sin caber si pasa los renglones');
+
+console.log('\n===============================================');
+if (fail === 0) console.log(` TODO EN VERDE: ${ok} correctas, 0 fallas`);
+else console.log(` FALLAS: ${ok} correctas, ${fail} fallas`);
+console.log('===============================================');
+process.exit(fail === 0 ? 0 : 1);

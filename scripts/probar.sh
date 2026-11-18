@@ -35,7 +35,7 @@ SUITES_FALLIDAS=()
 # --- Pruebas de JavaScript -------------------------------------------
 if [ "$solo_sql" = false ]; then
   echo "=== Pruebas de JavaScript ==="
-  for suite in engine local partida cloud render qr admin-ui; do
+  for suite in engine local partida cloud render qr admin-ui ajuste; do
     archivo="$RAIZ/src/lib/$suite.test.mjs"
     if [ ! -f "$archivo" ]; then
       echo "  FALTA $archivo"

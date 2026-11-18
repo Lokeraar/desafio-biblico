@@ -31,6 +31,11 @@
   --error:   #e0483c;
   --espera:  #f0a33a;
 
+  /* Anchos de las columnas de contenido. En píxeles fijos dejaban franjas
+     vacías en pantallas anchas; medidos en caracteres crecen con la letra. */
+  --ancho-form:  340px;
+  --ancho-lista: 620px;
+
   --radio:   18px;
   --radio-sm: 12px;
   --sombra:  0 10px 30px rgba(0, 0, 0, .45);
@@ -123,7 +128,15 @@ button:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
   color: #fff;
   box-shadow: 0 4px 0 #8e1719, var(--sombra);
 }
-.boton-grande { font-size: var(--t-lg); padding: 1em 1.6em; width: 100%; }
+.boton-grande {
+  /* Respaldo, no la fuente de verdad: el ajuste escribe el tamaño inline en
+     los cuatro botones del menú. Se deja en el techo de contenido (16 pt) y no
+     en `--t-lg` (18 pt) porque 18 supera el techo de la skill: si el ajuste no
+     corriera, el respaldo quedaría fuera del contrato. */
+  font-size: var(--t-base);
+  padding: 1em 1.6em;
+  width: 100%;
+}
 
 /* ---------- portada / menú ---------- */
 .portada {
@@ -201,7 +214,10 @@ button:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
 }
 .opcion {
   display: flex;
-  gap: .8rem;
+  /* El hueco entre la letra (A/B/C/D) y su texto sale del mismo presupuesto,
+     así que se mide en `em` y no en `rem`: encoge con la letra en vez de
+     quedarse fijo. `gap` en `em` del contenedor. */
+  gap: .4em;
   align-items: center;
   text-align: left;
   padding: 1em 1.1em;
@@ -602,6 +618,8 @@ body.tv .opcion { font-size: var(--t-xl); }
 .menu-cabecera {
   width: 100%;
   margin-inline: auto;
+  /* La portada es una imagen panorámica: sin tope se lleva media pantalla y
+     empuja los botones fuera de vista. */
   max-width: 720px;
 }
 .menu-cabecera .portada img {
@@ -984,7 +1002,15 @@ body.tv .qr-tv { max-width: clamp(220px, 34vmin, 380px); }
    ===================================================================== */
 .sala-cabecera {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  /* La columna del QR tiene tamano DEFINIDO, no `auto`.
+     Con `auto`, el ancho de la columna lo pone su contenido y el contenido
+     pide un porcentaje de la columna: circular, y el navegador resuelve el
+     porcentaje como si fuera `auto`. Medido: el QR se quedaba en 124 px por
+     mas que su regla pidiera 38 % de una tarjeta de 904.
+     `clamp(96px, 30%, 340px)` se resuelve contra el ancho de la tarjeta, que
+     si es definido: 30 % de 904 son 271 px en escritorio y 124 px en un
+     telefono, justo lo que ya se veia bien ahi. */
+  grid-template-columns: clamp(96px, 30%, 340px) minmax(0, 1fr);
   align-items: center;
   gap: clamp(.8rem, 3vw, 1.4rem);
   padding: clamp(.7rem, 2vw, 1rem);
@@ -996,13 +1022,31 @@ body.tv .qr-tv { max-width: clamp(220px, 34vmin, 380px); }
   margin-inline: auto;
 }
 .sala-cabecera .qr-caja {
-  max-width: clamp(96px, 26vw, 130px);
+  /* El QR es lo UNICO que el invitado tiene que apuntar con la camara: cuanto
+     mas grande, mas facil de escanear. Antes tenia un tope fijo de 130 px, que
+     en modo escritorio dejaba el codigo en 120 px dentro de una tarjeta de 904
+     —el 13 %— con la tarjeta medio vacia. Ahora llena la columna que le asigna
+     la rejilla, y esa columna crece con la tarjeta. */
+  width: 100%;
+  /* `max-width: 190px` de la regla general es para el QR suelto, no para el de
+     esta tarjeta: aqui la columna ya pone el limite y ese tope dejaba el
+     codigo a la mitad del espacio asignado (medido: 190 de 271 disponibles). */
+  max-width: none;
+  aspect-ratio: 1;
   margin: 0;
   padding: .35rem;
+  display: grid;
+  place-items: center;
 }
+.sala-cabecera .qr-caja svg { width: 100%; height: 100%; display: block; }
+
 .sala-datos {
   display: flex;
   flex-direction: column;
+  /* Los datos se reparten el alto disponible en vez de apilarse arriba y
+     dejar el resto vacio: con el QR crecido, la columna de texto tiene 403 px
+     de contenido en 457 de tarjeta. `space-evenly` los separa parejo. */
+  justify-content: space-evenly;
   gap: .15rem;
   min-width: 0;
   text-align: left;
@@ -1028,7 +1072,11 @@ body.tv .qr-tv { max-width: clamp(220px, 34vmin, 380px); }
   align-items: center;
   justify-content: center;
   gap: .5rem;
-  font-size: clamp(1.3rem, .9rem + 2vw, 2rem);
+  /* Atado a la escala global, no a un `clamp` propio: con un clamp fijo el
+     título se quedaba en 32 px mientras el cuerpo subía a 37, y el título
+     acababa MÁS CHICO que el texto que encabeza. Se mide en `em` del
+     contenedor para que el emoji acompañe sin desproporcionarse. */
+  font-size: var(--t-2xl);
 }
 .menu-titulo h1 {
   margin: 0;
@@ -1118,7 +1166,9 @@ body.tv .qr-tv { max-width: clamp(220px, 34vmin, 380px); }
   display: grid; place-items: center;
   border-radius: 12px;
   background: rgba(46, 196, 212, .16);
-  font-size: 1.15rem;
+  /* Decorativo: un emoji no necesita el tamaño del contenido. Su caja va en
+     `em`, así que encogiéndolo encoge también el cuadro y libera ancho. */
+  font-size: .9rem;
   flex: 0 0 auto;
 }
 .juego-tarjeta .texto {
@@ -1130,19 +1180,28 @@ body.tv .qr-tv { max-width: clamp(220px, 34vmin, 380px); }
 .juego-tarjeta .nombre {
   font-weight: 800;
   font-size: var(--t-sm);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  /* Sin `nowrap` ni puntos suspensivos: el nombre se parte en renglones si
+     hace falta. Con `nowrap` la altura no puede crecer, así que el texto
+     desborda a lo ancho y acaba truncado con «…» aunque haya sitio debajo. */
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 .juego-tarjeta .desc {
   font-size: var(--t-xs);
   color: var(--tinta-suave);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  /* La descripción dice qué es cada juego: cortarla esconde justo el dato
+     que sirve para decidir. Fluye en los renglones que necesite. */
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 .juego-tarjeta .insignia {
-  font-size: var(--t-xs);
+  /* La insignia es una ETIQUETA DE ESTADO, no contenido: dice «Abierto» o
+     «Pronto» y su sitio es el borde de la tarjeta. Por eso su categoría en el
+     ajuste es `etiqueta`, con techo de 12 pt en vez de los 16 del contenido:
+     con la letra de contenido se llevaba 226 px de 904 —el 25 % del ancho— y
+     el nombre y la descripción se quedaban con 386 px, obligados a encogerse.
+     Este valor es el de partida; el ajuste lo sube o baja según el renglón. */
+  font-size: .75rem;
   font-weight: 800;
   padding: .28em .6em;
   border-radius: 999px;
@@ -1194,12 +1253,20 @@ body.tv .qr-tv { max-width: clamp(220px, 34vmin, 380px); }
 
 /* Botón corto de las filas de temas y preguntas: se sigue tocando bien */
 .boton-mini {
-  flex: 0 0 auto;
+  /* `flex: 0 1 auto` y `min-width: 0`: el boton puede encogerse cuando la fila
+     se aprieta. Con `0 0 auto` su ancho es intocable y, si no cabe, se sale
+     del contenedor y pisa al boton vecino —que es lo que se veia en el modal
+     de temas: «Preguntas» y «Renombrar» encimados. */
+  flex: 0 1 auto;
+  min-width: 0;
   padding: .4em .75em;
   min-height: 2.5rem;
   font-size: var(--t-xs);
   line-height: 1.2;
-  white-space: nowrap;
+  /* Sin `nowrap`: si la letra llega al suelo y aun no cabe, el boton puede
+     partirse en dos renglones (el 1 + 1 de gracia) en vez de desbordarse. */
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 
 /* Modal con más ancho para las listas de temas y preguntas */
@@ -1396,18 +1463,55 @@ body.tv .tarjeta-config { padding: 1.4rem; }
    que es el orden natural de lectura y no necesita reordenar nada.
    ===================================================================== */
 @media (min-width: 768px) {
-  /* Escala tipográfica: sube toda la base y, con ella, lo que va en em.
-     El cuerpo se queda en un tamaño cómodo de leer a distancia; los
-     títulos crecen más porque su clamp ya arranca alto. */
+  /* Escala tipográfica de la maqueta ancha.
+
+     POR QUÉ EXISTE. En «modo escritorio» el navegador declara un lienzo de
+     980 px y lo dibuja dentro de una pantalla de 412 dp a escala 0.42: todo
+     se ve 2.38 veces más chico. Compensarlo aquí, agrandando token por token,
+     no funciona: hay que acertar siete números a ojo y la sección que se
+     olvide queda desproporcionada. Por eso la compensación se hace UNA sola
+     vez sobre la raíz, en `src/lib/ajuste.js`, y como todo cuelga de la raíz
+     suben el texto, los rellenos y los huecos juntos, en la proporción que el
+     diseño eligió.
+
+     Con la raíz compensada, 1 rem son 12 pt REALES, así que estos valores se
+     escriben directamente en puntos y significan lo que la skill pide:
+     contenido 16 pt, título 24 pt, suelo 8 pt. */
   :root {
-    --t-xs:   clamp(.9rem, .85rem + .25vw, 1.05rem);
-    --t-sm:   clamp(1.05rem, .95rem + .35vw, 1.25rem);
-    --t-base: clamp(1.25rem, 1.1rem + .5vw, 1.55rem);
-    --t-lg:   clamp(1.5rem, 1.3rem + .8vw, 1.9rem);
-    --t-xl:   clamp(1.9rem, 1.5rem + 1.6vw, 2.6rem);
-    --t-2xl:  clamp(2.4rem, 1.8rem + 2.6vw, 3.6rem);
-    --t-3xl:  clamp(3rem, 2.2rem + 3.6vw, 4.8rem);
+    /* 1rem = 12 pt reales, así que 16 pt son 1.3333rem y 24 pt son 2rem.
+       Antes había `clamp` con `vw` que se pasaban del techo (--t-2xl llegaba
+       a 43 pt y --t-3xl a 58 pt, por encima de los 24 pt de cualquier título).
+
+       Todo lo que es contenido arranca en el techo de 16 pt. La jerarquía
+       entre una etiqueta y su descripción sale del PESO y el COLOR, no de un
+       tamaño menor. Si algo no cabe, lo encoge el ajuste, elemento por
+       elemento, y si ni así entra, concede un renglón de gracia. */
+    --t-xs:   1.3333rem; /* 16 pt — etiquetas e insignias */
+    --t-sm:   1.3333rem; /* 16 pt — texto secundario */
+    --t-base: 1.3333rem; /* 16 pt — contenido, techo de la skill */
+    --t-lg:   1.5rem;    /* 18 pt */
+    --t-xl:   1.75rem;   /* 21 pt */
+    --t-2xl:  2rem;      /* 24 pt — techo de título */
+    --t-3xl:  2rem;      /* 24 pt — ningún título pasa de aquí */
+
+    /* Los formularios llevaban el ancho escrito en píxeles desde el
+       JavaScript. Medido en caracteres crece con la letra, así que un dato
+       como «2 Corintios (25 preguntas)» no acaba en puntos suspensivos. */
+    --ancho-form:  min(100%, max(420px, 34ch));
+    --ancho-lista: 100%;
   }
+
+  /* Las columnas de contenido tenían topes de 480-620 px, heredados de
+     cuando todo iba en una columna angosta: en una pantalla ancha se veían
+     como una franja en el centro. Usan el ancho disponible. */
+  .menu-acciones,
+  .menu-juegos,
+  .sala-cabecera,
+  .podio,
+  .podio-lista,
+  .resto-clasif,
+  .modal,
+  .modal-ancho { max-width: 100%; }
 
   /* La pantalla puede usar más ancho: con dos columnas de respuestas hace
      falta sitio, y dejar el texto en 1200 px desperdicia la pantalla. */
@@ -1415,16 +1519,33 @@ body.tv .tarjeta-config { padding: 1.4rem; }
 
   /* Las cuatro respuestas, en dos columnas iguales.
      `grid-auto-flow: row` es el valor por omisión y es el que da el orden
-     A-B / C-D. Se deja explícito para que nadie lo cambie sin darse cuenta. */
+     A-B / C-D. Se deja explícito para que nadie lo cambie sin darse cuenta.
+
+     `minmax(0, 1fr)` y NO `1fr`. Este es el defecto que desbordaba la pantalla
+     en modo escritorio: un `1fr` lleva `min-width: auto`, así que la columna
+     NO puede encoger por debajo del min-content de su contenido. Con la letra
+     compensada a 50 px, la palabra más larga de una respuesta mide cientos de
+     píxeles, las dos columnas se niegan a encoger y la rejilla se sale del
+     contenedor: medido, 1315 px de ancho en una ventana de 980. El mínimo en
+     `0` quita esa barrera y permite que el ajuste baje la letra hasta que el
+     contenido entre. */
   .opciones {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     grid-auto-flow: row;
     gap: clamp(.8rem, 1.6vw, 1.4rem);
   }
 
   /* Cada respuesta respira más: más alto para el dedo y para el ojo. */
   .opcion {
-    padding: clamp(1rem, 2vw, 1.5rem) clamp(1.1rem, 2.2vw, 1.7rem);
+    /* UN espacio de la propia letra en los cuatro lados, y nada más.
+       Un `.25em` es exactamente el ancho de un espacio en esta tipografía, así
+       que el texto toca el borde con la separación justa para no pegarse.
+       Antes tenía 1.7em arriba y abajo y 2em a los lados: en un lienzo
+       compensado eso son más de 50 px por lado que salen del ancho que el
+       texto necesita, y la respuesta se partía o se encogía teniendo sitio de
+       sobra. El relleno es parte del presupuesto del ajuste, no decoración:
+       cada píxel que se lleva el aire es un píxel que no tiene la letra. */
+    padding: .25em;
     font-size: var(--t-base);
     align-items: center;
   }

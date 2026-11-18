@@ -20,8 +20,16 @@ import {
 } from './lib/admin-ui.js';
 import { qrSVG } from './lib/qr.js';
 import { ceremoniaHTML, totalPasos } from './lib/render.js';
+import { crearEscalador, ajustarTextos } from './lib/ajuste.js';
 
 const $app = document.getElementById('app');
+
+/*
+ * Compensa el encogimiento del «modo escritorio» del navegador subiendo la
+ * raíz una sola vez. Toda la escala de la app está en `rem`, así que con esto
+ * crecen el texto, los rellenos y los huecos juntos y en su proporción.
+ */
+const escala = crearEscalador();
 
 /* ------------------------------------------------------------------ */
 /* Navegación por hash                                                 */
@@ -73,6 +81,67 @@ function ir(vista) {
 }
 
 window.addEventListener('hashchange', render);
+
+// Al girar o cambiar de tamaño cambia la proporción lienzo/pantalla.
+const reajustar = () => { escala.ahora(); ajustarTextos($app); };
+
+/*
+ * El ajuste de texto mide renglones, y los renglones dependen de la tipografía
+ * REAL. Si se mide antes de que la fuente cargue, se mide con la de reemplazo,
+ * que es más angosta: el texto «cabe» en una línea, y cuando llega la fuente
+ * buena ocupa tres y nadie vuelve a ajustar. Medido: una descripción de 37
+ * caracteres se quedaba en tres renglones con la letra grande por esta causa.
+ */
+if (typeof document !== 'undefined' && document.fonts) {
+  if (document.fonts.ready) document.fonts.ready.then(reajustar).catch(() => {});
+  // `ready` resuelve una sola vez y a veces antes de que la fuente se aplique.
+  // `loadingdone` avisa cada vez que una tipografía termina de cargar.
+  if (document.fonts.addEventListener) {
+    document.fonts.addEventListener('loadingdone', reajustar);
+  }
+}
+window.addEventListener('orientationchange', reajustar);
+window.addEventListener('resize', reajustar);
+
+/*
+ * El ajuste también reacciona cuando cambia el CONTENEDOR sin que cambie la
+ * ventana: un panel que se abre, una columna que se ensancha, el teclado que
+ * reduce el alto. Con solo `resize` de ventana, el texto conservaría el
+ * tamaño calculado para un ancho que ya no existe.
+ *
+ * Se vigila el ANCHO, no el alto. El propio ajuste cambia la altura (la letra
+ * más grande hace la caja más alta), así que observar el alto dispararía el
+ * ajuste otra vez, que cambiaría el alto, y así sin fin. Con el ancho, un
+ * reajuste que solo movió la altura no vuelve a entrar: el ancho no cambió.
+ *
+ * OJO AL MEDIR: los avisos del observador se entregan en el ciclo de dibujo,
+ * así que NO llegan con la pestaña en segundo plano —igual que
+ * `requestAnimationFrame`—. No es un fallo del ajuste: con la pestaña oculta
+ * el navegador no dibuja, y al volver el `visibilitychange` de arriba vuelve
+ * a ajustar todo. Medido: con `document.hidden === true` el texto conserva el
+ * tamaño anterior por más que se estreche el contenedor; con la pestaña
+ * visible, encoge solo (16 -> 12 -> 9 pt al pasar de 904 a 474 px).
+ */
+if (typeof ResizeObserver === 'function') {
+  let anchoVisto = 0;
+  let observando = false;   // un ajuste no debe re-entrar mientras corre
+  const observador = new ResizeObserver(entradas => {
+    if (observando) return;
+    const ancho = Math.round(entradas[entradas.length - 1].contentRect.width);
+    if (!ancho || ancho === anchoVisto) return;
+    anchoVisto = ancho;
+    observando = true;
+    try { reajustar(); } finally { observando = false; }
+  });
+  // `border-box`: el ancho que importa para el texto es el que deja el relleno.
+  observador.observe($app, { box: 'border-box' });
+  anchoVisto = Math.round($app.getBoundingClientRect().width);
+}
+// Mientras la pestaña está oculta el navegador no produce cuadros y
+// `requestAnimationFrame` no llama: hay que medir al volver.
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) reajustar();
+});
 
 /* ------------------------------------------------------------------ */
 /* Estado de la aplicación                                             */
@@ -392,7 +461,7 @@ function vistaHost() {
 
         ${selectorTema(app.temas, app.temaElegido)}
 
-        <div class="campo" style="max-width:340px; width:100%">
+        <div class="campo" style="max-width:var(--ancho-form); width:100%">
           <label for="cant">Preguntas en esta partida ${ayuda(
             'Se eligen al azar empezando por las que hace más tiempo no se juegan. '
             + (nPreguntas ? 'Este tema tiene ' + nPreguntas + '.' : ''))}</label>
@@ -402,7 +471,7 @@ function vistaHost() {
           </select>
         </div>
 
-        <div class="campo" style="max-width:340px; width:100%">
+        <div class="campo" style="max-width:var(--ancho-form); width:100%">
           <label for="seg">Segundos por pregunta ${ayuda(
             'Cuánto tiempo tienen para responder. Son juegos de reacción rápida: '
             + 'por encima de 30 segundos la espera se hace larga sin aportar nada.')}</label>
@@ -414,7 +483,7 @@ function vistaHost() {
 
         ${avisoHTML()}
         <button class="boton-grande" data-accion="crear-sala"
-                style="max-width:320px" ${puedeCrear ? '' : 'disabled'}
+                style="max-width:var(--ancho-form)" ${puedeCrear ? '' : 'disabled'}
                 title="${puedeCrear ? '' : esc(porQueNo)}">
           Crear sala
         </button>
@@ -790,7 +859,7 @@ function vistaJugador() {
       <main class="crecer columna centro" style="gap:1rem">
         <h1 style="font-size:var(--t-xl)">Entrar a la partida</h1>
         ${codigoDeUrl() ? `<div class="aviso info">Sala ${esc(codigoDeUrl())}</div>` : ''}
-        <div class="columna" style="gap:.8rem; max-width:340px; width:100%">
+        <div class="columna" style="gap:.8rem; max-width:var(--ancho-form); width:100%">
           <div class="campo">
             <label for="codigo">Código de la sala ${ayuda('Son los cinco caracteres que muestra la pantalla del presentador. Se pueden escribir con espacios: «B 7 3 W S» es lo mismo que «B73WS».')}</label>
             <input id="codigo" type="text" maxlength="12" autocapitalize="characters"
@@ -1061,7 +1130,7 @@ function salaEsperaHTML(s) {
         ? `<p class="tenue centro" style="text-align:center; margin:0">
              Nadie ha entrado todavía.
            </p>`
-        : `<div class="columna" style="gap:.4rem; width:100%; max-width:620px">
+        : `<div class="columna" style="gap:.4rem; width:100%; max-width:var(--ancho-lista)">
              <p class="chico centro" style="text-align:center; margin:0; color:var(--tu-100)">
                Ya están dentro ${cuantos} participante${cuantos === 1 ? '' : 's'}:
              </p>
@@ -1116,7 +1185,7 @@ function vistaTV() {
           Escribe el código que muestra la pantalla del presentador y este
           televisor sigue la partida.
         </p>
-        <div class="columna" style="gap:.8rem; max-width:340px; width:100%">
+        <div class="columna" style="gap:.8rem; max-width:var(--ancho-form); width:100%">
           <div class="campo">
             <label for="codigo-tv">Código de la sala ${ayuda('Son los cinco caracteres que muestra el presentador. Se pueden escribir con espacios: «B 7 3 W S» es lo mismo que «B73WS».')}</label>
             <input id="codigo-tv" type="text" maxlength="12" autocapitalize="characters"
@@ -1350,6 +1419,25 @@ function render() {
     htmlAnterior = html;
   }
   document.body.classList.toggle('tv', vista === 'tv');
+
+  /* Escalar y ajustar, en este orden y sin diferir.
+     El ajuste de texto mide renglones comparando contra la raíz: si la
+     compensación todavía no está aplicada, los `rem` valen otra cosa y la
+     cuenta sale mal. Por eso la escala va primero y de forma sincrónica. */
+  escala.ahora();
+  ajustarTextos($app);
+
+  /* Segunda pasada en el cuadro siguiente.
+     La primera mide con la maqueta a medio asentar: la columna del texto
+     todavía no tiene su ancho final, así que un párrafo «cabe» en una línea y
+     al asentarse ocupa tres. Medido: una descripción de 37 caracteres se
+     quedaba en tres renglones con la letra al máximo por esta causa. La
+     segunda pasada mide lo que de verdad quedó pintado y corrige.
+     Es idempotente: empieza limpiando el recorte anterior, así que puede
+     crecer otra vez si ahora entra. */
+  if (typeof requestAnimationFrame === 'function') {
+    requestAnimationFrame(() => ajustarTextos($app));
+  }
 
   // Al salir de la pantalla del televisor se suelta su sondeo: una consulta
   // viva desde una vista abandonada gasta datos y batería sin que nadie
