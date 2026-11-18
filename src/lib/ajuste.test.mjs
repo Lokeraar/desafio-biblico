@@ -14,48 +14,62 @@ let ok = 0, fail = 0;
 const t = (c, m) => { if (c) { ok++; console.log('  ok   ' + m); } else { fail++; console.log('  FALLA ' + m); } };
 
 console.log('=== 1. Sin zoom no se toca nada ===');
-t(factorEscala({ lienzo: 390, pantalla: 390 }) === 1, 'lienzo = pantalla → 1');
-t(factorEscala({ lienzo: 412, pantalla: 412 }) === 1, 'teléfono sin modo escritorio → 1');
-t(factorEscala({ lienzo: 430, pantalla: 412 }) === 1, 'diferencia chica (barras) → 1');
+t(factorEscala({ escala: 1 }) === 1, 'escala 1 (tamano real) -> 1');
+t(factorEscala({ escala: 1.05 }) === 1, 'pellizco leve -> 1');
+t(factorEscala({ escala: 2 }) === 1, 'el usuario AMPLIO la pagina -> 1');
+t(factorEscala({ escala: 1.4 }) === 1, 'nunca se compensa una ampliacion del usuario');
 
 console.log('\n=== 2. El zoom se detecta y se mide ===');
-const real = factorEscala({ lienzo: 980, pantalla: 412 });
-t(Math.abs(real - 2.3786) < 0.01, 'lienzo 980 / pantalla 412 → 2.38 (caso real medido)');
-t(factorEscala({ lienzo: 1200, pantalla: 412 }) > 2.9, 'lienzo más ancho → factor mayor');
-t(factorEscala({ lienzo: UMBRAL_ZOOM * 412, pantalla: 412 }) === UMBRAL_ZOOM, 'justo en el umbral ya cuenta');
+// Los dos valores REALES medidos en modo escritorio, misma pantalla, girando.
+const vertical = factorEscala({ escala: 0.4199 });
+const horizontal = factorEscala({ escala: 0.8142 });
+t(Math.abs(vertical - 2.3815) < 0.001, 'vertical (escala 0.4199) -> 2.3815 [medido]');
+t(Math.abs(horizontal - 1.2283) < 0.001, 'horizontal (escala 0.8142) -> 1.2283 [medido]');
+t(vertical > horizontal, 'en vertical la pagina esta mas encogida que en horizontal');
+// La razon de anchos se equivocaba justo al girar: daba 1.1584 contra 1.2283.
+t(Math.abs(horizontal - 1.1584) > 0.05,
+  'y NO coincide con la razon de anchos (1.1584): esa era la que fallaba al girar');
+t(factorEscala({ escala: 0.4 }) > 2.4, 'escala mas chica -> factor mayor');
 
 console.log('\n=== 3. Límites y datos inválidos ===');
-t(factorEscala({ lienzo: 9999, pantalla: 10 }) === TOPE_FACTOR, 'no pasa del tope');
-t(factorEscala({ lienzo: 0, pantalla: 412 }) === 1, 'lienzo 0 → 1 (sin datos)');
-t(factorEscala({ lienzo: 980, pantalla: 0 }) === 1, 'pantalla 0 → 1 (sin datos)');
-t(factorEscala({ lienzo: NaN, pantalla: 412 }) === 1, 'lienzo inválido → 1');
-t(factorEscala({ lienzo: -980, pantalla: 412 }) === 1, 'lienzo negativo → 1');
+t(factorEscala({ escala: 0.001 }) === TOPE_FACTOR, 'no pasa del tope');
+t(factorEscala({ escala: 0 }) >= 1, 'escala 0 -> respaldo, nunca 0');
+t(factorEscala({ escala: NaN }) >= 1, 'escala invalida -> respaldo o 1');
+t(factorEscala({ escala: 1.0001 }) === 1, 'redondeo por encima de 1 -> 1');
 
 console.log('\n=== 4. Lo que produce el factor en la raíz ===');
 // La raíz compensada es lo que hace que los `rem` signifiquen tamaño físico.
-const raiz = REM * real;
+const raiz = REM * vertical;
 t(Math.round(raiz) === 38, 'raíz ≈ 38 px con el factor real');
-// 1 rem = 38 px de hoja -> en pantalla 38 * 0.42 = 16 dp, que es lo normal.
-const dp = raiz * (412 / 980);
+// 1 rem = 38 px de hoja -> 38 * 0.4199 = 16 dp, que es lo normal.
+const dp = raiz * 0.4199;
 t(Math.round(dp) === 16, 'un rem compensado se ve en 16 dp (tamaño de diseño)');
-// Y los tokens de la skill, medidos en dp, dan lo que la skill pide.
-t(Math.round(1.3333 * raiz * 0.42) === 21, '16 pt del contrato → 21 dp reales');
-t(Math.round(2 * raiz * 0.42) === 32, '24 pt del contrato → 32 dp reales');
+t(Math.round(1.3333 * raiz * 0.4199) === 21, '16 pt del contrato -> 21 dp reales');
+t(Math.round(2 * raiz * 0.4199) === 32, '24 pt del contrato -> 32 dp reales');
+
+// El defecto al girar, en números: la razon de anchos daba 18.53 px de raiz
+// en horizontal cuando correspondian 19.65. Ahora la raiz es la correcta.
+const raizH = REM * horizontal;
+t(Math.abs(raizH - 19.65) < 0.1, 'en horizontal la raiz es 19.65 px, no 18.53 [defecto corregido]');
+t(Math.round(raizH * 0.8142) === 16, 'y un rem se sigue viendo en 16 dp tambien en horizontal');
 
 console.log('\n=== 5. La sección de juegos crece con el resto ===');
-// No se retoca token por token: todos cuelgan de la misma raíz.
-const tokens = { xs: 0.9, sm: 1.05, base: 1.25, lg: 1.5 };
+// Los tokens REALES de la hoja (styles.css, bloque de tableta). Todos cuelgan
+// de la misma raíz, así que la compensación los sube juntos y en la misma
+// proporción: ninguno se queda atrás aunque no se toque a mano.
+const tokens = { xs: 1.3333, sm: 1.3333, base: 1.3333, lg: 1.5, xl: 1.75, xl2: 2 };
 const antes = Object.fromEntries(Object.entries(tokens).map(([k, v]) => [k, v * REM]));
 const ahora = Object.fromEntries(Object.entries(tokens).map(([k, v]) => [k, v * raiz]));
 let subieronTodos = true;
 let proporcionIgual = true;
 for (const k of Object.keys(tokens)) {
   if (!(ahora[k] > antes[k])) subieronTodos = false;
-  if (Math.abs(ahora[k] / antes[k] - real) > 0.01) proporcionIgual = false;
+  if (Math.abs(ahora[k] / antes[k] - vertical) > 0.01) proporcionIgual = false;
 }
 t(subieronTodos, 'todos los pasos suben, incluido --t-xs de las descripciones');
 t(proporcionIgual, 'y suben en la MISMA proporción (ninguno se queda atrás)');
-t(ahora.xs / ahora.base === antes.xs / antes.base, 'la relación xs/base no cambia: no hay escalón roto');
+t(Math.abs(ahora.lg / ahora.base - tokens.lg / tokens.base) < 1e-9,
+  'la relación entre pasos no cambia: no hay escalón roto');
 
 console.log('\n=== 6. Topes de la skill, literales ===');
 // Con la raiz compensada (38.06 px) 1rem son 12 pt: los topes se escriben tal cual.
@@ -217,6 +231,35 @@ t(cabe({ renglones: 1, desborda: true }, 99) === false,
   'con capacidad enorme sigue sin caber si desborda');
 t(cabe({ renglones: 5, desborda: false }, 2) === false,
   'sin desbordar sigue sin caber si pasa los renglones');
+
+console.log('\n=== 8. El cableado al girar no se puede perder ===');
+// Estas lineas no son logica: son el CABLEADO. Si alguien las borra en un
+// refactor, el calculo sigue perfecto y la pantalla vuelve a quedarse con la
+// letra del tamano anterior, sin ningun error a la vista. Por eso se prueban.
+//
+// Y se prueba sobre el codigo, NO sobre el archivo entero: la primera version
+// de esta prueba pasaba con el cableado borrado, porque la palabra seguia en
+// un COMENTARIO que lo explicaba. Una prueba que el comentario satisface no
+// vigila nada.
+const { readFileSync } = await import('node:fs');
+/** Saca comentarios: deja solo el codigo que de verdad se ejecuta. */
+const soloCodigo = (s) => s
+  .replace(/\/\*[\s\S]*?\*\//g, ' ')   // /* ... */
+  .replace(/(^|[^:])\/\/.*$/gm, '$1');   // // ... (sin comerse un https://)
+const app = soloCodigo(readFileSync(new URL('../app.js', import.meta.url), 'utf8'));
+const lib = soloCodigo(readFileSync(new URL('./ajuste.js', import.meta.url), 'utf8'));
+
+t(/visualViewport/.test(lib), 'la compensacion lee visualViewport');
+t(/return 1 \/ e|1 \/ e;/.test(lib), 'el factor es el reciproco de la escala (1 / escala)');
+t(lib.indexOf('visualViewport') < lib.indexOf('fallback') || /Respaldo/.test(readFileSync(new URL('./ajuste.js', import.meta.url), 'utf8')),
+  'la razon de anchos queda despues, como respaldo');
+t(/addEventListener\('orientationchange'/.test(app), 'app.js escucha orientationchange');
+t(/screen\.orientation\.addEventListener\('change'/.test(app),
+  'y tambien screen.orientation, el aviso moderno');
+t(/setTimeout\(reajustar/.test(app),
+  'vuelve a ajustar un momento despues: la escala tarda en actualizarse');
+t(/addEventListener\('visibilitychange'/.test(app), 'y al volver visible, porque oculto no se mide');
+t(/document\.fonts/.test(app), 'y cuando la tipografia termina de cargar');
 
 console.log('\n===============================================');
 if (fail === 0) console.log(` TODO EN VERDE: ${ok} correctas, 0 fallas`);

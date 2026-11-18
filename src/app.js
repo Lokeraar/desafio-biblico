@@ -82,7 +82,8 @@ function ir(vista) {
 
 window.addEventListener('hashchange', render);
 
-// Al girar o cambiar de tamaño cambia la proporción lienzo/pantalla.
+// Al girar o cambiar de tamaño cambia la escala a la que el navegador dibuja,
+// y con ella el tamaño real de la letra. Reajustar siempre.
 const reajustar = () => { escala.ahora(); ajustarTextos($app); };
 
 /*
@@ -100,7 +101,27 @@ if (typeof document !== 'undefined' && document.fonts) {
     document.fonts.addEventListener('loadingdone', reajustar);
   }
 }
-window.addEventListener('orientationchange', reajustar);
+/*
+ * Al girar el teléfono hay que reajustar DOS veces, y no es un capricho.
+ * `visualViewport.scale` —la medida de la que sale la compensación— tarda en
+ * actualizarse: en el primer aviso de la rotación todavía trae el valor de la
+ * orientación anterior, así que medir de inmediato da la raíz del tamaño
+ * equivocado (medido: 18.53 px en horizontal, cuando corresponden 19.65).
+ * El `setTimeout` deja pasar ese instante y vuelve a aplicar con la escala ya
+ * correcta. El `resize` que el navegador manda después coincide con la
+ * segunda pasada y no molesta: `aplicarEscala` es idempotente, escribe el
+ * mismo número y el navegador no recompone nada.
+ */
+const reajustarTrasGirar = () => {
+  reajustar();
+  if (typeof setTimeout === 'function') setTimeout(reajustar, 300);
+};
+window.addEventListener('orientationchange', reajustarTrasGirar);
+// `screen.orientation` es el aviso moderno: `orientationchange` está en
+// desuso y algunos navegadores ya no lo emiten.
+if (typeof screen !== 'undefined' && screen.orientation && screen.orientation.addEventListener) {
+  screen.orientation.addEventListener('change', reajustarTrasGirar);
+}
 window.addEventListener('resize', reajustar);
 
 /*

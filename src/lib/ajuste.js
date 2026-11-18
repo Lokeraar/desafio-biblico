@@ -40,19 +40,49 @@ export const TOPE_FACTOR = 3;
 /**
  * Cuántas veces el navegador está encogiendo la página.
  *
+ * LA MEDIDA BUENA ES `visualViewport.scale`, NO la razón de anchos.
+ * Durante mucho tiempo esto se calculó como `innerWidth / screen.width`, y
+ * funciona en vertical pero se equivoca al girar el teléfono. Medido en modo
+ * escritorio, misma pantalla, solo girando:
+ *
+ *   vertical   : razón 2.378 | escala 0.4199 | error 0.1 %
+ *   horizontal : razón 1.158 | escala 0.8142 | error 5.7 %
+ *
+ * En horizontal la razón de anchos se queda corta porque `screen.width` pasa a
+ * ser el ALTO físico (846) mientras el lienzo sigue siendo 980: la razón ya no
+ * describe el encogimiento, describe una proporción que casualmente se le
+ * parece. El resultado era una raíz de 18.53 px en vez de 19.65: un 5.7 % de
+ * letra perdida en cada giro.
+ *
+ * `visualViewport.scale` es el propio navegador diciendo a qué escala dibuja.
+ * Su recíproco (`1 / escala`) ES el factor, sin suposiciones, y se mantiene
+ * correcto al girar porque el navegador lo recalcula.
+ *
+ * La razón de anchos queda solo como RESPALDO, para navegadores sin
+ * `visualViewport` (Safari viejo). Y un respaldo del que se sabe que se
+ * equivoca al girar: por eso se usa únicamente si no hay escala disponible.
+ *
  * @param {object} [o]
- * @param {number} [o.lienzo] ancho del lienzo, por omisión `innerWidth`
- * @param {number} [o.pantalla] ancho del dispositivo, por omisión `screen.width`
+ * @param {number} [o.escala] `visualViewport.scale`, por omisión el del navegador
  * @returns {number} 1 si no hay zoom; mayor que 1 si la página está encogida
  */
-export function factorEscala({ lienzo, pantalla } = {}) {
-  const L = typeof lienzo === 'number' ? lienzo : (typeof window !== 'undefined' ? window.innerWidth : 0);
-  const P = typeof pantalla === 'number' ? pantalla
-    : (typeof screen !== 'undefined' ? Number(screen.width) : 0);
+export function factorEscala({ escala } = {}) {
+  const e = typeof escala === 'number' ? escala
+    : (typeof visualViewport !== 'undefined' && visualViewport ? Number(visualViewport.scale) : 0);
 
-  // Sin los dos datos no se puede calcular nada: se deja como está.
+  if (e > 0) {
+    // La escala va de 0 a 1 mientras la página está encogida; 1 es tamaño real.
+    const factor = 1 / e;
+    // Una escala mayor que 1 es AMPLIACIÓN (pellizco del usuario): no se toca.
+    if (!(factor >= UMBRAL_ZOOM)) return 1;
+    return Math.min(factor, TOPE_FACTOR);
+  }
+
+  // Respaldo sin `visualViewport`: razón de anchos, sabiendo que se desvía al
+  // girar en modo escritorio. Mejor una aproximación que ninguna.
+  const L = typeof window !== 'undefined' ? window.innerWidth : 0;
+  const P = typeof screen !== 'undefined' ? Number(screen.width) : 0;
   if (!(L > 0) || !(P > 0)) return 1;
-
   const factor = L / P;
   if (!(factor >= UMBRAL_ZOOM)) return 1;
   return Math.min(factor, TOPE_FACTOR);
