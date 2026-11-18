@@ -51,12 +51,18 @@ git -C /storage/emulated/0/Download/Proyectos/Desafío-Bíblico push origin main
 ## Antes de dar algo por terminado
 
 ```bash
-# Pruebas de JavaScript (son 328; ninguna necesita dependencias)
-for f in engine local partida cloud render qr admin-ui; do node src/lib/$f.test.mjs; done
-
-# Pruebas de SQL: 67 comprobaciones
-psql -h /data/data/com.termux/files/usr/var/run -U postgres -d limpia -f supabase/tests/smoke.sql
+bash scripts/probar.sh          # todo: 328 de JavaScript + 67 de SQL
+bash scripts/probar.sh --js     # solo JavaScript (no necesita Postgres)
+bash scripts/probar.sh --sql    # solo SQL
 ```
+
+Sale con código 0 **solo si todo pasó**, y cuando una suite falla nombra cuál
+y muestra sus líneas `FALLA`. No hay que correr las ocho suites a mano ni
+interpretar ocho salidas distintas.
+
+Si el Postgres local no está levantado, la parte de SQL se **omite** con su
+instrucción para levantarlo, en vez de reportarse como fallo: confundir «no
+probado» con «falló» hace perseguir un error que no existe.
 
 El Postgres local vive en `~/.cache/desafio-pg` (el almacenamiento compartido
 no deja que Postgres sea dueño de su propio directorio). Se cae con los
