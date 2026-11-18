@@ -1450,3 +1450,5 @@ body.tv .tarjeta-config { padding: 1.4rem; }
 /* El televisor ya tiene su propia escala y su propio diseño de pantalla
    completa; se deja como estaba para no cambiar lo que ya funciona. */
 body.tv .opciones { grid-template-columns: 1fr; }
+
+/* Marca de prueba: se quita enseguida. */
