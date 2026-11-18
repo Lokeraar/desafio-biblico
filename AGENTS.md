@@ -10,37 +10,28 @@ sueltos, módulos ES, sin compilación y sin `package.json`.
 
 ---
 
-## Publicar: usa el script, no lo hagas a mano
+## Publicar
 
 ```bash
-bash scripts/publicar.sh "Mensaje del commit"
+publicar "Mensaje del commit"
 ```
 
-Hace commit, push y verificación contra el remoto real en un solo paso.
-Desde cualquier directorio funciona igual.
+`publicar` es un comando **general** (vive en `~/.local/bin/`), no de este
+proyecto: sirve para cualquier repositorio, resuelve la raíz con `git` y
+funciona desde cualquier directorio o subdirectorio. Hace commit, push y
+verificación contra el remoto real.
 
-**No uses otra forma.** Estas dos cosas se rompían en cada entrega y ya están
-resueltas dentro del script:
+No hay que repetir aquí por qué está escrito así, ni cuáles fueron los
+tropiezos: está en la regla general, `agent/rules/operacion-repetida.md`,
+que se carga en toda sesión.
 
-1. **El `cd` a mitad de comando.** Una sesión que arranca en otro directorio,
-   o un `cd` que falla, deja el resto del comando corriendo en el lugar
-   equivocado: `git` no encuentra el repositorio y el commit no ocurre. El
-   script usa `git -C` con **ruta absoluta**, nunca `cd`.
-2. **El guardia de entrega**, que rechaza `push` cuando el repositorio no se
-   puede resolver desde el directorio actual. Se resuelve igual: `git -C` con
-   ruta absoluta.
+Lo específico de este proyecto va en `scripts/al-publicar.sh`, que el comando
+general llama solo tras un push verificado. Aquí: comprobar que GitHub Pages
+sirva de verdad el archivo nuevo, por **bytes** y no buscando una cadena.
+Subir a `main` **es** publicar: este repositorio no tiene flujo de trabajo.
 
-Otras cosas que el script ya maneja y no hace falta repetir a mano:
-
-- Si no hay cambios, avisa y termina **sin error**.
-- El trabajo se hace **antes** de imprimir el resumen: cortar la salida (por
-  ejemplo con `| head`) no deja el commit a medias.
-- Verifica contra el remoto de verdad (`git ls-remote`), no contra
-  `origin/main` local, que el propio `push` ya actualizó.
-- Después de subir, comprueba que GitHub Pages sirva el archivo por bytes.
-  Subir a `main` **es** publicar: no hay flujo de trabajo.
-
-Para publicar en otro momento solo el envío, tras un push fallido:
+Si el `push` falla y solo hay que reintentar el envío, la ruta tiene que ir
+**literal** (el guardia de entrega lee el texto del comando):
 
 ```bash
 git -C /storage/emulated/0/Download/Proyectos/Desafío-Bíblico push origin main
