@@ -464,6 +464,24 @@ function traducirError(codigo) {
  *   3. si es correcta se aplica; si no, no;
  *   4. en los dos casos se guarda lo escrito y el campo vuelve a ser texto.
  */
+/**
+ * «Juego: …» debajo del lema.
+ *
+ * Dice en una línea qué juego se va a lanzar, porque los tres botones de
+ * abajo (presentador, participante, televisor) cambian de comportamiento
+ * según esto. Sin el rótulo, el presentador no tiene forma de saber en qué
+ * juego va a crear la sala.
+ */
+function juegoActualHTML(juegos) {
+  const j = juegos.find(x => x.slug === app.juegoElegido);
+  if (!j) return '';
+  return `
+    <p class="menu-juego-actual">
+      <span class="rotulo">Juego:</span>
+      <span class="valor">${esc(j.nombre)}</span>
+    </p>`;
+}
+
 function lemaHTML() {
   const editando = app.editandoLema !== null;
 
@@ -527,6 +545,7 @@ function vistaMenu() {
         <span aria-hidden="true">⭐</span>
       </div>
       ${lemaHTML()}
+      ${juegoActualHTML(juegos)}
 
       ${/*
         El menú es donde aterriza el jugador cuando el servidor cierra la
@@ -557,14 +576,20 @@ function vistaMenu() {
 
       <div class="menu-juegos">
         ${juegos.map(j => `
-          <button class="juego-tarjeta${j.listo ? ' listo' : ''}"
+          <button class="juego-tarjeta${j.listo ? ' listo' : ''}${
+                  j.slug === app.juegoElegido ? ' elegido' : ''}"
+                  ${j.slug === app.juegoElegido ? 'aria-current="true"' : ''}"
                   ${j.listo ? `data-accion="elegir-juego" data-juego="${j.slug}"` : 'disabled'}>
             <span class="icono" aria-hidden="true">${j.icono}</span>
             <span class="texto">
               <span class="nombre">${esc(j.nombre)}</span>
               <span class="desc">${esc(j.desc)}</span>
             </span>
-            <span class="insignia">${j.listo ? 'Abierto' : 'Pronto'}</span>
+            <span class="insignia">${
+              j.listo
+                ? (j.slug === app.juegoElegido ? 'Seleccionado' : 'Elegible')
+                : 'Pronto'
+            }</span>
           </button>`).join('')}
       </div>
 
@@ -2247,14 +2272,18 @@ document.addEventListener('click', async ev => {
      * selección simple para una sala de versículos y la sala nacería vacía.
      */
     case 'elegir-juego': {
+      // Elegir juego NO entra al panel: el menú es el selector, y desde ahí
+      // se decide a dónde ir. Solo se guarda la elección y se redibuja.
       const juego = el.dataset.juego;
-      if (juego !== app.juegoElegido) {
-        app.juegoElegido = juego;
-        app.temaElegido = null;
-        app.temas = [];
-        app.temasCargados = false;
-      }
-      ir('host');
+      if (juego === app.juegoElegido) break;
+      app.juegoElegido = juego;
+      // Cada juego tiene sus propios temas, aunque se llamen igual: el de
+      // «2 Corintios» de selección simple no sirve para completar el
+      // versículo. Al cambiar de juego se limpia lo cargado.
+      app.temaElegido = null;
+      app.temas = [];
+      app.temasCargados = false;
+      render();
       break;
     }
 

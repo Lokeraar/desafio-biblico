@@ -2019,3 +2019,41 @@ body.tv .opciones { grid-template-columns: 1fr; }
 /* Avisos: ya existen los colores base, aquí solo el tamaño del que gana. */
 .jugador-versiculo .aviso,
 .pie-tv .aviso { font-size: var(--t-sm); font-weight: 700; }
+
+/* ---------- menú: qué juego está elegido ---------- */
+/* Debajo del lema y antes de los botones: dice en una línea qué juego se
+   va a lanzar. Los tres botones de abajo cambian según esto, así que el
+   rótulo tiene que leerse antes de tocarlos. */
+.menu-juego-actual {
+  margin: .2rem 0 .6rem;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: .45rem;
+  flex-wrap: wrap;
+  font-size: var(--t-sm);
+  text-align: center;
+}
+.menu-juego-actual .rotulo {
+  color: var(--tinta-suave);
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  font-size: var(--t-xs);
+}
+.menu-juego-actual .valor {
+  color: var(--amarillo);
+  font-weight: 800;
+}
+
+/* La tarjeta del juego activo se distingue del resto sin gritar: borde
+   dorado y fondo algo más claro. La insignia ya dice «Seleccionado». */
+.juego-tarjeta.elegido {
+  border-color: var(--amarillo);
+  background: linear-gradient(135deg, rgba(252, 209, 22, .12), rgba(0, 160, 176, .10));
+  box-shadow: 0 0 22px rgba(252, 209, 22, .18);
+}
+.juego-tarjeta.elegido .insignia {
+  background: var(--amarillo);
+  color: #3a2c00;
+}
