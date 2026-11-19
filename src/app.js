@@ -23,6 +23,7 @@ import { qrSVG } from './lib/qr.js';
 import { ceremoniaHTML, totalPasos } from './lib/render.js';
 import {
   pantallaParticipante, pantallaTV, listaTurnosHTML, modalJuicioHTML,
+  versiculoHostHTML,
   versiculoDesdeServidor, felicitacion
 } from './lib/versiculo.js';
 import { crearEscalador, ajustarTextos } from './lib/ajuste.js';
@@ -269,6 +270,10 @@ function portadaMostrada() {
 }
 
 const CLAVE_SESION = 'desafio-biblico-sesion';
+// El juego elegido en el menú sobrevive a entrar a cualquier vista y a
+// recargar la página. Sin esto, volver al menú devolvía siempre a selección
+// simple y el presentador tenía que reelegir cada vez.
+const CLAVE_JUEGO = 'desafio-biblico-juego';
 // La sala del presentador se guarda aparte: si refresca, debe volver a SU
 // sala con sus participantes, no encontrarse el panel vacío.
 const CLAVE_HOST = 'desafio-biblico-host';
@@ -278,6 +283,26 @@ function guardarSesion() {
     if (app.yo) localStorage.setItem(CLAVE_SESION, JSON.stringify(app.yo));
     else localStorage.removeItem(CLAVE_SESION);
   } catch { /* modo privado: la sesión vive solo en memoria */ }
+}
+
+function guardarJuego(slug) {
+  try { localStorage.setItem(CLAVE_JUEGO, String(slug)); }
+  catch { /* modo privado: la elección vive solo en memoria */ }
+}
+
+/**
+ * El juego guardado, o null si no hay ninguno válido.
+ *
+ * Se valida contra la lista de juegos conocidos: si el almacenamiento trae
+ * basura o el slug de un juego que ya no existe, se ignora en vez de dejar
+ * la app en un estado que ninguna pantalla sabe dibujar.
+ */
+function leerJuego() {
+  const VALIDOS = ['seleccion-simple', 'completar-versiculo'];
+  try {
+    const guardado = localStorage.getItem(CLAVE_JUEGO);
+    return VALIDOS.includes(guardado) ? guardado : null;
+  } catch { return null; }
 }
 
 function leerSesion() {
@@ -672,28 +697,45 @@ function panelVersiculo(estado) {
         <span class="mini tenue">Escanea el QR o escribe el código</span>
       </div>
     </div>
-
-    ${jugando.length ? `
-      <ul class="lista-participantes">
-        ${jugando.map(p => `
-          <li class="participante">
-            <span class="p-nombre">${esc(p.name)}</span>
-            <span class="p-puntos">${p.score ?? 0}</span>
-            <button class="mini-btn" data-accion="expulsar" data-id="${p.id}"
-                    title="Expulsar a ${esc(p.name)}"
-                    aria-label="Expulsar a ${esc(p.name)}">✕</button>
-          </li>`).join('')}
-      </ul>` : `<div class="aviso info">Todavía no entró nadie. Comparte el código.</div>`}
   `;
 
-  // Sin ronda: la sala existe y espera. Con botón, nunca una pantalla muerta.
+  // La lista va al final de la pantalla, debajo del botón: primero se ve el
+  // código, luego lo que hay que hacer, y abajo quién llegó. Mismo orden que
+  // selección simple.
+  /* Reusa la lista de participantes que ya existe (`.lista-jugadores` y
+     `.nombre-j`), con su estilo y su rejilla. Inventar clases nuevas para lo
+     mismo dejó la lista sin CSS: se dibujaba cruda, sin separación, y
+     parecía que los participantes no estaban. */
+  const lista = `
+    <div class="columna" style="gap:.4rem">
+      <h3 style="font-size:var(--t-sm); margin:0">Participantes</h3>
+      ${jugando.length === 0
+        ? '<p class="mini tenue">Nadie ha entrado todavía. Comparte el código.</p>'
+        : `<ul class="lista-jugadores">${jugando.map(p => `
+            <li>
+              <span class="nombre-j">${esc(p.name)}</span>
+              <span class="chico tenue">${p.score ?? 0} pt${(p.score ?? 0) === 1 ? '' : 's'}</span>
+              <button class="mini-btn" data-accion="expulsar" data-id="${p.id}"
+                title="Retirar de la sala">✕</button>
+            </li>`).join('')}</ul>`}
+    </div>`;
+
+  // Lobby: la sala existe y espera. Mismo orden que selección simple —
+  // código y QR, aviso de que está lista, el botón que ABRE el presentador,
+  // y abajo la lista de quién entró. Nada se abre solo.
   if (!r) {
     return `
       ${cabecera}
       <main class="crecer columna" style="gap:1rem; margin-top:1rem">
         ${entorno}
         ${avisoHTML()}
-        <button class="boton-grande" data-accion="abrir">Abrir el primer versículo</button>
+        <div class="columna" style="gap:.8rem; margin-top:.5rem">
+          <div class="aviso info">
+            Lista para empezar: ${app.cantidadPreguntas} versículos preparados.
+          </div>
+          <button class="boton-grande" data-accion="abrir">Empezar el primer versículo</button>
+        </div>
+        ${lista}
       </main>`;
   }
 
@@ -747,25 +789,26 @@ function panelVersiculo(estado) {
 
       <div class="fila-entre">
         ${r.reference ? `<span class="mini tenue">${esc(r.reference)}</span>` : '<span></span>'}
-        <span class="mini tenue">${listos} de ${nHuecos} a la vista</span>
+        <span class="mini tenue">
+          ${listos} de ${nHuecos} palabras a la vista
+          ${ayuda('Cuántas de las palabras ocultas de este versículo ya se destaparon. '
+                + 'El presentador las ve todas subrayadas; los participantes solo ven las destapadas.')}
+        </span>
       </div>
 
       ${r.state === 'open' && !estado.paused ? barraTiempoHTML(r) : ''}
 
-      <p class="enunciado">${esc(r.prompt).replace(/_{4,}/g, '<span class="hueco"></span>')}</p>
-
-      <details class="respuesta-host">
-        <summary>👁 Ver la respuesta</summary>
-        <p>${esc(v?.respuesta ?? 'Se destapa al cerrar la ronda.')}</p>
-        ${huecos.length
-          ? `<ul class="huecos-host">${huecos.map(h =>
-              `<li class="${h.revelado ? 'visto' : ''}">${esc(h.respuesta)}${h.revelado ? ' ✓' : ''}</li>`
-            ).join('')}</ul>`
-          : ''}
-      </details>
+      ${/*
+        El presentador ve el versículo COMPLETO, con las palabras ocultas
+        subrayadas: eso le dice cuáles no ven los demás, sin un bloque aparte
+        que repita la respuesta. Las que ya se destaparon van sin subrayar,
+        porque ya las ve todo el mundo.
+      */''}
+      <p class="enunciado">${versiculoHostHTML(r.prompt, huecos)}</p>
 
       ${listaTurnosHTML(v)}
       ${controles}
+      ${lista}
     </main>`;
 }
 
@@ -1902,6 +1945,24 @@ function modalActivo() {
 function render() {
   const { vista } = rutaActual();
 
+  /* Si hay una sala viva, SU juego es el último que se jugó: entra a valer
+     como el elegido aunque se haya llegado con un código y sin pasar por el
+     menú. Se hace aquí, en el único sitio por donde pasan todos los estados,
+     en vez de en cada sondeo por separado.
+
+     SOLO fuera del menú. Dentro del menú manda lo que la persona acaba de
+     elegir: si un estado viejo de otra sala siguiera en memoria, tocar una
+     tarjeta se revertiría sola en el siguiente render y el botón parecería
+     no responder. */
+  const juegoDeLaSala = vista === 'menu' ? null : app.estado?.gameSlug;
+  if (juegoDeLaSala && juegoDeLaSala !== app.juegoElegido) {
+    app.juegoElegido = juegoDeLaSala;
+    guardarJuego(juegoDeLaSala);
+    app.temas = [];
+    app.temasCargados = false;
+    app.temaElegido = null;
+  }
+
   let html;
   switch (vista) {
     case 'host':  html = vistaHost(); break;
@@ -2216,16 +2277,10 @@ document.addEventListener('click', async ev => {
           }));
         } catch { /* modo privado: la sala solo vive en memoria */ }
 
-        // La sala nace en 'lobby' y sin ronda. En completar el versículo se
-        // abre la primera pregunta acto seguido: el presentador ya eligió el
-        // tema y la cantidad, y un panel en «cargando» sin botón lo dejaba
-        // atascado sin forma de arrancar.
-        if (app.juegoElegido === 'completar-versiculo') {
-          const primera = await host.abrir();
-          if (primera?.error) {
-            ponerAviso('error', traducirError(primera.error));
-          }
-        }
+        // NO se abre la primera pregunta sola. La sala nace en 'lobby' y la
+        // espera es parte del juego: la gente entra, el presentador ve quién
+        // llegó, y recién entonces pulsa. Abrirla sola se saltaba el lobby
+        // entero y nadie alcanzaba a entrar.
         render();
         break;
       }
@@ -2326,6 +2381,7 @@ document.addEventListener('click', async ev => {
       const juego = el.dataset.juego;
       if (juego === app.juegoElegido) break;
       app.juegoElegido = juego;
+      guardarJuego(juego);
       // Cada juego tiene sus propios temas, aunque se llamen igual: el de
       // «2 Corintios» de selección simple no sirve para completar el
       // versículo. Al cambiar de juego se limpia lo cargado.
@@ -2752,6 +2808,12 @@ addEventListener('pagehide', () => {
   app.tv = null;
 });
 (function iniciar() {
+  // El juego elegido se restaura antes que cualquier otra cosa: el menú y el
+  // panel del presentador se dibujan según esto, así que tiene que estar
+  // puesto antes del primer render.
+  const juegoGuardado = leerJuego();
+  if (juegoGuardado) app.juegoElegido = juegoGuardado;
+
   const sesion = leerSesion();
 
   // Volver a la partida tras recargar o tras un corte de señal.

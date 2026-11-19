@@ -247,6 +247,10 @@ export function estadoDesdeServidor(bruto, { completo = false } = {}) {
       optionKeys: opciones.map(o => (typeof o === 'string' ? null : o.k)),
       // Solo viene cuando el servidor decide que ya se puede publicar.
       correctIdx: idxCorrecto >= 0 ? idxCorrecto : null,
+      // El bloque del juego de versículos, tal cual lo manda el servidor.
+      // Sin esta línea se descartaba aquí y la pantalla mostraba «0 de 0»:
+      // el dato existía en la respuesta y se perdía al traducirla.
+      versiculo: r.versiculo ?? null,
       // La marca de arranque de la ronda. Con este valor se FIJA el desfase
       // que moverá la barra durante toda la ronda: se congela aquí, una sola
       // vez, y no se vuelve a tocar hasta la ronda siguiente. Sin esto, cada

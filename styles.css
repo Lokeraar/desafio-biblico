@@ -2060,3 +2060,35 @@ body.tv .opciones { grid-template-columns: 1fr; }
   background: var(--amarillo);
   color: #3a2c00;
 }
+
+/* ---------- presentador: la palabra oculta, subrayada ---------- */
+/* El presentador ve el versículo COMPLETO. Las palabras que los demás no
+   ven van subrayadas y en amarillo: eso le dice cuáles son sin un bloque
+   aparte que repita la respuesta. */
+.hueco-host {
+  color: var(--amarillo);
+  border-bottom: 2px solid var(--amarillo);
+  padding-bottom: 1px;
+  font-weight: 800;
+}
+
+/* ---------- tarjeta de sala: QR y datos a la par ---------- */
+/* El QR y el texto comparten UNA altura: antes el QR era cuadrado y la
+   columna de texto crecía a su aire, así que la tarjeta quedaba con una
+   mitad llena y la otra desbordada. Ahora la rejilla manda y las dos
+   columnas se alinean arriba y abajo. */
+.sala-cabecera {
+  align-items: stretch;
+}
+.sala-cabecera .qr-caja {
+  /* Cuadrado, pero atado al alto de la fila: si el texto es más alto, el
+     QR no crece más allá de su columna. */
+  align-self: center;
+  max-height: 100%;
+}
+.sala-cabecera .sala-datos {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: .3rem;
+}

@@ -5,7 +5,7 @@
    de revelarse, el juego se pierde entero. */
 import {
   felicitacion, todasLasFelicitaciones, versiculoDesdeServidor,
-  versiculoHTML, avisoParticipante, miTurnoTexto, estadoBoton,
+  versiculoHTML, versiculoHostHTML, avisoParticipante, miTurnoTexto, estadoBoton,
   pantallaParticipante, pantallaTV, listaTurnosHTML, modalJuicioHTML
 } from './versiculo.js';
 
@@ -77,6 +77,14 @@ const conFuga = versiculoDesdeServidor(estadoDe({
 }));
 t(conFuga.respuesta === null, 'LA REGLA: sin respuesta del servidor, no hay respuesta en pantalla');
 
+/* El defecto que dejaba «0 de 0»: cloud.js no copiaba el bloque del
+   servidor a la ronda, asi que la pantalla recibia undefined y contaba 0. */
+const conBloque = versiculoDesdeServidor({
+  round: { versiculo: { huecos_totales: 3, revelados: [0], completo: false, pulsos: [] } }
+});
+t(conBloque.huecosTotales === 3, 'el bloque del servidor llega con sus huecos totales');
+t(conBloque.revelados.length === 1, 'y con lo ya revelado');
+
 const revelado = versiculoDesdeServidor(estadoDe({
   state: 'revealed',
   versiculo: { respuesta: 'Vosotros sois nuestra carta, escrita en nuestros corazones', completo: true }
@@ -96,6 +104,34 @@ t(!lleno.includes('class="hueco"'), 'un texto completo no inventa huecos');
 const conEtiquetas = versiculoHTML('Dijo <b>esto</b> y ____');
 t(conEtiquetas.includes('&lt;b&gt;'), 'escapa el HTML del texto');
 t(conEtiquetas.includes('class="hueco"'), 'y aun así marca el hueco');
+
+/* ------------------------------------------------------------------ */
+console.log('\n=== 3b. El versiculo del presentador ===');
+/* El presentador ve el versiculo COMPLETO y las palabras ocultas van
+   subrayadas: eso le dice cuales no ven los demas. Ya no hay bloque
+   «Ver la respuesta» que las repita. */
+const hh = versiculoHostHTML('En honra y en ____ , como ____ , pero veraces', [
+  { indice: 0, respuesta: 'deshonra', revelado: false },
+  { indice: 1, respuesta: 'impostores', revelado: false }
+]);
+t(hh.includes('deshonra') && hh.includes('impostores'), 'muestra las palabras ocultas');
+t((hh.match(/hueco-host/g) || []).length === 2, 'las dos subrayadas');
+t(!hh.includes('____'), 'sin guiones sueltos en medio');
+
+const yaVista = versiculoHostHTML('Uno ____ dos', [
+  { indice: 0, respuesta: 'carta', revelado: true }
+]);
+t(!yaVista.includes('hueco-host'), 'una palabra ya revelada no va subrayada');
+t(!yaVista.includes('carta'), 'y no se repite: va escrita en el propio texto');
+
+const sinHuecos = versiculoHostHTML('Uno ____ dos', []);
+t(sinHuecos.includes('class="hueco"'), 'sin datos deja el hueco normal en vez de romper');
+
+const conHtml = versiculoHostHTML('Dijo <b>x</b> y ____', [
+  { indice: 0, respuesta: 'fin', revelado: false }
+]);
+t(conHtml.includes('&lt;b&gt;'), 'escapa el HTML del versiculo');
+t(conHtml.includes('hueco-host'), 'y aun asi subraya la palabra oculta');
 
 /* ------------------------------------------------------------------ */
 console.log('\n=== 4. Avisos del participante ===');

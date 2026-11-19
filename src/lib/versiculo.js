@@ -103,6 +103,50 @@ export function versiculoHTML(prompt) {
   return texto.replace(/_{4,}/g, '<span class="hueco"></span>');
 }
 
+/**
+ * El mismo versículo, pero como lo lee el presentador.
+ *
+ * Las palabras ocultas se muestran subrayadas y en otro color: así entiende
+ * de un vistazo cuáles son las que los demás NO ven, sin necesidad de un
+ * bloque aparte que repita la respuesta. Un hueco ya revelado va normal,
+ * porque ya lo ve todo el mundo.
+ *
+ * @param {object} vers  bloque del servidor: { contestando, revelados }
+ * @param {Array}  huecos [{ indice, respuesta, revelado }] del presentador
+ */
+export function versiculoHostHTML(prompt, huecos = []) {
+  const texto = prompt ?? '';
+  if (!texto) return '';
+
+  // Las palabras que siguen tapadas, en orden de aparición. Se buscan por
+  // índice del hueco para que el orden no dependa de cómo venga ordenado
+  // el arreglo.
+  const porIndice = new Map();
+  for (const h of huecos) {
+    if (!h.revelado) porIndice.set(h.indice, h.respuesta);
+  }
+  const pendientes = [...porIndice.keys()]
+    .sort((a, b) => a - b)
+    .map(k => porIndice.get(k));
+
+  // El texto se parte por los huecos ANTES de escapar: si se escapara
+  // primero, las etiquetas del subrayado saldrían como texto visible.
+  const trozos = texto.split(/_{4,}/);
+  let salida = '';
+  let i = 0;
+  trozos.forEach((trozo, n) => {
+    salida += esc(trozo);
+    if (n < trozos.length - 1) {
+      const palabra = pendientes[i];
+      salida += palabra
+        ? `<span class="hueco-host">${esc(palabra)}</span>`
+        : '<span class="hueco"></span>';
+      i += 1;
+    }
+  });
+  return salida;
+}
+
 /* ------------------------------------------------------------------ */
 /* Mensajes por estado                                                 */
 /* ------------------------------------------------------------------ */
