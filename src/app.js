@@ -643,18 +643,57 @@ function felicitaPara(s, miPulso) {
  */
 function panelVersiculo(estado) {
   const r = estado?.round;
-  const v = versiculoDesdeServidor(estado);
+  const v = versiculoDesdeServer(estado);
   // Una sola fuente: el estado que ya tradujo el servidor.
   const huecos = estado?.huecos ?? [];
+  // En sala de espera el panel no puede ser una pantalla sin salida: por eso
+  // el QR, el código y la lista van arriba siempre, haya ronda o no.
+  const jugando = (estado?.players ?? []).filter(p => !p.waiting && !p.kicked);
 
+  const cabecera = `
+    <div class="fila-entre">
+      <button class="boton boton-secundario" data-accion="pedir-cerrar-sala">← Menú</button>
+      <span class="fila chico">
+        <span class="punto-vivo"></span> En línea
+      </span>
+    </div>`;
+
+  const entorno = `
+    <div class="sala-cabecera">
+      <div class="qr-caja" title="Escanéalo para entrar a la sala">
+        ${qrSala(estado.code)}
+      </div>
+      <div class="sala-datos">
+        <span class="mini tenue">Código de la sala</span>
+        <div class="codigo-sala">${esc(estado.code ?? '')}</div>
+        <span class="chico tenue">
+          ${jugando.length} participante${jugando.length === 1 ? '' : 's'}
+        </span>
+        <span class="mini tenue">Escanea el QR o escribe el código</span>
+      </div>
+    </div>
+
+    ${jugando.length ? `
+      <ul class="lista-participantes">
+        ${jugando.map(p => `
+          <li class="participante">
+            <span class="p-nombre">${esc(p.name)}</span>
+            <span class="p-puntos">${p.score ?? 0}</span>
+            <button class="mini-btn" data-accion="expulsar" data-id="${p.id}"
+                    title="Expulsar a ${esc(p.name)}"
+                    aria-label="Expulsar a ${esc(p.name)}">✕</button>
+          </li>`).join('')}
+      </ul>` : `<div class="aviso info">Todavía no entró nadie. Comparte el código.</div>`}
+  `;
+
+  // Sin ronda: la sala existe y espera. Con botón, nunca una pantalla muerta.
   if (!r) {
     return `
-      <div class="fila-entre">
-        <button class="boton boton-secundario" data-ir="menu">← Menú</button>
-      </div>
-      <main class="crecer columna centro">
-        <h1>Panel del presentador</h1>
-        <p class="tenue">Cargando la primera pregunta…</p>
+      ${cabecera}
+      <main class="crecer columna" style="gap:1rem; margin-top:1rem">
+        ${entorno}
+        ${avisoHTML()}
+        <button class="boton-grande" data-accion="abrir">Abrir el primer versículo</button>
       </main>`;
   }
 
@@ -662,23 +701,21 @@ function panelVersiculo(estado) {
   const listos = v ? v.revelados.length : 0;
 
   let controles = '';
-  if (r.state === 'prepared') {
-    controles = `
-      <div class="fila-botones">
-        <button data-accion="iniciar">▶ Soltar temporizador (${estado.roundSeconds ?? 15} s)</button>
-      </div>
-      <div class="fila-botones">
-        <button class="boton-secundario" data-accion="cambiar-pregunta">🔄 Cambiar versículo</button>
-      </div>`;
-  } else if (r.state === 'open') {
-    controles = `
-      <div class="fila-botones">
-        <button class="boton-secundario" data-accion="pausar">${estado.paused ? '▶ Reanudar' : '⏸ Pausar'}</button>
-        <button data-accion="cerrar-pulsaciones">Cerrar pulsaciones</button>
-      </div>
-      <div class="fila-botones">
-        <button class="boton-secundario" data-accion="cambiar-pregunta">🔄 Cambiar versículo</button>
-      </div>`;
+  if (r.state === 'prepared' || r.state === 'open') {
+    controles = r.state === 'prepared'
+      ? `<div class="fila-botones">
+           <button data-accion="iniciar">▶ Soltar temporizador (${estado.roundSeconds ?? 15} s)</button>
+         </div>
+         <div class="fila-botones">
+           <button class="boton-secundario" data-accion="cambiar-pregunta">🔄 Cambiar versículo</button>
+         </div>`
+      : `<div class="fila-botones">
+           <button class="boton-secundario" data-accion="pausar">${estado.paused ? '▶ Reanudar' : '⏸ Pausar'}</button>
+           <button data-accion="cerrar-pulsaciones">Cerrar pulsaciones</button>
+         </div>
+         <div class="fila-botones">
+           <button class="boton-secundario" data-accion="cambiar-pregunta">🔄 Cambiar versículo</button>
+         </div>`;
   } else if (r.state === 'juicio') {
     const turno = v?.contestando;
     controles = `
@@ -703,22 +740,23 @@ function panelVersiculo(estado) {
   }
 
   return `
-    <div class="fila-entre">
-      <button class="boton boton-secundario" data-ir="menu">← Menú</button>
-      <span class="sala">${esc(estado.code ?? '')}</span>
-    </div>
-    <main class="crecer columna" style="gap:.9rem">
+    ${cabecera}
+    <main class="crecer columna" style="gap:1rem; margin-top:1rem">
+      ${entorno}
+      ${avisoHTML()}
+
       <div class="fila-entre">
-        ${r.reference ? `<span class="ref">${esc(r.reference)}</span>` : '<span></span>'}
-        <span class="tenue mini">${listos} de ${nHuecos} a la vista</span>
+        ${r.reference ? `<span class="mini tenue">${esc(r.reference)}</span>` : '<span></span>'}
+        <span class="mini tenue">${listos} de ${nHuecos} a la vista</span>
       </div>
 
-      <p class="versiculo">${esc(r.prompt)
-        .replace(/_{4,}/g, '<span class="hueco"></span>')}</p>
+      ${r.state === 'open' && !estado.paused ? barraTiempoHTML(r) : ''}
+
+      <p class="enunciado">${esc(r.prompt).replace(/_{4,}/g, '<span class="hueco"></span>')}</p>
 
       <details class="respuesta-host">
         <summary>👁 Ver la respuesta</summary>
-        <p>${esc(v?.respuesta ?? 'Se revela al cerrar la ronda.')}</p>
+        <p>${esc(v?.respuesta ?? 'Se destapa al cerrar la ronda.')}</p>
         ${huecos.length
           ? `<ul class="huecos-host">${huecos.map(h =>
               `<li class="${h.revelado ? 'visto' : ''}">${esc(h.respuesta)}${h.revelado ? ' ✓' : ''}</li>`
@@ -2177,6 +2215,17 @@ document.addEventListener('click', async ev => {
             roomId: r.roomId, hostToken: r.hostToken, code: r.code
           }));
         } catch { /* modo privado: la sala solo vive en memoria */ }
+
+        // La sala nace en 'lobby' y sin ronda. En completar el versículo se
+        // abre la primera pregunta acto seguido: el presentador ya eligió el
+        // tema y la cantidad, y un panel en «cargando» sin botón lo dejaba
+        // atascado sin forma de arrancar.
+        if (app.juegoElegido === 'completar-versiculo') {
+          const primera = await host.abrir();
+          if (primera?.error) {
+            ponerAviso('error', traducirError(primera.error));
+          }
+        }
         render();
         break;
       }

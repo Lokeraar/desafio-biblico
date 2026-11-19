@@ -118,10 +118,20 @@ console.log('\n=== 10. La capacidad la pone el perfil, no el rol ===');
 // perfil y, de paso, se saltaba el paso de ENCOGER.
 // La capacidad la declara el USUARIO, no el agente. Por eso el unico rol con
 // capacidad propia es el que el declaro: la pregunta, con 2 + 1.
+/* Dos decisiones del usuario conviven aqui, y las dos son legitimas porque
+   las declaro el, no el agente:
+     - .enunciado  -> 2 + 1, la pregunta se lee, no se adivina
+     - el menu     -> 1 + 1, todo el menu principal
+   La regla que sigue en pie: NADIE MAS declara capacidad. Cualquier otro rol
+   hereda el perfil, y el agente no inventa ninguna para que algo quepa. */
 const conCapacidadPropia = ROLES.filter(r => r.renglones != null);
-t(conCapacidadPropia.length === 1, 'un solo rol declara capacidad propia');
-t(conCapacidadPropia[0].sel === '.enunciado', 'y es la pregunta');
-t(conCapacidadPropia[0].renglones === 2, 'con 2 renglones declarados');
+const esDelMenu = (sel) => /menu|juego-tarjeta/.test(sel);
+const pregunta = conCapacidadPropia.filter(r => !esDelMenu(r.sel));
+t(pregunta.length === 1 && pregunta[0].sel === '.enunciado',
+  'fuera del menu, solo la pregunta declara capacidad');
+t(pregunta[0].renglones === 2, 'con 2 renglones declarados');
+t(conCapacidadPropia.filter(r => esDelMenu(r.sel)).every(r => r.renglones === 1),
+  'y el menu entero va en 1 renglon');
 t(PERFILES.ancho.gracia === 1, 'y la gracia del perfil le suma el +1');
 // La prosa SI entra (la capacidad 1+1 es para todo el texto), pero heredando
 // el perfil: sin capacidad propia inventada.
@@ -132,7 +142,12 @@ t(prosaRol.renglones == null, 'y hereda el perfil, sin capacidad inventada');
 // Los botones del menu son UNA decision: un solo grupo, un solo tamano.
 const botones = ROLES.filter(r => r.sel.includes('menu-acciones'));
 t(botones.length === 1, 'los botones del menu son un solo grupo');
-t(botones[0].renglones == null, 'y NO declaran capacidad: la toman del perfil (1+1)');
+/* El menu declara 1 + 1 a proposito, y NO es capacidad inventada: la declaro
+   el usuario («a todo el menu principal aplícale text-fitting 1+1»). En
+   telefono el perfil daba 2 y los botones se veian desbordados; declararla
+   aqui la fija igual en todos los perfiles. Lo que sigue prohibido es que el
+   AGENTE se invente una capacidad para hacer que algo quepa. */
+t(botones[0].renglones === 1, 'los botones del menu declaran 1, por pedido explicito');
 // El selector va por CONTENEDOR (`> button`), no por clase. Medido: dos
 // botones eran .boton-grande y dos .boton, asi que agrupar por clase dejaba
 // fuera a la mitad y la fila quedaba con dos tamanos distintos.

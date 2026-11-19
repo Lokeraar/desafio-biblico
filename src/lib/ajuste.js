@@ -424,18 +424,34 @@ export const ROLES = [
      Y NO declaran capacidad: la toman del perfil, que es 1 + 1 en tableta y
      PC —lo que declaraste— y 2 + 1 en teléfono. Declararla aquí otra vez
      anularía el perfil, que fue exactamente el error anterior. */
-  { sel: '.menu-acciones > button', categoria: 'contenido' },
-  { sel: '.juego-tarjeta .insignia', categoria: 'etiqueta' },
-  /* Nombres y descripciones son contenido: techo de 16 pt. */
-  { sel: '.juego-tarjeta .nombre', categoria: 'contenido' },
-  { sel: '.juego-tarjeta .desc', categoria: 'contenido' },
+  /*
+     EL MENÚ PRINCIPAL VA EN 1 + 1, EN TODOS LOS PERFILES.
+     El usuario lo declaró así: en teléfono el perfil daba 2 renglones y los
+     botones y las tarjetas se veían desbordados o cortados. Se declara la
+     capacidad UNA vez, aquí, y no se deja al perfil: el perfil describe la
+     pantalla en general, y el menú tiene su propia decisión.
+
+     Solo cambia el teléfono: en tableta y PC el perfil ya era 1 + 1. */
+  { sel: '.menu-acciones > button', categoria: 'contenido', renglones: 1 },
+  { sel: '.juego-tarjeta .insignia', categoria: 'etiqueta', renglones: 1 },
+  /* Nombres y descripciones son contenido: techo de 16 pt. En el menú, 1 + 1:
+     una tarjeta que ocupa dos renglones de nombre empuja al hermano y la
+     rejilla deja de leerse como una lista. */
+  { sel: '.juego-tarjeta .nombre', categoria: 'contenido', renglones: 1 },
+  { sel: '.juego-tarjeta .desc', categoria: 'contenido', renglones: 1 },
   /* Títulos: techo de 24 pt. Entran todos los encabezados, incluido el h1
      de la portada, que antes se quedaba con el tamaño de la hoja y partía en
      dos renglones sin que nadie comprobara si encogiendo cabía en uno. */
   { sel: 'h1', categoria: 'titulo' },
   { sel: 'h2', categoria: 'titulo' },
-  { sel: '.menu-seccion', categoria: 'titulo' },
-  { sel: '.menu-lema', categoria: 'contenido' },
+  { sel: '.menu-seccion', categoria: 'titulo', renglones: 1 },
+  /* El título grande de la portada y el resto del menú, acotados con
+     `.menu-cuerpo` para que la misma capacidad no se aplique a los h1 de
+     otras pantallas, que no son este caso. */
+  { sel: '.menu-titulo h1', categoria: 'titulo', renglones: 1 },
+  { sel: '.menu-juego-actual', categoria: 'contenido', renglones: 1 },
+  { sel: '.menu-pie', categoria: 'etiqueta', renglones: 1 },
+  { sel: '.menu-lema', categoria: 'contenido', renglones: 1 },
   /* Párrafos explicativos. El usuario declaró la capacidad 1 + 1 para TODO el
      texto de la interfaz, así que la prosa también entra: si no cabe en dos
      renglones, encoge. Lo que NO se hace es inventarle una capacidad propia
