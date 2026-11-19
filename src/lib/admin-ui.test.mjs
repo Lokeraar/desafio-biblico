@@ -126,6 +126,46 @@ t(vistaConfig({ hayClave: false }).includes('Establecer la clave maestra'), 'sin
 t(vistaConfig({}).includes('data-ir="menu"'), 'tiene salida al menú');
 
 /* ------------------------------------------------------------------ */
+console.log('\n=== 7. El modal de clave dice PARA QUÉ se pide ===');
+
+// Antes decía siempre «modificar los temas y las preguntas», que era verdad
+// cuando lo único detrás era el panel. Ahora también protege el lema y la
+// portada, y quien escribe la clave merece saber qué autoriza.
+t(modalClave({ para: 'entrar' }).includes('temas y las preguntas'),
+  'para entrar al panel, habla del panel');
+t(modalClave({ para: 'lema' }).includes('texto del menú'),
+  'para el lema, habla del texto del menú');
+t(!modalClave({ para: 'lema' }).includes('temas y las preguntas'),
+  'y no habla del panel, que no es lo que va a cambiar');
+t(modalClave({ para: 'portada' }).includes('imagen del menú'),
+  'para la portada, habla de la imagen');
+
+// El para qué viaja en el formulario: el que recibe el envío tiene que saber
+// qué hacer con la clave, sin adivinar por el estado de la app.
+t(modalClave({ para: 'lema' }).includes('data-clave-para="lema"'),
+  'el formulario lleva para qué se pide');
+t(modalClave({}).includes('data-clave-para="entrar"'),
+  'sin decir para qué, entra al panel');
+
+// La vista previa: quien autoriza el cambio lo tiene que ver.
+t(modalClave({ para: 'lema', muestra: 'Romanos · Concurso' }).includes('Romanos · Concurso'),
+  'el modal muestra el texto que se va a guardar');
+t(!modalClave({ para: 'lema' }).includes('lema-confirmado'),
+  'sin texto que mostrar, no aparece el hueco vacío');
+
+// El bloqueo se anuncia ANTES de que escriba, no después de fallar.
+t(modalClave({ para: 'lema', pista: 'bloqueada' }).includes('10 minutos'),
+  'si está bloqueada, lo dice antes de que escriba');
+t(!modalClave({ para: 'lema' }).includes('10 minutos'),
+  'sin bloqueo no se menciona');
+
+// El escapado, que es lo que evita que un texto con etiquetas rompa el modal.
+t(modalClave({ para: 'lema', muestra: '<b>negrita</b>' }).includes('&lt;b&gt;'),
+  'el texto de la vista previa se escapa');
+t(!modalClave({ para: 'lema', muestra: '<b>negrita</b>' }).includes('<b>negrita</b>'),
+  'y no entra crudo al HTML');
+
+/* ------------------------------------------------------------------ */
 console.log('\n===============================');
 console.log(`  ${ok} correctas, ${fail} fallas`);
 console.log('===============================');

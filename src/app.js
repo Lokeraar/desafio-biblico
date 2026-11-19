@@ -16,11 +16,14 @@ import { crearHostNube, crearClienteNube, admin, rpc, resolverSala, mirarSala } 
 import { hayNube } from './config.js';
 import {
   selectorTema, modalClave, modalCambiarClave, modalTemas,
-  modalPreguntas, modalFormPregunta, vistaConfig, validarPregunta
+  modalPreguntas, modalFormPregunta, vistaConfig, validarPregunta,
+  modalProcesando
 } from './lib/admin-ui.js';
 import { qrSVG } from './lib/qr.js';
 import { ceremoniaHTML, totalPasos } from './lib/render.js';
 import { crearEscalador, ajustarTextos } from './lib/ajuste.js';
+import { crearLatido } from './lib/latido.js';
+import { aWebp, crearImagenNavegador, lienzoNavegador, prefijoData } from './lib/imagen.js';
 
 const $app = document.getElementById('app');
 
@@ -200,8 +203,49 @@ const app = {
   modal: null,         // { tipo, ...datos } o null
   adminError: null,    // mensaje de error dentro del modal
   preguntasTema: [],   // preguntas del tema abierto en el modal
-  editarPregunta: null // pregunta que se está editando (null = nueva)
+  editarPregunta: null, // pregunta que se está editando (null = nueva)
+
+  // --- marca del menú: el lema y la portada ---
+  marca: null,         // lo que devuelve la base; null = todavía no se pidió
+  marcaCargada: false, // evita volver a pedirla en cada render
+  // El lema se edita EN EL MENÚ. `editandoLema` es el texto que se está
+  // escribiendo; `null` significa que se ve como texto normal.
+  editandoLema: null,
+  // El primer toque solo señala. Hace falta recordarlo entre un render y el
+  // otro: si viviera en el DOM, cualquier redibujado lo borraría y el segundo
+  // toque nunca llegaría a contar.
+  lemaSenalado: false,
+  // Borrador del cambio en curso: qué se está cambiando y con qué valor.
+  // La clave se pide DESPUÉS de editar, así que el valor tiene que esperar
+  // en algún lado mientras se escribe la clave.
+  marcaPendiente: null // { tipo: 'lema'|'portada', valor }
 };
+
+/*
+ * El lema y la portada que trae el CÓDIGO. La base arranca vacía a propósito:
+ * así una instalación nueva se ve igual que siempre sin que nadie configure
+ * nada, y `null` en la base significa «usa esto».
+ */
+const LEMA_ORIGINAL = '2 Corintios · Concurso de preguntas';
+const PORTADA_ORIGINAL = 'public/img/portada.webp';
+
+/** El lema que hay que mostrar: el guardado, o el del código. */
+function lemaMostrado() {
+  const guardado = app.marca && typeof app.marca.lema === 'string' ? app.marca.lema.trim() : '';
+  return guardado || LEMA_ORIGINAL;
+}
+
+/**
+ * La portada que hay que mostrar.
+ *
+ * La guardada viene en base64 dentro del JSON. Se le arma el prefijo `data:`
+ * para que el navegador la dibuje como cualquier imagen. Si no hay guardada,
+ * se usa el archivo del proyecto.
+ */
+function portadaMostrada() {
+  const guardada = app.marca && typeof app.marca.portada === 'string' ? app.marca.portada : '';
+  return guardada ? prefijoData(guardada) : PORTADA_ORIGINAL;
+}
 
 const CLAVE_SESION = 'desafio-biblico-sesion';
 // La sala del presentador se guarda aparte: si refresca, debe volver a SU
@@ -381,6 +425,51 @@ function traducirError(codigo) {
 /* ------------------------------------------------------------------ */
 /* VISTA: menú                                                         */
 /* ------------------------------------------------------------------ */
+
+/**
+ * El lema del menú, que se edita con DOS toques.
+ *
+ * Dos toques y no un doble clic, y la diferencia importa: un doble clic es un
+ * gesto único que el navegador arma por su cuenta (dos clics en menos de medio
+ * segundo) y que en un teléfono no existe. Acá el primer toque SEÑALA —el
+ * texto queda marcado, y se ve que está seleccionado— y el segundo lo
+ * convierte en un campo editable. Así funciona igual con dedo que con mouse,
+ * y de paso se avisa antes de abrir un campo de escritura, que en una pantalla
+ * táctil es un cambio grande.
+ *
+ * El orden que se pidió, y que no se puede invertir:
+ *   1. se edita el texto;
+ *   2. se pide la clave maestra;
+ *   3. si es correcta se aplica; si no, no;
+ *   4. en los dos casos se guarda lo escrito y el campo vuelve a ser texto.
+ */
+function lemaHTML() {
+  const editando = app.editandoLema !== null;
+
+  if (editando) {
+    return `
+      <form class="menu-lema-editor" data-form="lema">
+        <input id="in-lema" name="lema" type="text" value="${esc(app.editandoLema)}"
+               maxlength="120" autocomplete="off" enterkeyhint="done"
+               aria-label="Texto del menú">
+        <div class="fila" style="gap:.5rem; margin-top:.5rem">
+          <button type="button" class="boton boton-secundario" data-accion="cancelar-lema">
+            Cancelar
+          </button>
+          <button type="submit" class="boton boton-oro">Guardar</button>
+        </div>
+      </form>`;
+  }
+
+  const marcado = app.lemaSenalado === true;
+  return `
+    <p class="menu-lema${marcado ? ' señalado' : ''}" data-accion="editar-lema"
+       role="button" tabindex="0"
+       aria-label="${marcado ? 'Toca otra vez para editar el texto' : 'Texto del menú'}">
+      ${esc(lemaMostrado())}
+    </p>`;
+}
+
 function vistaMenu() {
   const juegos = [
     { slug: 'seleccion-simple', icono: '🎯', nombre: 'Selección simple',
@@ -395,8 +484,18 @@ function vistaMenu() {
   return `
     <header class="menu-cabecera">
       <div class="portada">
-        <img src="public/img/portada.webp" alt="Desafío Bíblico 2026 — 2 Corintios"
+        <img src="${portadaMostrada()}" alt="Desafío Bíblico 2026 — 2 Corintios"
              fetchpriority="high" decoding="async">
+        <!-- El lápiz va en la esquina superior derecha DE LA IMAGEN, no de la
+             pantalla. Es una silueta sin fondo para que no tape la portada, y
+             pide la clave maestra antes de abrir el explorador. -->
+        <button type="button" class="lapiz-portada" data-accion="cambiar-portada"
+                aria-label="Cambiar la imagen del menú"
+                title="Cambiar la imagen del menú">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+          </svg>
+        </button>
       </div>
     </header>
 
@@ -406,7 +505,7 @@ function vistaMenu() {
         <h1>DESAFÍO BÍBLICO</h1>
         <span aria-hidden="true">⭐</span>
       </div>
-      <p class="menu-lema">2 Corintios · Concurso de preguntas</p>
+      ${lemaHTML()}
 
       ${/*
         El menú es donde aterriza el jugador cuando el servidor cierra la
@@ -1321,6 +1420,7 @@ function vistaTV() {
 /* Render                                                              */
 /* ------------------------------------------------------------------ */
 let timerReloj = null;
+let latido = null;   // el que mueve la barra del tiempo, cuadro por cuadro
 // Último HTML dibujado. Evita reescribir el DOM cuando nada cambió: eso
 // reiniciaba el confeti de la ceremonia en cada vuelta del sondeo.
 let htmlAnterior = '';
@@ -1335,6 +1435,22 @@ let cerrando = false;
 /* ------------------------------------------------------------------ */
 /* Administración: temas, preguntas y clave maestra                    */
 /* ------------------------------------------------------------------ */
+
+/**
+ * Carga el lema y la portada guardados, y refresca.
+ *
+ * Si falla, NO se avisa con un cartel: el menú se dibuja igual con el lema y
+ * la portada del código, que es exactamente lo que se veía antes de que esto
+ * existiera. Un aviso rojo por no poder leer un adorno del menú sería peor
+ * que el problema: el juego se puede jugar con el texto original.
+ */
+async function cargarMarca() {
+  if (!hayNube) return;
+  const { marca, error } = await admin.marca();
+  if (error || !marca) return;
+  app.marca = marca;
+  render();
+}
 
 /** Carga los temas del servidor y refresca la pantalla. */
 async function cargarTemas() {
@@ -1360,9 +1476,129 @@ async function cargarTemas() {
 /** Pide la clave maestra si todavía no se verificó en esta sesión. */
 function pedirClave(siguiente) {
   if (app.adminClave) { siguiente(); return; }
-  app.modal = { tipo: 'clave' };
+  app.modal = { tipo: 'clave', para: 'entrar' };
   app.adminError = null;
   render();
+}
+
+/**
+ * Guarda el lema. Se llama SOLO con la clave ya verificada.
+ *
+ * El lema se edita en el menú y la clave se pide después: mientras se escribe
+ * la clave, lo editado espera en `marcaPendiente`. Si la clave es incorrecta,
+ * el valor NO se pierde —queda en el estado y el modal lo vuelve a mostrar—
+ * porque hacer reescribir el texto por una clave mal tecleada sería castigar
+ * el error equivocado.
+ */
+async function guardarLema(lema) {
+  const { marca, error } = await admin.cambiarLema(app.adminClave, lema);
+  if (error) {
+    // La clave ya se verificó en la sesión, así que un error acá no es de
+    // clave: es de red o del servidor. Se dice, y el cambio no se pierde.
+    app.adminError = traducirError(error);
+    app.modal = { tipo: 'clave', para: 'lema', muestra: lema, error: app.adminError };
+    render();
+    return false;
+  }
+  if (marca) app.marca = { ...(app.marca || {}), lema: (lema || '').trim() || null };
+  app.editandoLema = null;
+  app.lemaSenalado = false;
+  app.marcaPendiente = null;
+  app.modal = null;
+  app.adminError = null;
+  ponerAviso('ok', 'Texto del menú actualizado.', 3000);
+  return true;
+}
+
+/**
+ * Abre el explorador de archivos y convierte lo elegido.
+ *
+ * El `<input type="file">` es del navegador, así que abre el explorador del
+ * sistema que corresponda —el de Android, el de Windows, el de macOS, el de
+ * Linux, el de iPhone— sin que haya que programar nada por plataforma.
+ * `accept` filtra lo que se puede elegir, que es una ayuda, no una garantía:
+ * un explorador puede dejar pasar otra cosa, y por eso lo elegido se revisa.
+ */
+function abrirSelectorDeImagen() {
+  const entrada = document.createElement('input');
+  entrada.type = 'file';
+  entrada.accept = 'image/*';
+  entrada.style.position = 'fixed';
+  entrada.style.left = '-9999px';
+
+  entrada.addEventListener('change', async () => {
+    const archivo = entrada.files && entrada.files[0];
+    entrada.remove();
+    if (!archivo) return;   // se cerró el explorador sin elegir: no es un error
+    await aplicarImagen(archivo);
+  });
+
+  document.body.appendChild(entrada);
+  entrada.click();
+}
+
+/** Convierte a webp lo elegido y lo guarda. */
+async function aplicarImagen(archivo) {
+  app.modal = { tipo: 'procesando', que: 'la imagen' };
+  app.adminError = null;
+  render();
+
+  let datos;
+  try {
+    datos = await archivo.arrayBuffer();
+  } catch {
+    app.modal = null;
+    ponerAviso('error', 'No se pudo leer el archivo elegido.');
+    return;
+  }
+
+  let convertida;
+  try {
+    convertida = await aWebp({
+      datos,
+      tipo: archivo.type,
+      nombre: archivo.name,
+      crearImagen: crearImagenNavegador,
+      lienzoDe: lienzoNavegador
+    });
+  } catch (e) {
+    app.modal = null;
+    ponerAviso('error', traducirErrorImagen(e && e.message));
+    return;
+  }
+
+  const { error } = await admin.cambiarPortada(app.adminClave, convertida.html);
+  if (error) {
+    app.modal = null;
+    // Si el servidor la rechazó, se dice qué pasó. La app ya convirtió, así
+    // que un rechazo acá es de tamaño o de formato, no de red.
+    ponerAviso('error', traducirError(error));
+    return;
+  }
+
+  // Guardado con éxito: se relee de donde se guardó, que es la regla. No se
+  // da por hecho que el valor en memoria es el que quedó en la base.
+  app.marca = { ...(app.marca || {}), portada: convertida.html };
+  app.marcaCargada = true;
+  app.modal = null;
+  app.marcaPendiente = null;
+  ponerAviso('ok', 'Imagen cambiada con éxito.', 4000);
+}
+
+/** Los errores de la conversión, dichos como los diría una persona. */
+function traducirErrorImagen(codigo) {
+  const frases = {
+    archivo_vacio: 'El archivo está vacío.',
+    imagen_ilegible: 'Ese archivo no se pudo abrir como imagen.',
+    gif_no_soportado: 'Los gif animados no se pueden usar como imagen del menú.',
+    no_es_imagen: 'Ese archivo no es una imagen.',
+    no_se_pudo_convertir: 'No se pudo preparar la imagen. Prueba con otra.',
+    sin_lienzo: 'Este navegador no puede preparar la imagen.',
+    sin_herramientas: 'Este navegador no puede preparar la imagen.',
+    imagen_muy_grande: 'La imagen es demasiado grande. Prueba con una más liviana.',
+    imagen_no_webp: 'La imagen no quedó en el formato correcto. Prueba con otra.'
+  };
+  return frases[codigo] ?? 'No se pudo preparar la imagen.';
 }
 
 /** Abre la lista de temas (ya con la clave verificada). */
@@ -1396,7 +1632,13 @@ function modalActivo() {
   const err = app.adminError;
 
   switch (m.tipo) {
-    case 'clave':       return modalClave({ error: err });
+    case 'procesando':  return modalProcesando({ que: m.que });
+    case 'clave':       return modalClave({
+                          para: m.para || 'entrar',
+                          error: err,
+                          pista: m.pista || null,
+                          muestra: m.muestra || null
+                        });
     case 'cambiar':     return modalCambiarClave({ error: err });
     case 'temas':       return modalTemas(app.temas, { error: err });
     case 'preguntas':   return modalPreguntas(m.tema, app.preguntasTema, { error: err });
@@ -1478,7 +1720,31 @@ function render() {
     cargarTemas();
   }
 
-  // El reloj se actualiza cada 250 ms sin re-renderizar toda la pantalla.
+  // La marca del menú (el lema y la portada) se pide una vez, al pasar por el
+  // menú. La bandera evita el bucle: si la consulta vuelve vacía, render() no
+  // debe volver a pedirla, porque se llamaría a sí mismo sin fin.
+  if (vista === 'menu' && hayNube && !app.marcaCargada) {
+    app.marcaCargada = true;
+    cargarMarca();
+  }
+
+  /*
+   * El reloj se mueve CUADRO POR CUADRO, no por intervalos.
+   *
+   * Antes era un `setInterval` de 250 ms con `transition: width .25s` en la
+   * hoja de estilos: la animación duraba exactamente lo mismo que el
+   * intervalo. Cuando dos cosas encadenadas duran igual y las dispara un reloj
+   * impreciso, la cadena se rompe en cada vuelta: si el intervalo llegaba
+   * tarde, la transición ya había terminado y la barra se quedaba quieta hasta
+   * el salto siguiente; si llegaba temprano, la transición se cortaba a la
+   * mitad y la siguiente recorría menos distancia en el mismo tiempo. Eso es
+   * lo que se veía como «la barra se frena».
+   *
+   * Ahora el ancho se calcula con el tiempo real en cada cuadro: no hay nada
+   * que perseguir al tiempo, el ancho ES el tiempo. El motor vive en
+   * `lib/latido.js`, con sus pruebas.
+   */
+  if (latido) { latido.parar(); latido = null; }
   clearInterval(timerReloj);
   if (app.estado?.round?.state === 'open' && !app.estado.paused) {
     const r = app.estado.round;
@@ -1486,26 +1752,35 @@ function render() {
       openedAt: r.openedAt, pausedAt: r.pausedAt,
       pausedTotal: r.pausedTotal, durationMs: r.deadlineMs
     };
-    timerReloj = setInterval(() => {
-      const ms = E.restanteMs(base);
-      for (const sel of ['#reloj', '#reloj-jug', '#reloj-tv']) {
-        const el = document.querySelector(sel);
-        if (el) el.textContent = segundos(ms) + (sel === '#reloj' ? 's' : '');
-      }
-      const barra = document.querySelector('#barra > i');
-      if (barra) barra.style.width = `${(ms / r.deadlineMs) * 100}%`;
-
+    latido = crearLatido({
+      leer: () => E.restanteMs(base),
+      total: r.deadlineMs,
+      pintar: (pct, ms) => {
+        // Los segundos se escriben solo cuando cambian: son texto, y
+        // reescribir el mismo número cada cuadro hace trabajar al navegador
+        // para nada. La barra, en cambio, se mueve en cada cuadro.
+        const texto = segundos(ms);
+        for (const sel of ['#reloj', '#reloj-jug', '#reloj-tv']) {
+          const el = document.querySelector(sel);
+          if (!el) continue;
+          const nuevo = texto + (sel === '#reloj' ? 's' : '');
+          if (el.textContent !== nuevo) el.textContent = nuevo;
+        }
+        const barra = document.querySelector('#barra > i');
+        if (barra) barra.style.width = `${pct}%`;
+      },
       // Al llegar a cero, el presentador cierra la ronda solo.
       // Los jugadores ya no pueden responder (el motor rechaza por tiempo);
       // esta llamada solo mueve la máquina de estados para que el botón
       // pase a «Revelar respuesta».
-      if (ms <= 0) {
-        clearInterval(timerReloj);
+      alCero: () => {
+        latido = null;
         if (app.host && app.estado?.round?.state === 'open') {
           app.host.cerrar();
         }
       }
-    }, 250);
+    });
+    latido.arrancar();
   }
 }
 
@@ -1600,6 +1875,55 @@ document.addEventListener('click', async ev => {
   const accion = el.dataset.accion;
 
   switch (accion) {
+    /* --- marca del menú: el texto --- */
+    case 'editar-lema': {
+      // DOS toques: el primero señala, el segundo abre el campo.
+      // El primer toque no abre nada a propósito. En un teléfono, caer en un
+      // campo de escritura sin querer abre el teclado y tapa media pantalla:
+      // pedir un segundo toque es lo que hace que el gesto sea deliberado.
+      if (!app.lemaSenalado) {
+        app.lemaSenalado = true;
+        render();
+        break;
+      }
+      app.lemaSenalado = false;
+      app.editandoLema = lemaMostrado();
+      render();
+      // El cursor al final: quien toca dos veces suele querer agregar o
+      // corregir, no reemplazar todo.
+      const campo = document.querySelector('#in-lema');
+      if (campo) {
+        campo.focus();
+        try { campo.setSelectionRange(campo.value.length, campo.value.length); } catch { /* sin selección */ }
+      }
+      break;
+    }
+
+    case 'cancelar-lema': {
+      // Cancelar descarta: no se guarda nada y el texto vuelve a como estaba.
+      app.editandoLema = null;
+      app.lemaSenalado = false;
+      app.marcaPendiente = null;
+      render();
+      break;
+    }
+
+    /* --- marca del menú: la imagen --- */
+    case 'cambiar-portada': {
+      // Primero la clave, SIEMPRE. Recién con la clave acertada se abre el
+      // explorador de archivos: pedir la foto antes de autorizar dejaría a
+      // cualquiera eligiendo archivos para nada.
+      if (app.adminClave) {
+        abrirSelectorDeImagen();
+        break;
+      }
+      app.marcaPendiente = { tipo: 'portada', valor: null };
+      app.modal = { tipo: 'clave', para: 'portada' };
+      app.adminError = null;
+      render();
+      break;
+    }
+
     /* --- menú / navegación --- */
     case 'crear-sala': {
       if (!app.temaElegido) {
@@ -2199,17 +2523,76 @@ document.addEventListener('submit', async ev => {
   const datos = new FormData(form);
   const tipo = form.dataset.form;
 
+  /* --- guardar el texto del menú (ya editado, falta la clave) --- */
+  if (tipo === 'lema') {
+    const lema = String(datos.get('lema') ?? '').trim().slice(0, 120);
+
+    // El orden que se pidió: primero se edita, DESPUÉS se pide la clave.
+    // Si ya está verificada en esta sesión, no se vuelve a pedir.
+    if (app.adminClave) {
+      await guardarLema(lema);
+      return;
+    }
+    app.marcaPendiente = { tipo: 'lema', valor: lema };
+    // Lo escrito se conserva también en el campo, no solo en lo pendiente.
+    // Sin esto, al redibujar el menú el input volvía al texto original y quien
+    // había escrito veía desaparecer su texto al pasar a la clave.
+    app.editandoLema = lema;
+    app.modal = { tipo: 'clave', para: 'lema', muestra: lema };
+    app.adminError = null;
+    render();
+    return;
+  }
+
   /* --- introducir la clave maestra --- */
   if (tipo === 'clave') {
+    const para = form.dataset.clavePara || 'entrar';
     const clave = String(datos.get('clave') ?? '').trim();
     const { error } = await admin.comprobarClave(clave);
     if (error) {
+      /*
+       * Clave incorrecta. Lo importante: NO se aplica el cambio y NO se
+       * pierde lo editado.
+       *
+       * Acá vivía el defecto del que no se podía salir. Se cerraba el modal
+       * con `app.modal = null`, así que lo que se estaba cambiando se
+       * perdía, y —peor— el bloqueo por intentos fallidos se anunciaba con
+       * un mensaje traducido que nunca llegaba a verse, porque el modal se
+       * cerraba antes.
+       */
       app.adminError = traducirError(error);
+      app.modal = {
+        tipo: 'clave',
+        para,
+        error: app.adminError,
+        // El candado se dice aquí y se ve: 10 minutos de espera no se
+        // descubren probando.
+        pista: /bloqueada/.test(String(error)) ? 'bloqueada' : null,
+        muestra: app.marcaPendiente && app.marcaPendiente.tipo === 'lema'
+          ? app.marcaPendiente.valor : null
+      };
       render();
       return;
     }
+
     app.adminClave = clave;
     app.adminError = null;
+
+    // La clave era correcta: ahora sí se aplica lo que estaba esperando.
+    if (para === 'lema') {
+      const pendiente = app.marcaPendiente && app.marcaPendiente.tipo === 'lema'
+        ? app.marcaPendiente.valor : '';
+      await guardarLema(pendiente);
+      return;
+    }
+    if (para === 'portada') {
+      // Recién ahora se abre el explorador: la clave ya está verificada.
+      app.modal = null;
+      render();
+      abrirSelectorDeImagen();
+      return;
+    }
+
     await abrirTemas();
     return;
   }

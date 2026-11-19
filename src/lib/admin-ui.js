@@ -94,31 +94,96 @@ export function selectorTema(temas, elegido) {
 /* Modal: pedir la clave maestra                                       */
 /* ------------------------------------------------------------------ */
 
-export function modalClave({ para = 'entrar', error = null } = {}) {
-  const titulos = {
-    entrar: 'Clave maestra',
-    config: 'Cambiar la clave maestra'
+export function modalClave({ para = 'entrar', error = null, pista = null, muestra = null } = {}) {
+  /*
+   * Un solo modal para pedir la clave, con el texto cambiando según para qué
+   * se pide. Antes decía siempre «modificar los temas y las preguntas», que
+   * era verdad cuando lo único que había detrás era el panel. Ahora también
+   * protege el lema y la portada del menú, así que el texto tiene que decir
+   * para qué se está pidiendo: quien escribe la clave merece saber qué va a
+   * pasar si la acierta.
+   */
+  const textos = {
+    entrar: {
+      titulo: 'Clave maestra',
+      explicacion: 'Solo el presentador puede modificar los temas y las preguntas.',
+      boton: 'Entrar'
+    },
+    lema: {
+      titulo: 'Clave maestra',
+      explicacion: 'Para cambiar el texto del menú hace falta la clave maestra.',
+      boton: 'Aplicar el cambio'
+    },
+    portada: {
+      titulo: 'Clave maestra',
+      explicacion: 'Para cambiar la imagen del menú hace falta la clave maestra.',
+      boton: 'Continuar'
+    },
+    config: {
+      titulo: 'Cambiar la clave maestra',
+      explicacion: 'Escribe la clave actual y después la nueva.',
+      boton: 'Entrar'
+    }
   };
+  const c = textos[para] ?? textos.entrar;
+
+  // Lo que se va a guardar, a la vista. Quien escribe la clave tiene que ver
+  // el cambio que está autorizando, no aprobar a ciegas.
+  const vistaPrevia = muestra
+    ? `<p class="lema-confirmado">${esc(muestra)}</p>`
+    : '';
+
+  // Cuando ya está bloqueada por intentos fallidos, se dice antes de que
+  // escriba: el candado existe, y enterarse al intentar es peor.
+  const avisoBloqueo = pista === 'bloqueada'
+    ? `<p class="chico" style="color:var(--peligro); margin:.3rem 0 0">
+         Demasiados intentos. Espera 10 minutos antes de volver a probar.
+       </p>`
+    : '';
+
   return `
     <div class="modal-fondo" data-accion="cerrar-admin" data-solo-fondo="1">
       <div class="modal" role="dialog" aria-modal="true" aria-labelledby="t-clave">
-        <h2 id="t-clave" style="font-size:var(--t-lg)">${esc(titulos[para] ?? titulos.entrar)}</h2>
-        <p class="chico tenue" style="margin:0">
-          Solo el presentador puede modificar los temas y las preguntas.
-        </p>
-        <form class="campo" data-form="clave">
+        <h2 id="t-clave" style="font-size:var(--t-lg)">${esc(c.titulo)}</h2>
+        <p class="chico tenue" style="margin:0">${esc(c.explicacion)}</p>
+        ${vistaPrevia}
+        <form class="campo" data-form="clave" data-clave-para="${esc(para)}">
           <label for="in-clave">Clave de 4 dígitos</label>
           <input id="in-clave" name="clave" type="password" inputmode="numeric"
                  autocomplete="off" maxlength="64" required
                  style="font-size:var(--t-lg); letter-spacing:.3em; text-align:center">
           ${error ? `<p class="chico" style="color:var(--peligro); margin:.3rem 0 0">${esc(error)}</p>` : ''}
+          ${avisoBloqueo}
           <div class="fila" style="gap:.6rem; margin-top:.8rem">
             <button type="button" class="boton boton-secundario" data-accion="cerrar-admin" style="flex:1">
               Cancelar
             </button>
-            <button type="submit" class="boton boton-oro" style="flex:1">Entrar</button>
+            <button type="submit" class="boton boton-oro" style="flex:1">${esc(c.boton)}</button>
           </div>
         </form>
+      </div>
+    </div>`;
+}
+
+/* ------------------------------------------------------------------ */
+/* Modal: algo está en curso                                           */
+/* ------------------------------------------------------------------ */
+/**
+ * Mientras se convierte una imagen.
+ *
+ * Existe porque convertir una foto grande tarda unos segundos, y sin esto la
+ * pantalla se quedaba como estaba: quien eligió la imagen no veía nada pasar
+ * y podía tocar otra vez, encolando dos conversiones. Un aviso que solo dice
+ * «espera» evita ese silencio, que es lo único que no se puede diagnosticar.
+ */
+export function modalProcesando({ que = 'la imagen' } = {}) {
+  return `
+    <div class="modal-fondo" data-solo-fondo="1">
+      <div class="modal" role="dialog" aria-modal="true" aria-busy="true">
+        <h2 style="font-size:var(--t-lg); margin:0 0 .4rem">Preparando ${esc(que)}…</h2>
+        <p class="chico tenue" style="margin:0">
+          Un momento. Se está ajustando el tamaño y el formato.
+        </p>
       </div>
     </div>`;
 }

@@ -34,6 +34,7 @@ declare
   v_topic uuid;
   v_host2 jsonb;
   v_q1 uuid; v_q2 uuid; v_q3 uuid; v_ord int;
+  v_marca jsonb; v_webp text; v_png text; v_clave text;
 begin
 
 raise notice '=== 1. Sala y banco ===';
@@ -442,6 +443,266 @@ begin
 end;
 alter table public.rooms enable trigger rooms_broadcast;
 alter table public.rooms enable trigger rooms_actividad;
+
+raise notice '';
+raise notice '=== 15. Marca del menú: lema y portada ===';
+-- La clave maestra se configura al final, cuando ya nadie depende de que
+-- esté ausente. Se guarda el texto para poder probar el caso correcto.
+v_clave := '4321';
+
+-- ESTA SECCIÓN EMPIEZA SIN CLAVE, a propósito y por su cuenta.
+--
+-- La prueba corre contra la misma base en cada corrida, y la vez anterior
+-- dejó una clave configurada. Depender de eso hacía que la prueba pasara la
+-- primera vez y fallara la segunda: el peor tipo de prueba, la que miente
+-- según el historial. Así que se deja el punto de partida explícito.
+update public.admin_config
+   set key_hash = null,
+       failed_attempts = 0,
+       locked_until = null
+ where id = true;
+perform setval('public.admin_intentos_seq', 1000000);
+perform setval('public.admin_marca_seq', 1000000);
+perform setval('public.admin_ultimo_fallo_seq', 0);
+update public.branding set lema = null, portada = null, portada_bytes = null where id = true;
+
+-- Sin clave configurada, escribir el lema NO puede pasar. Se comprueba
+-- antes de configurarla, que es la única ventana en que esto es posible.
+perform public.t_assert((public.admin_key_status()->>'configurada')::boolean = false,
+  'el punto de partida de la sección no tiene clave');
+
+begin
+  perform public.branding_set_lema(v_clave, 'No debe entrar');
+  perform public.t_assert(false, 'sin clave configurada, escribir el lema falla');
+exception when others then
+  perform public.t_assert(sqlerrm like '%clave_no_configurada%',
+    'sin clave configurada, escribir el lema falla');
+end;
+
+-- Se configura la clave maestra por el mismo camino que usa la app.
+--
+-- Y ahí estaba el defecto: `admin_change_key` exigía la clave ANTERIOR, así
+-- que en una instalación nueva —sin ninguna clave— el botón «Establecer la
+-- clave maestra» fallaba con `clave_no_configurada`. Para poner la primera
+-- clave había que escribir la que todavía no existía. Se comprueba primero
+-- que la pantalla dice la verdad sobre si hay clave, y después que se puede
+-- establecer sin anterior.
+perform public.admin_change_key(null, v_clave);
+perform public.t_assert((public.admin_key_status()->>'configurada')::boolean = true,
+  'establecer la PRIMERA clave funciona sin escribir una anterior (defecto corregido)');
+
+-- Con la clave ya puesta, la anterior se sigue exigiendo: la corrección no
+-- relajó nada.
+begin
+  perform public.admin_change_key('0000', 'nueva1234');
+  perform public.t_assert(false, 'con clave puesta, la anterior se sigue exigiendo');
+exception when others then
+  perform public.t_assert(sqlerrm like '%clave_incorrecta%',
+    'con clave puesta, la anterior se sigue exigiendo');
+end;
+-- Y ese intento fallido deja marca. Ojo con la sutileza que costó una vuelta:
+-- dentro de una MISMA función, un error aborta la transacción entera, así que
+-- el conteo de intentos no puede leerse aquí mismo con una consulta —la
+-- transacción ya está condenada. Lo que sí sobrevive son las secuencias, que
+-- es donde vive el conteo de verdad. Se limpia para las pruebas siguientes.
+perform setval('public.admin_marca_seq',
+               (select last_value from public.admin_intentos_seq));
+update public.admin_config set failed_attempts = 0, locked_until = null where id = true;
+
+-- ---------------------------------------------------------------------
+-- EL CANDADO DE INTENTOS, que no existía
+-- ---------------------------------------------------------------------
+-- Se creía que cinco claves incorrectas cerraban la puerta diez minutos. No
+-- cerraban nada: el `update` del contador se deshacía junto con el error que
+-- lo acompañaba, porque en PostgreSQL una excepción revierte la transacción
+-- ENTERA. Medido antes de corregirlo: tras 7 claves incorrectas, intentos = 0
+-- y nunca se bloqueaba.
+--
+-- Aquí no se puede probar con llamadas seguidas dentro de este bloque: el
+-- primer error dejaría la transacción condenada y las siguientes pruebas no
+-- correrían. La prueba del candado de verdad —con cada intento en su propia
+-- transacción, que es como llega desde el navegador— está en
+-- `supabase/tests/candado.sh`, que sí puede abrir una conexión por intento.
+--
+-- Lo que sí se prueba aquí es la MECÁNICA de la que depende: que el conteo
+-- salga de la resta de dos secuencias, que esas secuencias no se reviertan, y
+-- que un acierto alinee la marca.
+perform setval('public.admin_intentos_seq', 1000000);
+perform setval('public.admin_marca_seq', 1000000);
+perform public.t_assert(public.admin_intentos_fallidos() = 0,
+  'el conteo de intentos sale en 0 alineado');
+
+-- Un avance de la secuencia que NO viene de un error: se prueba la resta.
+perform nextval('public.admin_intentos_seq');
+perform public.t_assert(public.admin_intentos_fallidos() = 1,
+  'un avance de la secuencia cuenta como un intento');
+perform nextval('public.admin_intentos_seq');
+perform public.t_assert(public.admin_intentos_fallidos() = 2,
+  'y dos avances cuentan dos');
+
+-- Alinear la marca es lo que hace un acierto: el conteo vuelve a cero.
+perform setval('public.admin_marca_seq',
+               (select last_value from public.admin_intentos_seq));
+perform public.t_assert(public.admin_intentos_fallidos() = 0,
+  'alinear la marca devuelve el conteo a 0 (lo que hace un acierto)');
+perform public.t_assert((public.admin_key_status()->>'restantes')::int = 5,
+  'y quedan los 5 intentos otra vez');
+
+-- Un fallo real, del camino de verdad, ahora que la transacción está sana:
+-- se llama a la comprobación y se captura el error para poder seguir.
+begin
+  perform public.admin_check_key('0000');
+  perform public.t_assert(false, 'una clave incorrecta falla');
+exception when others then
+  perform public.t_assert(sqlerrm like '%clave_incorrecta%', 'una clave incorrecta falla');
+end;
+
+for i in 1..5 loop
+  begin
+    perform public.admin_check_key('0000');
+  exception when others then
+    null;   -- cada error se captura para poder seguir probando
+  end;
+end loop;
+
+-- Con el conteo en 5 o más, el estado tiene que decir «bloqueada». Se mira
+-- por `admin_intentos_fallidos`, que es la autoridad y sí sobrevive al error.
+perform public.t_assert(public.admin_intentos_fallidos() >= 5,
+  'tras varios fallos, el conteo llega al máximo (y sobrevive a los errores)');
+perform public.t_assert((public.admin_key_status()->>'restantes')::int = 0,
+  'y no quedan intentos disponibles');
+
+-- La clave correcta tampoco pasa mientras esté bloqueada. Es el punto: si el
+-- bloqueo solo frenara las equivocadas, no frenaría a quien está probando.
+begin
+  perform public.admin_check_key(v_clave);
+  perform public.t_assert(false, 'bloqueada, ni la clave correcta entra');
+exception when others then
+  perform public.t_assert(sqlerrm like '%clave_bloqueada%',
+    'bloqueada, ni la clave correcta entra');
+end;
+
+-- Cumplida la espera, vuelve a entrar. Se envejece el último fallo en vez de
+-- esperar diez minutos de verdad: la espera se mide contra ese número.
+perform setval('public.admin_ultimo_fallo_seq',
+               ((extract(epoch from clock_timestamp()) * 1000)::bigint - 660000));
+perform public.t_assert((public.admin_key_status()->>'bloqueada')::boolean = false,
+  'pasada la espera, deja de estar bloqueada');
+perform public.admin_check_key(v_clave);
+perform public.t_assert(public.admin_intentos_fallidos() = 0,
+  'y al acertar el conteo vuelve a cero, sin arrastrar los fallos viejos');
+
+-- LA MARCA ARRANCA VACÍA, no con texto del código. Es a propósito: si la
+-- base guardara «2 Corintios · Concurso de preguntas», cambiar el lema del
+-- código dejaría de servir y habría dos fuentes de verdad.
+v_marca := public.branding_get();
+perform public.t_assert(v_marca->>'lema' is null,
+  'sin cambios, el lema es null (manda el texto del código)');
+perform public.t_assert(v_marca->>'portada' is null,
+  'sin cambios, no hay portada guardada (manda el archivo del proyecto)');
+
+-- Clave incorrecta: no escribe. Se prueba sobre el lema, que es lo barato.
+update public.admin_config set failed_attempts = 0, locked_until = null where id = true;
+begin
+  perform public.branding_set_lema('0000', 'No debe entrar');
+  perform public.t_assert(false, 'con clave incorrecta el lema NO se escribe');
+exception when others then
+  perform public.t_assert(sqlerrm like '%clave_incorrecta%',
+    'con clave incorrecta el lema NO se escribe');
+end;
+perform public.t_assert((select lema from public.branding where id = true) is null,
+  'y la tabla quedó intacta: el intento fallido no escribió nada');
+
+-- Clave correcta: escribe.
+perform public.branding_set_lema(v_clave, 'Romanos · Concurso de preguntas');
+perform public.t_assert((select lema from public.branding where id = true)
+                        = 'Romanos · Concurso de preguntas',
+  'con clave correcta el lema se guarda');
+
+-- El lema se recorta, y vaciarlo es la forma de volver al texto del código.
+perform public.branding_set_lema(v_clave, '   Con espacios   ');
+perform public.t_assert((select lema from public.branding where id = true) = 'Con espacios',
+  'el lema se guarda sin espacios sobrantes');
+
+perform public.branding_set_lema(v_clave, '   ');
+perform public.t_assert((select lema from public.branding where id = true) is null,
+  'un lema vacío vuelve al texto del código (null), no a una cadena vacía');
+
+-- Un lema desmedido se rechaza: el menú tiene una línea y no debe crecer
+-- sin límite por un pegado accidental.
+begin
+  perform public.branding_set_lema(v_clave, repeat('x', 121));
+  perform public.t_assert(false, 'un lema de 121 caracteres se rechaza');
+exception when others then
+  perform public.t_assert(sqlerrm like '%lema_muy_largo%',
+    'un lema de 121 caracteres se rechaza');
+end;
+perform public.t_assert((select lema from public.branding where id = true) is null,
+  'y el lema rechazado no se guardó');
+perform public.branding_set_lema(v_clave, repeat('y', 120));
+perform public.t_assert((select lema from public.branding where id = true) = repeat('y', 120),
+  'un lema de 120 caracteres sí entra');
+perform public.branding_set_lema(v_clave, null);
+perform public.t_assert((select lema from public.branding where id = true) is null,
+  'y se puede limpiar otra vez');
+
+-- PORTADA. Un webp mínimo de verdad: cabecera RIFF + tamaño + WEBP.
+-- No es una imagen que se pueda ver, pero sí es un webp por sus bytes,
+-- que es exactamente lo que la función promete revisar.
+v_webp := encode('\x524946461c0000005745425056503820'::bytea, 'base64');
+
+perform public.branding_set_portada(v_clave, v_webp);
+perform public.t_assert((select portada_bytes from public.branding where id = true) = 16,
+  'un webp de verdad se guarda y se registra su tamaño');
+
+-- El prefijo que produce el navegador se acepta y se descarta: obligar al
+-- cliente a quitarlo sería un punto más donde equivocarse.
+perform public.branding_set_portada(v_clave, 'data:image/webp;base64,' || v_webp);
+perform public.t_assert((select portada is not null and length(portada) = length(v_webp)
+                           from public.branding where id = true),
+  'el prefijo data:image/webp;base64, se descarta sin ensuciar lo guardado');
+
+-- Un PNG disfrazado: nombre de webp, bytes de PNG. Se revisa el CONTENIDO.
+v_png := encode('\x89504e470d0a1a0a0000000d49484452'::bytea, 'base64');
+begin
+  perform public.branding_set_portada(v_clave, v_png);
+  perform public.t_assert(false, 'un PNG disfrazado de webp se rechaza');
+exception when others then
+  perform public.t_assert(sqlerrm like '%imagen_no_webp%',
+    'un PNG disfrazado de webp se rechaza (manda la cabecera, no el nombre)');
+end;
+perform public.t_assert((select length(portada) = length(v_webp)
+                           from public.branding where id = true),
+  'y la portada anterior quedó intacta');
+
+-- Vacío, y base64 roto: los dos se rechazan con un nombre que se entiende.
+begin
+  perform public.branding_set_portada(v_clave, '');
+  perform public.t_assert(false, 'una imagen vacía se rechaza');
+exception when others then
+  perform public.t_assert(sqlerrm like '%imagen_vacia%', 'una imagen vacía se rechaza');
+end;
+begin
+  perform public.branding_set_portada(v_clave, 'esto no es base64 !!!');
+  perform public.t_assert(false, 'base64 mal formado se rechaza');
+exception when others then
+  perform public.t_assert(sqlerrm like '%imagen_invalida%',
+    'base64 mal formado se rechaza (con nombre claro, no el error crudo)');
+end;
+
+-- Y la portada tampoco entra sin la clave correcta.
+update public.admin_config set failed_attempts = 0, locked_until = null where id = true;
+begin
+  perform public.branding_set_portada('9999', v_png);
+  perform public.t_assert(false, 'la portada tampoco se escribe con clave incorrecta');
+exception when others then
+  perform public.t_assert(sqlerrm like '%clave_incorrecta%',
+    'la portada tampoco se escribe con clave incorrecta');
+end;
+
+-- Dejar la clave como estaba: las pruebas anteriores no dependían de ella,
+-- pero una corrida futura que lea `admin_config` no debe encontrar basura.
+update public.admin_config set failed_attempts = 0, locked_until = null where id = true;
 
 raise notice '';
 raise notice '===============================';

@@ -139,12 +139,52 @@ button:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
 }
 
 /* ---------- portada / menú ---------- */
+/* La portada necesita ser el punto de referencia del lápiz: el botón va
+   pegado a SU esquina, no a la de la pantalla. */
 .portada {
+  position: relative;
   width: 100%;
   border-radius: var(--radio);
   overflow: hidden;
   box-shadow: var(--sombra);
   line-height: 0;
+}
+/* Lápiz para cambiar la imagen: esquina superior derecha de la imagen. */
+.lapiz-portada {
+  position: absolute;
+  top: .5rem;
+  right: .5rem;
+  width: 2.4rem;
+  height: 2.4rem;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  /* Silueta SIN fondo: un cuadrado opaco taparía la imagen, que es
+     justamente lo que se quiere mirar antes de cambiarla. Solo se oscurece
+     un poco por detrás para que la silueta se vea sobre una foto clara. */
+  background: rgba(0, 0, 0, .28);
+  color: rgba(255, 255, 255, .92);
+  cursor: pointer;
+  transition: background-color .15s ease, transform .15s ease;
+  line-height: 0;
+  z-index: 2;
+}
+.lapiz-portada svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: currentColor;
+  display: block;
+}
+.lapiz-portada:hover { background: rgba(0, 0, 0, .45); }
+.lapiz-portada:focus-visible { outline: 2px solid var(--tu-300); outline-offset: 2px; }
+.lapiz-portada:active { transform: scale(.94); }
+/* En pantalla táctil el objetivo tiene que ser más grande que en ratón:
+   con el dedo, 2.4 rem queda al borde de lo que se puede acertar. */
+@media (pointer: coarse) {
+  .lapiz-portada { width: 3rem; height: 3rem; }
+  .lapiz-portada svg { width: 1.55rem; height: 1.55rem; }
 }
 .portada img { width: 100%; height: auto; display: block; }
 
@@ -264,7 +304,13 @@ button:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
   height: 100%;
   width: 100%;
   background: linear-gradient(90deg, var(--tu-300), var(--raya));
-  transition: width .25s linear;
+  /* SIN `transition`. El ancho lo calcula el latido en cada cuadro de dibujo
+     (`src/lib/latido.js`), así que el ancho ya ES el tiempo.
+     Con una transición encima, la barra perseguiría al tiempo en vez de
+     seguirlo, y como la animación duraba lo mismo que el intervalo viejo, la
+     cadena se rompía en cada vuelta: la barra se veía frenar a cada segundo.
+     Si alguien la vuelve a poner «para suavizar», el defecto regresa. */
+  will-change: width;
 }
 .barra-tiempo.urgente > i { background: linear-gradient(90deg, var(--espera), var(--rojo)); }
 
@@ -1092,6 +1138,91 @@ body.tv .qr-tv { max-width: clamp(220px, 34vmin, 380px); }
   text-align: center;
   font-size: var(--t-sm);
   color: var(--tinta-suave);
+  /* El lema se edita a dos toques: el primero lo señala. Sin una marca
+     visible, el primer toque parece no hacer nada y nadie descubre el
+     segundo. El contorno y el cursor son esa marca. */
+  cursor: pointer;
+  border-radius: .4rem;
+  padding: .2em .5em;
+  transition: background-color .15s ease, outline-color .15s ease;
+  outline: 2px solid transparent;
+}
+.menu-lema:hover { background: rgba(255, 255, 255, .05); }
+.menu-lema:focus-visible { outline-color: var(--tu-300); }
+/* Señalado: el primer toque ya ocurrió y falta el segundo. Se nota. */
+.menu-lema.señalado {
+  background: rgba(110, 227, 238, .14);
+  outline: 2px solid var(--tu-300);
+  outline-offset: 2px;
+}
+
+/* El lema como campo de escritura, en el mismo lugar donde estaba el texto:
+   así se edita viendo el resultado en su sitio, no en otra pantalla.
+
+   El formulario ocupa el ANCHO DE SU COLUMNA, que es la misma que la del
+   texto que reemplaza. Antes tenía un `max-width: 520px` propio: en una
+   pantalla ancha el campo quedaba flotando en el centro, más angosto que los
+   botones de abajo, y en un teléfono se veía desalineado respecto de todo lo
+   demás. Un campo de escritura se alinea con lo que está reemplazando, no
+   con un número elegido a mano. */
+.menu-lema-editor {
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+  align-items: stretch;
+  /*
+   * SIN ancho propio. Ocupa el ancho de su columna, que es la misma que la
+   * del texto que reemplaza, y queda centrado con él.
+   *
+   * Antes tenía `max-width: 520px; margin-inline: auto`. Medido en el
+   * teléfono: el formulario quedaba con centro en 298 mientras el cuerpo
+   * tiene el suyo en 490 —descentrado—, y los botones, al repartirse ese
+   * ancho de 520 con `flex: 1`, se salían de la pantalla: el primero
+   * arrancaba en x=-14, fuera del borde. Un campo de escritura se alinea con
+   * lo que reemplaza, no con un número elegido a mano.
+   */
+  width: 100%;
+  min-width: 0;
+  margin: -.3rem 0 0;
+}
+.menu-lema-editor input {
+  width: 100%;
+  min-width: 0;          /* un input no baja de su `size` sin esto */
+  text-align: center;
+  font-size: var(--t-sm);
+  padding: .5em .7em;
+}
+/* Los botones comparten el ancho, mitad y mitad: así «Cancelar» y «Guardar»
+   forman una sola pieza y no quedan de anchos distintos.
+   `min-width: 0` es lo que permite que de verdad bajen de su ancho natural:
+   sin eso, un flex item no se encoge por debajo del contenido y la fila se
+   desborda de la pantalla. */
+.menu-lema-editor .fila {
+  margin-top: 0;
+  display: grid;
+  /* Dos columnas iguales, sin depender de `flex`: con `flex: 1 1 0` los dos
+     botones quedaban de 311 y 294 px (desiguales) y el primero se salía.
+     `grid` con `1fr 1fr` los deja exactamente iguales y dentro del ancho. */
+  grid-template-columns: 1fr 1fr;
+  gap: .6rem;
+  align-items: stretch;
+}
+.menu-lema-editor .boton {
+  padding: .5em 1em;
+  width: 100%;
+  min-width: 0;      /* permite encogerse por debajo del texto */
+}
+
+/* Vista previa del texto que se va a guardar, dentro del modal de la clave. */
+.lema-confirmado {
+  margin: .6rem 0 .2rem;
+  padding: .6em .8em;
+  border-radius: .5rem;
+  background: rgba(255, 255, 255, .06);
+  border: 1px solid rgba(110, 227, 238, .2);
+  text-align: center;
+  font-size: var(--t-sm);
+  overflow-wrap: anywhere;
 }
 
 .menu-acciones {

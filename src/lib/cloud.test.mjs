@@ -3,7 +3,7 @@
    la clave original de cada una (la posición 1 puede ser 'd'), y el cliente
    enviaba la letra de la POSICIÓN. El servidor la comparaba contra la clave
    real, así que daba incorrecto siempre y nadie sumaba puntos. */
-import { estadoDesdeServidor, resolverSala, mirarSala } from './cloud.js';
+import { estadoDesdeServidor, resolverSala, mirarSala, fijarDesfaseDeRonda } from './cloud.js';
 import { normalizarCodigo } from './util.js';
 
 let ok = 0, fail = 0;
@@ -33,6 +33,27 @@ const bruto = (extra = {}) => ({
     ...extra
   }
 });
+
+console.log('=== 0. El desfase de la ronda se congela ===');
+/*
+ * El origen del tiempo de la ronda se fija UNA vez y no se vuelve a tocar.
+ *
+ * Por qué importa: la cabecera `Date` del servidor solo tiene resolución de
+ * un segundo (medido contra el servidor real: siempre llega en `.000`), así
+ * que cada medición del desfase trae hasta un segundo de ruido. Si el origen
+ * se re-aprende con cada sondeo —cada 900 ms— la barra retrocede de golpe:
+ * medido, 693 ms de retroceso en 4 segundos, y el usuario lo ve como una
+ * pausa al pasar cada segundo.
+ */
+{
+  const a = fijarDesfaseDeRonda(1000);
+  t(typeof a === 'number', 'fijar devuelve un número');
+  const b = fijarDesfaseDeRonda(1000);
+  t(a === b, 'el MISMO arranque no vuelve a congelar: el sondeo no reinicia el reloj');
+  const c = fijarDesfaseDeRonda(2000);
+  t(typeof c === 'number', 'un arranque distinto sí re-fija (es otra ronda)');
+  t(fijarDesfaseDeRonda(null) === fijarDesfaseDeRonda(null), 'sin ronda es estable');
+}
 
 console.log('=== 1. Con la ronda abierta NO se filtra la correcta ===');
 const abierta = estadoDesdeServidor(bruto(), { completo: false });

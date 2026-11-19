@@ -82,6 +82,62 @@ function aprenderDesfase(res, enviadoEn) {
   desfaseMedido = true;
 }
 
+/**
+ * El desfase para lo que se mueve en pantalla: el ÚLTIMO valor congelado.
+ *
+ * POR QUÉ HACE FALTA SEPARARLOS
+ *
+ * El desfase sirve para dos cosas distintas, y una sola cifra no sirve para
+ * las dos:
+ *
+ *   1. Poner en hora los instantes que llegan del servidor (`openedAt`, la
+ *      marca en que arrancó la ronda). Ahí conviene el mejor valor posible,
+ *      y tiene que seguir aprendiéndose: si se congela, la ronda arranca
+ *      corrida para siempre.
+ *   2. Mover una barra que baja durante 15 o 30 segundos. Ahí lo que importa
+ *      no es la exactitud sino la ESTABILIDAD: si la cifra cambia a mitad de
+ *      la ronda, la barra salta.
+ *
+ * Y la cabecera `Date` del HTTP solo tiene resolución de UN SEGUNDO. Medido
+ * contra el servidor real: siempre llega en `.000`, con el instante verdadero
+ * en algún punto de ese segundo. Así que cada medición trae hasta un segundo
+ * de ruido, y el desfase aprendido va saltando dentro de esa ventana.
+ * Repartido entre varias consultas del sondeo —cada 900 ms— eso mueve el
+ * origen de la ronda, y la barra retrocede de golpe.
+ *
+ * Medido con el ruido real: 1 retroceso de 693 ms en 4 segundos de ronda.
+ * Con un reloj limpio, 0. Eso es exactamente la «mini pausa» que se veía al
+ * pasar cada segundo: no era el dibujado, era el origen del tiempo.
+ *
+ * La solución es la misma que un reloj de pared y una radio: se sincroniza
+ * UNA vez, al llegar, y después se deja correr. Al arrancar una ronda se fija
+ * el desfase del momento, y no se vuelve a tocar hasta la ronda siguiente.
+ */
+let desfaseCongeladoMs = 0;
+let congeladoPara = null;   // el `openedAt` de la ronda a la que pertenece
+
+/**
+ * Fija el desfase que usarán los cálculos de la ronda en curso.
+ *
+ * Se llama con la marca de arranque de la ronda. El mismo `openedAt` no
+ * vuelve a congelar nada: así el sondeo, que trae el mismo valor cada vez,
+ * no reinicia el reloj a mitad de camino.
+ *
+ * @param {number|null} openedAt la marca de arranque que trae el servidor
+ */
+export function fijarDesfaseDeRonda(openedAt) {
+  const clave = openedAt == null ? null : String(openedAt);
+  if (clave === congeladoPara) return desfaseCongeladoMs;
+  congeladoPara = clave;
+  desfaseCongeladoMs = desfaseRelojMs;
+  return desfaseCongeladoMs;
+}
+
+/** El desfase congelado, para diagnóstico. */
+export function desfaseCongelado() {
+  return { ms: Math.round(desfaseCongeladoMs), para: congeladoPara };
+}
+
 /** Llama a una función RPC de Supabase y normaliza los errores. */
 export async function rpc(nombre, args = {}) {
   const corte = new AbortController();
@@ -137,9 +193,14 @@ function aMs(iso) {
  * Restarle el desfase deja `openedAt` en la misma escala que el reloj local,
  * así que el tiempo restante sale bien aunque el teléfono vaya mal.
  */
-function aMsLocal(iso) {
+function aMsLocal(iso, { congelado = false } = {}) {
   const n = aMs(iso);
-  return n == null ? null : n - desfaseRelojMs;
+  if (n == null) return null;
+  // Los instantes que mueven la barra usan el desfase CONGELADO, para que el
+  // ruido de un segundo de la cabecera `Date` no la haga retroceder. El resto
+  // (marcas de llegada, puntajes) usa el valor vivo, que es el más exacto.
+  const d = congelado ? desfaseCongeladoMs : desfaseRelojMs;
+  return n - d;
 }
 
 /**
@@ -186,8 +247,17 @@ export function estadoDesdeServidor(bruto, { completo = false } = {}) {
       optionKeys: opciones.map(o => (typeof o === 'string' ? null : o.k)),
       // Solo viene cuando el servidor decide que ya se puede publicar.
       correctIdx: idxCorrecto >= 0 ? idxCorrecto : null,
-      openedAt: aMsLocal(r.opened_at),
-      deadline: aMsLocal(r.deadline),
+      // La marca de arranque de la ronda. Con este valor se FIJA el desfase
+      // que moverá la barra durante toda la ronda: se congela aquí, una sola
+      // vez, y no se vuelve a tocar hasta la ronda siguiente. Sin esto, cada
+      // sondeo re-aprendía el desfase —con el ruido de un segundo de la
+      // cabecera `Date`— y la barra retrocedía de golpe a mitad de camino.
+      // Medido: 693 ms de retroceso; con el reloj limpio, cero.
+      openedAt: (() => {
+        const bruto = aMs(r.opened_at ?? r.openedAt ?? null);
+        return bruto == null ? null : bruto - fijarDesfaseDeRonda(bruto);
+      })(),
+      deadline: aMsLocal(r.deadline, { congelado: true }),
       // La vista del presentador lee `deadlineMs` (es el nombre que usa el
       // motor local y `estadoVisible`). Aquí solo se publicaba `durationMs`,
       // así que `segundos(undefined)` daba NaN y la cabecera mostraba
@@ -603,6 +673,41 @@ export const admin = {
   async cambiarClave(anterior, nueva) {
     const { error } = await rpc('admin_change_key', { p_old: anterior, p_new: nueva });
     return { error };
+  },
+
+  /**
+   * ¿Hay clave configurada? ¿Está bloqueada por intentos fallidos?
+   *
+   * La pantalla de configuraciones decía «La clave está configurada» mirando
+   * si Supabase estaba configurado, que es otra cosa. Con esto dice la verdad,
+   * y el modal sabe si debe pedir la clave actual o no.
+   */
+  async estadoClave() {
+    const { dato, error } = await rpc('admin_key_status');
+    return error ? { error } : { estado: dato ?? null };
+  },
+
+  /**
+   * El lema y la portada del menú. Público: se lee sin clave.
+   *
+   * Cualquier campo en `null` significa «todavía no se cambió», y la app usa
+   * el texto o el archivo que trae el código. Así una instalación nueva se ve
+   * igual que siempre sin que nadie configure nada.
+   */
+  async marca() {
+    const { dato, error } = await rpc('branding_get');
+    return error ? { error } : { marca: dato ?? null };
+  },
+
+  async cambiarLema(clave, lema) {
+    const { dato, error } = await rpc('branding_set_lema', { p_key: clave, p_lema: lema });
+    return error ? { error } : { marca: dato };
+  },
+
+  /** `data` es el webp en base64, con o sin el prefijo `data:`. */
+  async cambiarPortada(clave, data) {
+    const { dato, error } = await rpc('branding_set_portada', { p_key: clave, p_data: data });
+    return error ? { error } : { marca: dato };
   },
 
   async temas(gameSlug = 'seleccion-simple') {

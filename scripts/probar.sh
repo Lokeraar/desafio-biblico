@@ -35,7 +35,7 @@ SUITES_FALLIDAS=()
 # --- Pruebas de JavaScript -------------------------------------------
 if [ "$solo_sql" = false ]; then
   echo "=== Pruebas de JavaScript ==="
-  for suite in engine local partida cloud render qr admin-ui ajuste; do
+  for suite in engine local partida cloud render qr admin-ui ajuste latido imagen; do
     archivo="$RAIZ/src/lib/$suite.test.mjs"
     if [ ! -f "$archivo" ]; then
       echo "  FALTA $archivo"
@@ -98,6 +98,24 @@ if [ "$solo_js" = false ]; then
       printf '%s\n' "$salida" | rg 'ERROR|FALLA' | head -5 | sed 's/^/      /'
       TOTAL_FALLAS=$((TOTAL_FALLAS + 1))
       SUITES_FALLIDAS+=("smoke (SQL)")
+    fi
+
+    # El candado de intentos necesita una conexión POR INTENTO: dentro de una
+    # sola transacción el defecto que lo rompía desaparece y la prueba pasaría
+    # sin demostrar nada. Va aparte por eso, y se suma a mano porque su salida
+    # no tiene la forma de `smoke.sql`.
+    salida_candado="$(bash "$RAIZ/supabase/tests/candado.sh" 2>&1)"
+    ok_candado="$(printf '%s\n' "$salida_candado" | rg -o 'candado: [0-9]+ correctas' | rg -o '[0-9]+' | tail -1)"
+    if printf '%s\n' "$salida_candado" | rg -q 'candado: [0-9]+ correctas, 0 fallas'; then
+      echo "  candado: ${ok_candado:-0} correctas, 0 fallas"
+      TOTAL_OK=$((TOTAL_OK + ${ok_candado:-0}))
+    elif printf '%s\n' "$salida_candado" | rg -q 'Omitido:'; then
+      echo "  candado: omitido (sin Postgres)"
+    else
+      echo "  candado: FALLÓ"
+      printf '%s\n' "$salida_candado" | rg 'FALLA' | head -5 | sed 's/^/      /'
+      TOTAL_FALLAS=$((TOTAL_FALLAS + 1))
+      SUITES_FALLIDAS+=("candado (SQL)")
     fi
   fi
 fi
