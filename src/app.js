@@ -726,7 +726,7 @@ function panelVersiculo(estado) {
   if (!r) {
     return `
       ${cabecera}
-      <main class="crecer columna" style="gap:1rem; margin-top:1rem">
+      <main class="crecer columna panel-host" style="gap:1rem; margin-top:1rem">
         ${entorno}
         ${avisoHTML()}
         <div class="columna" style="gap:.8rem; margin-top:.5rem">
@@ -783,7 +783,7 @@ function panelVersiculo(estado) {
 
   return `
     ${cabecera}
-    <main class="crecer columna" style="gap:1rem; margin-top:1rem">
+    <main class="crecer columna panel-host" style="gap:1rem; margin-top:1rem">
       ${entorno}
       ${avisoHTML()}
 
@@ -809,6 +809,9 @@ function panelVersiculo(estado) {
       ${listaTurnosHTML(v)}
       ${controles}
       ${lista}
+      <button class="boton boton-peligro" data-accion="pedir-terminar">
+        Terminar juego
+      </button>
     </main>`;
 }
 
@@ -1235,12 +1238,19 @@ function vistaJugador() {
   // mostrar lo que la sala está jugando.
   if (s && s.gameSlug === 'completar-versiculo' && app.yo) {
     const miPulso = pulsoPropio(s);
+    const rr = s.round;
+    const base = rr ? {
+      openedAt: rr.openedAt, pausedAt: rr.pausedAt,
+      pausedTotal: rr.pausedTotal, durationMs: rr.deadlineMs
+    } : null;
     return pantallaParticipante(s, {
       miId: app.yo.playerId,
       miPulso,
       enviando: app.enviandoPulso,
       rechazo: app.rechazoPulso,
-      felicitacionActual: felicitaPara(s, miPulso)
+      felicitacionActual: felicitaPara(s, miPulso),
+      restanteMs: base ? E.restanteMs(base) : null,
+      totalMs: rr?.deadlineMs ?? null
     });
   }
 
@@ -1554,7 +1564,17 @@ function vistaTV() {
   const s = app.tv ? app.estado : null;
 
   if (s && s.gameSlug === 'completar-versiculo') {
-    return pantallaTV(s);
+    // El QR se dibuja aquí: la URL de la sala la conoce esta capa.
+    const rr = s.round;
+    const base = rr ? {
+      openedAt: rr.openedAt, pausedAt: rr.pausedAt,
+      pausedTotal: rr.pausedTotal, durationMs: rr.deadlineMs
+    } : null;
+    return pantallaTV(s, {
+      qr: s.code ? qrSala(s.code) : '',
+      restanteMs: base ? E.restanteMs(base) : null,
+      totalMs: rr?.deadlineMs ?? null
+    });
   }
 
   if (!s) {

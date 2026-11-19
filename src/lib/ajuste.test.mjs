@@ -126,10 +126,15 @@ console.log('\n=== 10. La capacidad la pone el perfil, no el rol ===');
    hereda el perfil, y el agente no inventa ninguna para que algo quepa. */
 const conCapacidadPropia = ROLES.filter(r => r.renglones != null);
 const esDelMenu = (sel) => /menu|juego-tarjeta/.test(sel);
-const pregunta = conCapacidadPropia.filter(r => !esDelMenu(r.sel));
-t(pregunta.length === 1 && pregunta[0].sel === '.enunciado',
-  'fuera del menu, solo la pregunta declara capacidad');
-t(pregunta[0].renglones === 2, 'con 2 renglones declarados');
+/* Fuera del menú, solo el VERSÍCULO declara 2: se lee, no se adivina.
+   Son tres selectores porque son tres pantallas con el mismo texto. */
+const pregunta = conCapacidadPropia.filter(r => !esDelMenu(r.sel) && r.renglones === 2);
+t(pregunta.length === 2, 'el versiculo declara 2 renglones: presentador y las otras dos pantallas');
+t(pregunta.every(r => /versiculo|enunciado/.test(r.sel)),
+  'y todos son el texto del versiculo');
+t(conCapacidadPropia.filter(r => !esDelMenu(r.sel) && r.renglones !== 2)
+   .every(r => r.renglones === 1),
+  'el resto declara 1, como el menu');
 t(conCapacidadPropia.filter(r => esDelMenu(r.sel)).every(r => r.renglones === 1),
   'y el menu entero va en 1 renglon');
 t(PERFILES.ancho.gracia === 1, 'y la gracia del perfil le suma el +1');

@@ -1764,15 +1764,21 @@ body.tv .opciones { grid-template-columns: 1fr; }
   flex: 0 0 auto;
 }
 
+/* SIN `display: flex` en el versículo.
+   Con flex, cada palabra y cada hueco pasan a ser un elemento flexible y
+   el texto se parte en COLUMNAS en vez de fluir en renglones. Se veía
+   texto en tres columnas ilegibles. El texto es una sola columna que se
+   envuelve sola: no hace falta ninguna caja flexible. */
 .jugador-versiculo .versiculo {
   flex: 1 1 auto;
-  display: flex;
-  align-items: center;
-  margin: 0;
+  display: block;
+  margin-block: auto;
+  margin-inline: 0;
   font-size: var(--t-xl);
   line-height: 1.38;
   font-weight: 700;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 
 .pie-jugador {
@@ -1784,10 +1790,13 @@ body.tv .opciones { grid-template-columns: 1fr; }
 
 /* ---------- el botón negro: la tecla del mando ---------- */
 .boton-ok {
-  width: 100%;
-  border: 2px solid rgba(255, 255, 255, .22);
-  border-radius: var(--radio);
-  padding: 1.1em 1em;
+  /* Circular y grande: es la tecla de un mando, se pulsa sin mirar. */
+  width: clamp(11rem, 42vw, 15rem);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  margin-inline: auto;
+  border: 3px solid rgba(255, 255, 255, .22);
+  padding: .6em;
   font: inherit;
   font-size: var(--t-lg);
   font-weight: 800;
@@ -1796,12 +1805,14 @@ body.tv .opciones { grid-template-columns: 1fr; }
   color: #fff;
   background: linear-gradient(180deg, #242424 0%, #000 62%, #000 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, .16),
-    0 7px 0 #000,
-    0 12px 28px rgba(0, 0, 0, .6);
+    inset 0 2px 0 rgba(255, 255, 255, .18),
+    0 9px 0 #000,
+    0 16px 34px rgba(0, 0, 0, .65);
   cursor: pointer;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  display: grid;
+  place-items: center;
 }
 .boton-ok:active:not(:disabled) {
   transform: translateY(4px);
@@ -2092,3 +2103,22 @@ body.tv .opciones { grid-template-columns: 1fr; }
   justify-content: center;
   gap: .3rem;
 }
+
+/* ---------- televisor: lobby con QR ---------- */
+/* El QR es lo que la gente apunta con el teléfono: en el lobby del
+   televisor va grande y junto al código, no el código suelto. */
+.tv-lobby { justify-content: center; }
+.qr-tv-grande {
+  background: #fff;
+  padding: clamp(.6rem, 2vmin, 1.2rem);
+  border-radius: 18px;
+  line-height: 0;
+  box-shadow: var(--sombra);
+  width: clamp(180px, 42vmin, 420px);
+  aspect-ratio: 1;
+}
+.qr-tv-grande svg { width: 100%; height: 100%; display: block; }
+.espera-datos { display: flex; flex-direction: column; align-items: center; gap: .4rem; }
+
+/* ---------- panel del presentador ---------- */
+.panel-host { display: flex; flex-direction: column; gap: .8rem; }

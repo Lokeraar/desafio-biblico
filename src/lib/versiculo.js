@@ -100,7 +100,7 @@ export function versiculoDesdeServidor(bruto, { completo = false } = {}) {
 export function versiculoHTML(prompt) {
   const texto = esc(prompt ?? '');
   // `____` es lo único que el servidor escribe para un hueco tapado.
-  return texto.replace(/_{4,}/g, '<span class="hueco"></span>');
+  return texto.replace(/_{3,}/g, '<span class="hueco"></span>');
 }
 
 /**
@@ -131,7 +131,7 @@ export function versiculoHostHTML(prompt, huecos = []) {
 
   // El texto se parte por los huecos ANTES de escapar: si se escapara
   // primero, las etiquetas del subrayado saldrían como texto visible.
-  const trozos = texto.split(/_{4,}/);
+  const trozos = texto.split(/_{3,}/);
   let salida = '';
   let i = 0;
   trozos.forEach((trozo, n) => {
@@ -145,6 +145,30 @@ export function versiculoHostHTML(prompt, huecos = []) {
     }
   });
   return salida;
+}
+
+
+/**
+ * Barra y segundos de la ronda, para las pantallas del juego nuevo.
+ *
+ * El motor del reloj vive en `latido.js` y lo monta `render()` en app.js,
+ * que busca `#barra > i` y `#reloj-jug` / `#reloj-tv`. Aquí solo se deja
+ * el hueco con el valor inicial: el movimiento cuadro a cuadro lo pone el
+ * latido, no un intervalo ni una transición.
+ *
+ * `restanteMs` y `totalMs` llegan como parámetros porque este módulo es
+ * puro: no sabe leer el reloj ni el DOM.
+ */
+export function relojHTML(restanteMs, totalMs, idReloj) {
+  if (!(totalMs > 0)) return '';
+  const ms = Math.max(0, Math.min(Number(restanteMs) || 0, totalMs));
+  const pct = (ms / totalMs) * 100;
+  const segs = Math.ceil(ms / 1000);
+  return `
+    <div class="reloj-ronda">
+      <div class="barra-tiempo" id="barra"><i style="width:${pct}%"></i></div>
+      <span class="reloj" id="${idReloj}">${segs} s</span>
+    </div>`;
 }
 
 /* ------------------------------------------------------------------ */
@@ -252,7 +276,7 @@ export function estadoBoton({
  */
 export function pantallaParticipante(estado, {
   miId = null, miPulso = null, enviando = false, rechazo = null,
-  felicitacionActual = null
+  felicitacionActual = null, restanteMs = null, totalMs = null
 } = {}) {
   const r = estado?.round;
   const vers = versiculoDesdeServidor(estado);
@@ -324,6 +348,7 @@ export function pantallaParticipante(estado, {
         <span class="puntos">${yo?.score ?? 0} pts</span>
       </div>
       ${r.reference ? `<span class="ref">${esc(r.reference)}</span>` : ''}
+      ${r.state === 'open' ? relojHTML(restanteMs, totalMs, 'reloj-jug') : ''}
       <p class="versiculo">${versiculoHTML(r.prompt)}</p>
       <div class="pie-jugador">
         ${aviso ? `<div class="aviso ${aviso.tipo}">${esc(aviso.texto)}</div>` : ''}
@@ -352,20 +377,27 @@ function ultimoJuicioDe(vers, estadoRonda) {
  * que el presentador lo sentencie. Estas dos cosas no son un detalle de
  * estilo: son las reglas que se acordaron y están en el contrato.
  */
-export function pantallaTV(estado) {
+export function pantallaTV(estado, { qr = '', restanteMs = null, totalMs = null } = {}) {
   const r = estado?.round;
   const vers = versiculoDesdeServidor(estado);
 
   if (!r) {
+    // Lobby del televisor: el QR y el código son lo ÚNICO que importa aquí,
+    // porque es lo que la gente tiene que apuntar con el teléfono. Van
+    // grandes y juntos, no el código suelto sin código de barras.
+    const cuantos = (estado?.players ?? []).length;
     return `
-      <div class="pantalla pantalla-tv centro">
+      <div class="pantalla pantalla-tv tv-lobby centro">
         <div class="espera-caja">
-          <div>
+          ${qr ? `<div class="qr-tv-grande">${qr}</div>` : ''}
+          <div class="espera-datos">
             <div class="codigo-grande">${esc(estado?.code ?? '')}</div>
-            <p class="espera-txt">Entra en la app y escribe este código</p>
+            <p class="espera-txt">Escanea el QR o escribe este código</p>
           </div>
         </div>
-        <div class="aviso neutro">${(estado?.players ?? []).length} en la sala</div>
+        <div class="aviso neutro">
+          ${cuantos === 0 ? 'Esperando participantes' : `${cuantos} en la sala`}
+        </div>
       </div>`;
   }
 
@@ -402,6 +434,7 @@ export function pantallaTV(estado) {
       <div class="cuerpo-tv">
         <p class="versiculo">${versiculoHTML(r.prompt)}</p>
       </div>
+      ${r.state === 'open' ? relojHTML(restanteMs, totalMs, 'reloj-tv') : ''}
       <div class="pie-tv">${pie}</div>
     </div>`;
 }
@@ -450,14 +483,18 @@ export function listaTurnosHTML(vers, turnoAnswerId = null) {
 export function modalJuicioHTML(vers, huecos, nombre) {
   const disponibles = (huecos ?? []).filter(h => !h.revelado);
   if (!disponibles.length) {
-    return `<div class="modal-caja">
-      <h3>No quedan huecos por revelar</h3>
-      <p class="sub">El versículo ya está completo.</p>
+    return `<div class="modal-fondo" data-solo-fondo="1">
+      <div class="modal" role="dialog" aria-modal="true">
+        <h2 style="font-size:var(--t-lg); margin:0">No quedan huecos por revelar</h2>
+        <p class="chico tenue" style="margin:0">El versículo ya está completo.</p>
+      </div>
     </div>`;
   }
   return `
-    <div class="modal-caja">
-      <h3>¿Cuáles acertó ${esc(nombre)}?</h3>
+    <div class="modal-fondo" data-solo-fondo="1">
+    <div class="modal" role="dialog" aria-modal="true"
+         aria-label="Elegir las palabras que acertó ${esc(nombre)}">
+      <h2 style="font-size:var(--t-lg); margin:0">¿Cuáles acertó ${esc(nombre)}?</h2>
       <p class="sub">Marca las palabras que dijo bien. Las que no marques quedan tapadas para el siguiente.</p>
       ${disponibles.map(h => `
         <label class="casilla">
@@ -466,11 +503,12 @@ export function modalJuicioHTML(vers, huecos, nombre) {
           <span class="palabra">${esc(h.respuesta)}</span>
           <span class="quien-dijo">hueco ${h.indice + 1} de ${vers?.huecosTotales ?? disponibles.length}</span>
         </label>`).join('')}
-      <div class="controles">
-        <div class="fila-botones">
-          <button class="sec" type="button" data-accion="cancelar-juicio">Cancelar</button>
-          <button class="ok" type="button" data-accion="confirmar-juicio">Confirmar</button>
-        </div>
+      <div class="fila-botones">
+        <button class="boton boton-secundario" type="button"
+                data-accion="cancelar-juicio">Cancelar</button>
+        <button class="boton" type="button"
+                data-accion="confirmar-juicio">Confirmar</button>
       </div>
+    </div>
     </div>`;
 }

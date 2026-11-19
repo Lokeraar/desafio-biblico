@@ -738,13 +738,20 @@ begin
   -- -------------------------------------------------------------------
   v_render := public.versiculo_render('Uno {dos} tres {cuatro} cinco {seis}', array[0]);
 
+  /* Un guion por letra: «cuatro» tiene 6 y «seis» tiene 4. Así el
+     participante sabe cuántas letras le faltan sin que se le diga cuáles. */
   perform public.t_assert(
-    v_render = 'Uno dos tres ____ cinco ____',
-    'versiculo_render rellena el hueco revelado y tapa los otros');
+    v_render = 'Uno dos tres ______ cinco ____',
+    'versiculo_render rellena el hueco revelado y dibuja el otro por letras');
 
   perform public.t_assert(
-    (length(v_render) - length(replace(v_render, '____', ''))) / 4 = 2,
-    'versiculo_render deja exactamente dos huecos tapados');
+    position('cuatro' in v_render) = 0 and position('seis' in v_render) = 0,
+    'versiculo_render no deja escapar ninguna respuesta tapada');
+
+  /* Palabras cortas: el mínimo de 3 guiones evita un hueco invisible. */
+  perform public.t_assert(
+    public.versiculo_render('A {ir} B', array[]::int[]) = 'A ___ B',
+    'una palabra de 2 letras se dibuja con el minimo de 3 guiones');
 
   -- Si `cuatro` o `seis` aparecieran, la respuesta se estaría escapando.
   perform public.t_assert(
@@ -752,7 +759,7 @@ begin
     'versiculo_render no deja escapar ninguna respuesta tapada');
 
   perform public.t_assert(
-    public.versiculo_render('Uno {dos} tres', array[]::int[]) = 'Uno ____ tres',
+    public.versiculo_render('Uno {dos} tres', array[]::int[]) = 'Uno ___ tres',
     'versiculo_render sin nada revelado tapa todo');
 
   v_huecos := public.versiculo_huecos('Uno {dos} tres {cuatro}');
@@ -953,8 +960,8 @@ begin
 
   v_res := public.room_state(v_room);
   perform public.t_assert(
-    (v_res -> 'round' ->> 'prompt') = 'Uno dos tres ____ cinco ____',
-    'el enunciado público destapa solo lo acertado');
+    (v_res -> 'round' ->> 'prompt') = 'Uno dos tres ______ cinco ____',
+    'el enunciado publico destapa solo lo acertado, con un guion por letra');
 
   perform public.t_assert(
     (select turno_answer_id from public.rounds where id = v_round)
@@ -1022,14 +1029,25 @@ begin
     (select state from public.rounds where id = v_round) = 'juicio',
     'deshacer reabre la ronda cerrada');
 
+  /* Los puntos se pagan al confirmar. Deshacer la confirmación de Ana le
+     quita lo suyo, pero NO lo de Beto, que ganó su hueco de verdad: su
+     trabajo no puede perderse por un error ajeno. Queda 1 hueco de 3. */
   perform public.t_assert(
-    (select sum(score) from public.players where room_id = v_room) = 0,
-    'deshacer devuelve los puntos repartidos: nadie queda con puntos de un error');
+    (select score from public.players where id = v_ia) = 0,
+    'deshacer devuelve los puntos de la sentencia deshecha');
 
   perform public.t_assert(
-    (select coalesce(sum(puntos), 0) from public.answers
-      where round_id = v_round) = 0,
-    'deshacer deja las respuestas en cero puntos: el dato no puede decir que pagó algo que ya se devolvió');
+    (select score from public.players where id = v_ib) = 3,
+    'y NO toca los puntos de quien acertó de verdad');
+
+  /* Con el pago al sentenciar, deshacer ya no pone todo en cero: la
+     sentencia deshecha queda en 0 y las que siguen válidas conservan lo
+     suyo. El invariante que importa es ese: lo deshecho no paga, lo vivo
+     sí. */
+  perform public.t_assert(
+    (select coalesce(puntos, -1) from public.answers
+      where round_id = v_round and player_id = v_ia) = 0,
+    'deshacer deja en cero la sentencia que se deshizo');
 
   perform public.t_assert(
     (select veredicto from public.answers
@@ -1098,9 +1116,12 @@ begin
     (select id from public.answers where round_id = v_round and player_id = v_ic),
     false, array[]::int[]);
 
+  /* Fue un ❌ a la única persona que pulsó, así que nadie ganó ninguna
+     palabra: se cierra y se destapa. No hay segunda vuelta para un
+     versículo en el que nadie acertó. */
   perform public.t_assert(
     (select state from public.rounds where id = v_round) = 'revealed',
-    'tras vencer el reloj todavía se puede juzgar y cerrar la ronda');
+    'sin ningun acierto la ronda se cierra y se destapa');
 
   -- El temporizador sigue impidiendo pulsar fuera de tiempo.
   v_pos := public.host_open_question(v_room, v_token, v_q);

@@ -452,6 +452,29 @@ export const ROLES = [
   { sel: '.menu-juego-actual', categoria: 'contenido', renglones: 1 },
   { sel: '.menu-pie', categoria: 'etiqueta', renglones: 1 },
   { sel: '.menu-lema', categoria: 'contenido', renglones: 1 },
+
+  /* --- completar el versículo --------------------------------------- */
+  /* El panel del presentador va entero en 1 + 1; el versículo, en 2 + 1.
+     Lo pidió el usuario, y va declarado aquí, en un solo sitio visible. */
+  { sel: '.panel-host, .panel-host .aviso, .panel-host .mini, .panel-host .chico',
+    categoria: 'contenido', renglones: 1 },
+  { sel: '.panel-host .boton, .panel-host button',
+    categoria: 'contenido', renglones: 1 },
+  { sel: '.participante .nombre-j, .participante .chico',
+    categoria: 'contenido', renglones: 1 },
+
+  /* Participante y televisor: el versículo manda, 2 + 1. El resto del
+     texto va en 1 + 1. */
+  { sel: '.jugador-versiculo .ref, .jugador-versiculo .aviso, .barra-jugador',
+    categoria: 'contenido', renglones: 1 },
+  { sel: '.jugador-versiculo .versiculo, .cuerpo-tv .versiculo',
+    categoria: 'titulo', renglones: 2 },
+  { sel: '.tv-top .ref, .tv-top .sala, .pie-tv .aviso',
+    categoria: 'contenido', renglones: 1 },
+  { sel: '.codigo-grande', categoria: 'titulo', renglones: 1 },
+  { sel: '.espera-txt, .lista-aportes', categoria: 'contenido', renglones: 1 },
+  { sel: '.modal-caja h2, .modal-caja h3', categoria: 'titulo', renglones: 1 },
+  { sel: '.casilla .palabra, .casilla .quien-dijo', categoria: 'contenido', renglones: 1 },
   /* Párrafos explicativos. El usuario declaró la capacidad 1 + 1 para TODO el
      texto de la interfaz, así que la prosa también entra: si no cabe en dos
      renglones, encoge. Lo que NO se hace es inventarle una capacidad propia
