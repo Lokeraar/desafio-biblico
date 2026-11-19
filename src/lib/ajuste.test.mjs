@@ -7,7 +7,8 @@
 import {
   REM, UMBRAL_ZOOM, TOPE_FACTOR, factorEscala,
   TECHO_CONTENIDO, TECHO_TITULO, SUELO, PASOS,
-  PERFILES, perfilPara, ptARem, ROLES, PASOS_TITULO, esTitulo, cabe
+  PERFILES, perfilPara, ptARem, ROLES, PASOS_TITULO, esTitulo, cabe,
+  esCajaDeTexto, ajustarGrupo
 } from './ajuste.js';
 
 let ok = 0, fail = 0;
@@ -280,6 +281,76 @@ t(/setTimeout\(reajustar/.test(app),
   'vuelve a ajustar un momento despues: la escala tarda en actualizarse');
 t(/addEventListener\('visibilitychange'/.test(app), 'y al volver visible, porque oculto no se mide');
 t(/document\.fonts/.test(app), 'y cuando la tipografia termina de cargar');
+
+console.log('\n=== 22. Un contenedor de maquetacion NO se ajusta como texto ===');
+// El defecto real: el rol `.panel-host` casaba con el <main> entero. El ajuste
+// lo trataba como una caja de texto, contaba los renglones de TODOS sus
+// descendientes, no cabia en uno, y le ponia overflow:hidden con dos renglones
+// de alto. El panel quedaba en 28 px con 1010 px de contenido y la pantalla
+// se veia vacia: solo se leia «Codigo de la sala» cortado arriba.
+const nodo = (tagName, hijos = []) => ({ tagName, children: hijos });
+const texto = (...nombres) => nodo('SPAN', nombres.length ? nombres : []);
+
+t(esCajaDeTexto(nodo('P')) === true, 'un <p> sin hijos es caja de texto');
+t(esCajaDeTexto(nodo('P', [nodo('B'), nodo('EM')])) === true,
+  'con hijos de linea (<b>, <em>) sigue siendo texto');
+t(esCajaDeTexto(nodo('P', [nodo('SPAN'), nodo('BR'), nodo('SPAN')])) === true,
+  'un <br> no lo convierte en contenedor');
+t(esCajaDeTexto(nodo('MAIN', [nodo('DIV'), nodo('P')])) === false,
+  'un <main> con divs dentro NO es caja de texto: es el defecto');
+t(esCajaDeTexto(nodo('DIV', [nodo('BUTTON')])) === false,
+  'una fila de botones no se ajusta como texto');
+t(esCajaDeTexto(nodo('SECTION', [nodo('DIV')])) === false,
+  'una rejilla tampoco');
+t(esCajaDeTexto(null) === false, 'nulo no es caja de texto');
+
+// Y ningun rol puede volver a apuntar a un contenedor: los selectores que
+// terminan en la clase de un <main> se colarian otra vez.
+const ROLES_DE_CONTENEDOR = ['.panel-host', '.pantalla', '.pantalla-ceremonia'];
+for (const sel of ROLES_DE_CONTENEDOR) {
+  const sueltos = ROLES.filter(r =>
+    r.sel.split(',').map(x => x.trim()).includes(sel));
+  t(sueltos.length === 0, `ningun rol apunta a ${sel} a secas (casa con el contenedor)`);
+}
+
+// El rol del panel sigue existiendo, pero acotado a texto de dentro.
+const panel = ROLES.filter(r => r.sel.includes('.panel-host'));
+t(panel.length > 0, 'el panel del presentador sigue teniendo su rol de texto');
+t(panel.every(r => r.sel.split(',').every(x => x.trim() !== '.panel-host')),
+  'y ninguno de sus selectores es `.panel-host` solo');
+
+console.log('\n=== 23. La guarda protege al contenedor en la PRACTICA ===');
+// No basta con que el selector este bien escrito: si alguien vuelve a pasar
+// un contenedor a `ajustarGrupo`, la funcion tiene que negarse a tocarlo.
+// Sin DOM, un contenedor de mentira con su `style` y sus hijos de bloque.
+const contenedorFalso = () => ({
+  tagName: 'MAIN',
+  className: 'panel-host',
+  style: {},
+  children: [nodo('DIV'), nodo('P'), nodo('BUTTON')],
+  clientWidth: 380, scrollWidth: 380
+});
+
+const caja = contenedorFalso();
+const r = ajustarGrupo([caja], { renglones: 1 });
+t(r.pt === 0, 'un contenedor no recibe tamano: el ajuste lo descarta');
+t(r.recortado === false, 'y no queda marcado como recortado');
+t(caja.style.fontSize === undefined,
+  'NO se le pone fontSize al contenedor: era el defecto');
+t(caja.style.overflow === undefined,
+  'NO se le pone overflow:hidden: era lo que dejaba el panel en 28 px');
+t(caja.style.maxBlockSize === undefined,
+  'NO se le inventa un maxBlockSize de dos renglones');
+
+// Y un texto de verdad SI se sigue ajustando, para que la guarda no apague
+// el ajuste entero por error.
+const parrafo = {
+  tagName: 'P', className: 'aviso', style: {},
+  children: [nodo('B')], clientWidth: 380, scrollWidth: 380
+};
+ajustarGrupo([parrafo], { renglones: 1 });
+t(parrafo.style.fontSize !== undefined,
+  'un <p> de verdad SI se ajusta: la guarda no apaga el ajuste');
 
 console.log('\n===============================================');
 if (fail === 0) console.log(` TODO EN VERDE: ${ok} correctas, 0 fallas`);

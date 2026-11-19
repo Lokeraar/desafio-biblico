@@ -22,42 +22,16 @@
 -- =====================================================================
 
 -- ---------------------------------------------------------------------
--- 1. Reabrir el timbrazo conservando lo destapado
+-- 1. El timbrazo NO se reabre entre palabras
 -- ---------------------------------------------------------------------
--- Se diferencia de `host_reabrir_pulsaciones` en que aquella BORRA los
--- pulsos (solo se usa antes de juzgar). Esta conserva a quienes ya
--- hablaron y solo acepta pulsos nuevos, que es lo que hace falta entre
--- una palabra y la siguiente.
-create or replace function public.versiculo_siguiente_tanda(p_round uuid)
-returns void
-language plpgsql
-security definer
-set search_path = public, pg_temp
-as $$
-declare
-  v_round public.rounds;
-  v_room  public.rooms;
-begin
-  select * into v_round from public.rounds where id = p_round for update;
-  if not found then return; end if;
-
-  select * into v_room from public.rooms where id = v_round.room_id;
-
-  update public.rounds
-     set state = 'open',
-         turno_answer_id = null,
-         opened_at = clock_timestamp(),
-         deadline = clock_timestamp() + make_interval(secs => v_room.round_seconds),
-         paused_at = null,
-         paused_total_ms = 0
-   where id = p_round;
-
-  update public.rooms set status = 'question', paused = false
-   where id = v_round.room_id;
-end;
-$$;
-
-revoke all on function public.versiculo_siguiente_tanda(uuid) from public;
+-- Se quitó `versiculo_siguiente_tanda`. El orden de la ronda lo fija quien
+-- pulsó más rápido al principio y esa lista no crece: agotada, la ronda
+-- cierra. Reabrir el temporizador hacía que el mismo versículo pareciera
+-- empezar de nuevo.
+-- `versiculo_siguiente_tanda` se eliminó a propósito: el timbrazo ya no se
+-- reabre. Está aquí de cuerpo entero sólo en el historial, para que se lea
+-- por qué se fue.
+drop function if exists public.versiculo_siguiente_tanda(uuid);
 
 -- ---------------------------------------------------------------------
 -- 2. Sentenciar: solo lo marcado, puntos al momento, ronda sigue
@@ -201,24 +175,26 @@ begin
     end if;
 
     /*
-     * Lista agotada y todavía faltan palabras. Dos casos, y se decidieron
-     * distinto:
-     *   - Alguien ganó alguna palabra: la ronda sigue y se reabre el
-     *     timbrazo para que otros intenten las que quedan.
-     *   - Nadie ganó NADA: se cierra y se destapa el versículo. No hay
-     *     segunda vuelta para un versículo en el que nadie acertó.
+     * LA LISTA NO SE REABRE. Se cierra la ronda.
+     *
+     * El timbrazo se cierra UNA vez por ronda y esa lista es definitiva: el
+     * orden lo fija quien pulsó más rápido al principio. Cuando se agota, ya
+     * hablaron todos los que querían hablar, y quedan dos casos:
+     *
+     *   - Nadie ganó nada: se destapa el versículo y no hubo ganador.
+     *   - Alguien ganó algunas palabras pero no todas: esas palabras quedan
+     *     como su acierto parcial, y las que nadie acertó se destapan al
+     *     cerrar. No hay segunda vuelta.
+     *
+     * Antes se reiniciaba el temporizador para una tanda nueva, y eso
+     * confundía: en pantalla parecía que nadie había acertado nada y el
+     * mismo versículo volvía a empezar. Acertar una palabra de tres es un
+     * acierto parcial de ESA persona, y el turno pasa al siguiente de la
+     * lista, no a una ronda nueva.
      */
-    if coalesce(array_length(v_rev, 1), 0) = 0 then
-      perform public.cerrar_ronda_versiculo(v_round.id, false);
-      return jsonb_build_object(
-        'round_id', v_round.id, 'state', 'closed',
-        'turno_answer_id', null, 'huecos_restantes', true
-      );
-    end if;
-
-    perform public.versiculo_siguiente_tanda(v_round.id);
+    perform public.cerrar_ronda_versiculo(v_round.id);
     return jsonb_build_object(
-      'round_id', v_round.id, 'state', 'open',
+      'round_id', v_round.id, 'state', 'closed',
       'turno_answer_id', null, 'huecos_restantes', true
     );
   end if;

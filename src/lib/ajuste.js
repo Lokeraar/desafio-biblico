@@ -339,8 +339,50 @@ export function cabe({ renglones, desborda }, capacidad) {
  * @param {number} [o.gracia] líneas extra disponibles tras el suelo
  * @returns {{pt: number, renglones: number, graciaUsada: boolean, recortado: boolean}}
  */
+/**
+ * ¿Este elemento es una caja de texto, o un contenedor de maquetación?
+ *
+ * Caja de texto: no tiene hijos, o sus hijos son todos de línea (`<b>`,
+ * `<em>`, `<span>`…), que es texto enriquecido y se mide como texto.
+ *
+ * Contenedor: tiene al menos un hijo de bloque (`<div>`, `<p>`, `<button>`…).
+ * Ese no se ajusta: su letra no es la que se ve.
+ *
+ * Se decide por `tagName` y no por `getComputedStyle` para que la cuenta sea
+ * la misma en el navegador y en las pruebas, que corren sin DOM.
+ */
+const EN_LINEA = new Set([
+  'B', 'I', 'EM', 'STRONG', 'SPAN', 'BR', 'SMALL', 'SUP', 'SUB',
+  'MARK', 'U', 'CODE', 'TIME', 'ABBR', 'S', 'Q', 'CITE', 'KBD'
+]);
+
+export function esCajaDeTexto(el) {
+  if (!el) return false;
+  const hijos = el.children;
+  if (!hijos || typeof hijos.length !== 'number') return true;
+  for (let i = 0; i < hijos.length; i++) {
+    const hijo = hijos[i];
+    const etiqueta = String(hijo?.tagName || '').toUpperCase();
+    if (etiqueta === 'BR') continue;
+    if (!EN_LINEA.has(etiqueta)) return false;
+  }
+  return true;
+}
+
 export function ajustarGrupo(els, { pasos, renglones, gracia, categoria } = {}) {
-  const grupo = [...(els || [])].filter(Boolean);
+  /* SOLO CAJAS DE TEXTO.
+   *
+   * Un rol con selector amplio puede casar con un CONTENEDOR de maquetación
+   * —un <main>, una rejilla, una fila de botones—. Ajustar eso como si fuera
+   * texto lo rompe: `contarRenglones` cuenta los renglones de todos sus
+   * descendientes, así que el contenedor "nunca cabe", se va al último paso
+   * y termina con `overflow:hidden` y `maxBlockSize` de dos renglones. El
+   * panel del presentador quedó en 28 px de alto con 1010 px de contenido, y
+   * la pantalla se veía vacía.
+   *
+   * Un contenedor no tiene un tamaño de letra propio que ajustar: lo que se
+   * ajusta es el texto que hay dentro. Se descarta y se sigue con el resto. */
+  const grupo = [...(els || [])].filter(Boolean).filter(esCajaDeTexto);
   const perfil = perfilPara();
   const capacidad = typeof renglones === 'number' ? renglones : perfil.renglones;
   const extra = typeof gracia === 'number' ? gracia : perfil.gracia;
@@ -456,7 +498,11 @@ export const ROLES = [
   /* --- completar el versículo --------------------------------------- */
   /* El panel del presentador va entero en 1 + 1; el versículo, en 2 + 1.
      Lo pidió el usuario, y va declarado aquí, en un solo sitio visible. */
-  { sel: '.panel-host, .panel-host .aviso, .panel-host .mini, .panel-host .chico',
+  /* SIN `.panel-host` A SECAS. Ese selector casaba con el <main> entero y
+     el ajuste lo trataba como una caja de texto: no cabía en un renglón, se
+     recortaba y el panel quedaba en 28 px. Lo que se ajusta es el texto de
+     dentro, que son los tres selectores que siguen. */
+  { sel: '.panel-host .aviso, .panel-host .mini, .panel-host .chico',
     categoria: 'contenido', renglones: 1 },
   { sel: '.panel-host .boton, .panel-host button',
     categoria: 'contenido', renglones: 1 },

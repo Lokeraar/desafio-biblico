@@ -1168,6 +1168,66 @@ begin
     'sin pulsaciones la ronda se cierra sin ganador');
 
   -- -------------------------------------------------------------------
+  -- -------------------------------------------------------------------
+  -- 17.11 La lista de turnos NO se reabre entre palabras
+  -- -------------------------------------------------------------------
+  -- Se midió en el juego real: con tres huecos, si una persona acertaba uno
+  -- y la siguiente otro, el sistema reabría el temporizador para una tanda
+  -- nueva. En pantalla parecía que nadie había acertado nada y el mismo
+  -- versículo volvía a empezar. Lo correcto: el orden lo fija quien pulsó
+  -- primero al principio de la ronda, y agotada la lista la ronda cierra.
+  declare
+    v_r2  uuid;
+    v_dl  timestamptz;
+    v_dl2 timestamptz;
+  begin
+    v_pos := public.host_open_question(v_room, v_token, v_q);
+    v_r2 := (v_pos ->> 'round_id')::uuid;
+    perform public.host_iniciar(v_room, v_token);
+
+    -- Los tres pulsan al principio: ese orden es definitivo.
+    perform public.player_pulsar(v_ia, v_ta, v_r2);
+    perform public.player_pulsar(v_ib, v_tb, v_r2);
+    perform public.player_pulsar(v_ic, v_tc, v_r2);
+    perform public.host_cerrar_pulsaciones(v_room, v_token);
+
+    select deadline into v_dl from public.rounds where id = v_r2;
+
+    -- Ana acierta una de tres.
+    perform public.host_sentenciar(v_room, v_token,
+      (select id from public.answers where round_id = v_r2 and player_id = v_ia),
+      true, array[0]);
+
+    select deadline into v_dl2 from public.rounds where id = v_r2;
+    perform public.t_assert(v_dl = v_dl2,
+      'pasar el turno NO reinicia el temporizador');
+
+    perform public.t_assert(
+      (select turno_answer_id from public.rounds where id = v_r2)
+        = (select id from public.answers where round_id = v_r2 and player_id = v_ib),
+      'tras un acierto parcial el turno pasa al siguiente que pulsó');
+
+    -- Beto acierta otra y Caro falla: lista agotada y todavía falta una.
+    perform public.host_sentenciar(v_room, v_token,
+      (select id from public.answers where round_id = v_r2 and player_id = v_ib),
+      true, array[1]);
+    perform public.host_sentenciar(v_room, v_token,
+      (select id from public.answers where round_id = v_r2 and player_id = v_ic),
+      false, array[]::int[]);
+
+    perform public.t_assert(
+      (select state from public.rounds where id = v_r2) = 'revealed',
+      'agotada la lista con palabras sin acertar, la ronda CIERRA (no se reabre)');
+
+    perform public.t_assert(
+      (select deadline from public.rounds where id = v_r2) = v_dl,
+      'y el temporizador tampoco se reinicia al cerrar');
+
+    perform public.t_assert(
+      (select huecos_revelados from public.rounds where id = v_r2) = '[0, 1, 2]'::jsonb,
+      'al cerrar se destapan también las palabras que nadie acertó');
+  end;
+
   -- 17.10 El juego viejo sigue intacto
   -- -------------------------------------------------------------------
   perform public.t_assert(
