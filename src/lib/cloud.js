@@ -300,6 +300,16 @@ export function estadoDesdeServidor(bruto, { completo = false } = {}) {
     roomId: bruto.room_id,
     code: bruto.code,
     gameSlug: bruto.game_slug,
+    // Solo el presentador recibe estos dos: `huecos` diría la respuesta
+    // antes de destaparla, y `turno_answer_id` a quién le toca. En la vista
+    // del jugador llegan undefined y la interfaz no los usa.
+    huecos: (bruto.huecos ?? []).map(h => ({
+      indice: h.indice,
+      respuesta: h.respuesta,
+      revelado: Boolean(h.revelado),
+      ganoNombre: h.gano_nombre ?? null
+    })),
+    turnoAnswerId: bruto.turno_answer_id ?? null,
     status: bruto.status,
     paused: Boolean(bruto.paused),
     // Por qué se cerró la sala, cuando lo decidió el servidor y no el
@@ -455,6 +465,37 @@ export function crearHostNube({ topicId, onEstado, gameSlug = 'seleccion-simple'
     expulsar: (id) => accion('host_remove_player', { p_player: id }),
     admitir: (id) => accion('host_admit_player', { p_player: id }),
 
+    /* --- completar el versículo -------------------------------------- */
+
+    /**
+     * Cierra la ventana de pulsaciones y abre el juicio.
+     *
+     * Es lo mismo que hace el servidor al vencer el reloj, así que el
+     * presentador puede adelantarlo sin dejar la ronda en otro estado.
+     */
+    cerrarPulsaciones: () => accion('host_cerrar_pulsaciones'),
+
+    /**
+     * Sentencia al que tiene el turno.
+     *
+     * `huecos` son los índices que el participante dijo bien; el servidor
+     * ignora el arreglo cuando `correcto` es false.
+     */
+    sentenciar: (answerId, correcto, huecos = []) => accion('host_sentenciar', {
+      p_answer: answerId,
+      p_correcto: correcto,
+      p_huecos: huecos
+    }),
+
+    /** Deshace la última sentencia completa, no el último toque. */
+    deshacerSentencia: () => accion('host_deshacer_sentencia'),
+
+    /** Termina la ronda sin completar el versículo, conservando lo ganado. */
+    cerrarPregunta: () => accion('host_cerrar_pregunta'),
+
+    /** Vuelve a soltar el temporizador con la lista limpia. */
+    reabrirPulsaciones: () => accion('host_reabrir_pulsaciones'),
+
     activo: () => activo,
     destruir: parar,
     refrescar
@@ -542,6 +583,24 @@ export function crearClienteNube({ onEstado } = {}) {
       onEstado?.(estadoDesdeServidor(dato, { completo: false }), jugador);
       if (!sondeo) sondeo = setInterval(refrescar, MS_SONDEO_JUGADOR);
       return { error: null };
+    },
+
+    /**
+     * Pulsa el botón negro de completar el versículo.
+     *
+     * No es una respuesta: es tomar el turno. El servidor anota el orden
+     * con la secuencia monotónica y devuelve cuál le tocó.
+     */
+    async pulsar(roundId) {
+      if (!jugador) return { error: 'No estás dentro de una sala.' };
+      const { dato, error } = await rpc('player_pulsar', {
+        p_player: jugador.id,
+        p_token: jugador.token,
+        p_round: roundId
+      });
+      if (error) return { error };
+      await refrescar();
+      return { error: null, seq: dato?.seq, orden: dato?.orden };
     },
 
     /** Responde la ronda en curso. */

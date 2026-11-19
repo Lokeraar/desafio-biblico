@@ -21,6 +21,10 @@ import {
 } from './lib/admin-ui.js';
 import { qrSVG } from './lib/qr.js';
 import { ceremoniaHTML, totalPasos } from './lib/render.js';
+import {
+  pantallaParticipante, pantallaTV, listaTurnosHTML, modalJuicioHTML,
+  versiculoDesdeServidor, felicitacion, estadoBoton
+} from './lib/versiculo.js';
 import { crearEscalador, ajustarTextos } from './lib/ajuste.js';
 import { crearLatido } from './lib/latido.js';
 import { aWebp, crearImagenNavegador, lienzoNavegador, prefijoData } from './lib/imagen.js';
@@ -182,6 +186,22 @@ const app = {
   confirmar: null,
   podioPaso: 0,      // 0 = oculto, 1 = 3.º, 2 = 2.º, 3 = 1.º
   miRespuesta: null, // { roundId, idx } — lo que este teléfono ya contestó
+  // Qué juego está elegido. El menú lo fija al pulsar una tarjeta, y el
+  // resto de la app pregunta por esto en vez de suponer que es siempre
+  // selección simple.
+  juegoElegido: 'seleccion-simple',
+  // Juego de la sala que ya está abierta: viene del servidor y manda sobre
+  // lo elegido en el menú mientras la partida exista.
+  juegoSala: 'seleccion-simple',
+  // Pulsación en curso: el botón negro se apaga al instante y se corrige
+  // cuando el servidor contesta. Sin esto, con el sondeo de 1 400 ms el
+  // jugador pulsa dos veces porque no ve nada pasar.
+  enviandoPulso: false,
+  rechazoPulso: null,
+  // Última variante de felicitación mostrada, para no repetirla seguida.
+  felicitaActual: null,
+  // Juicio en curso en el panel del presentador: { answerId, nombre }.
+  juicio: null,
   cantidadPreguntas: 10,
   segundosRonda: 15,   // duración de cada pregunta (5–30)
   // Mando del sondeo del televisor. Existe para poder soltarlo: un sondeo
@@ -475,7 +495,7 @@ function vistaMenu() {
     { slug: 'seleccion-simple', icono: '🎯', nombre: 'Selección simple',
       desc: 'Una pregunta, 4 opciones y una sola correcta.', listo: true },
     { slug: 'completar-versiculo', icono: '📖', nombre: 'Completar el versículo',
-      desc: 'Se muestra un versículo con un hueco.', listo: false },
+      desc: 'Un versículo con palabras tapadas. Pulsa para tomar el turno.', listo: true },
     { slug: 'respuesta-abierta', icono: '💬', nombre: 'Respuesta abierta',
       desc: 'El presentador lee y cada quien escribe.', listo: false }
   ];
@@ -536,7 +556,8 @@ function vistaMenu() {
 
       <div class="menu-juegos">
         ${juegos.map(j => `
-          <button class="juego-tarjeta${j.listo ? ' listo' : ''}" ${j.listo ? '' : 'disabled'}>
+          <button class="juego-tarjeta${j.listo ? ' listo' : ''}"
+                  ${j.listo ? `data-accion="elegir-juego" data-juego="${j.slug}"` : 'disabled'}>
             <span class="icono" aria-hidden="true">${j.icono}</span>
             <span class="texto">
               <span class="nombre">${esc(j.nombre)}</span>
@@ -555,8 +576,141 @@ function vistaMenu() {
       </footer>
     </main>`;
 }
+
+/* ------------------------------------------------------------------ */
+/* Completar el versículo: piezas que las pantallas necesitan          */
+/* ------------------------------------------------------------------ */
+
+/** Mi pulso en la ronda actual, o null si no pulsé. */
+function pulsoPropio(s) {
+  const v = versiculoDesdeServidor(s);
+  const yo = app.yo?.playerId;
+  if (!v || !yo) return null;
+  return v.pulsos.find(p => p.playerId === yo) ?? null;
+}
+
+/**
+ * La variante de felicitación que corresponde MOSTRAR ahora.
+ *
+ * Se fija una sola vez por ronda y se guarda: si se sorteara en cada
+ * dibujado, el sondeo la cambiaría cada segundo y el mensaje parpadearía
+ * entre seis frases distintas.
+ */
+function felicitaPara(s, miPulso) {
+  const v = versiculoDesdeServidor(s);
+  if (!v?.completo || miPulso?.veredicto !== 'correcto') {
+    app.felicitaActual = null;
+    return null;
+  }
+  if (!app.felicitaActual) {
+    app.felicitaActual = felicitacion(Math.random(), app.felicitaAnterior ?? null);
+    app.felicitaAnterior = app.felicitaActual;
+  }
+  return app.felicitaActual;
+}
+
+/**
+ * Panel del presentador para completar el versículo.
+ *
+ * El presentador es el árbitro: aquí SÍ se ven las palabras ocultas. Es la
+ * única pantalla donde eso es correcto.
+ */
+function panelVersiculo(estado) {
+  const r = estado?.round;
+  const v = versiculoDesdeServer(estado);
+  // Una sola fuente: el estado que ya tradujo el servidor.
+  const huecos = estado?.huecos ?? [];
+
+  if (!r) {
+    return `
+      <div class="fila-entre">
+        <button class="boton boton-secundario" data-ir="menu">← Menú</button>
+      </div>
+      <main class="crecer columna centro">
+        <h1>Panel del presentador</h1>
+        <p class="tenue">Cargando la primera pregunta…</p>
+      </main>`;
+  }
+
+  const nHuecos = v?.huecosTotales ?? 0;
+  const listos = v ? v.revelados.length : 0;
+
+  let controles = '';
+  if (r.state === 'prepared') {
+    controles = `
+      <div class="fila-botones">
+        <button data-accion="iniciar">▶ Soltar temporizador (${estado.roundSeconds ?? 15} s)</button>
+      </div>
+      <div class="fila-botones">
+        <button class="boton-secundario" data-accion="cambiar-pregunta">🔄 Cambiar versículo</button>
+      </div>`;
+  } else if (r.state === 'open') {
+    controles = `
+      <div class="fila-botones">
+        <button class="boton-secundario" data-accion="pausar">${estado.paused ? '▶ Reanudar' : '⏸ Pausar'}</button>
+        <button data-accion="cerrar-pulsaciones">Cerrar pulsaciones</button>
+      </div>
+      <div class="fila-botones">
+        <button class="boton-secundario" data-accion="cambiar-pregunta">🔄 Cambiar versículo</button>
+      </div>`;
+  } else if (r.state === 'juicio') {
+    const turno = v?.contestando;
+    controles = `
+      ${turno
+        ? `<div class="aviso turno">🎤 Le toca a ${esc(turno.nombre)} · fue el ${turno.orden} en pulsar</div>`
+        : `<div class="aviso neutro">Nadie pulsó esta ronda.</div>`}
+      ${turno ? `
+      <div class="fila-botones">
+        <button class="boton-peligro" data-accion="sentenciar-mal">❌ Incorrecto</button>
+        <button data-accion="sentenciar-bien">✅ Correcto</button>
+      </div>` : ''}
+      <div class="fila-botones">
+        <button class="boton-secundario" data-accion="deshacer-sentencia">↶ Deshacer</button>
+        <button class="boton-secundario" data-accion="cerrar-pregunta">Cerrar pregunta</button>
+      </div>`;
+  } else {
+    controles = `
+      <div class="fila-botones">
+        <button class="boton-secundario" data-accion="deshacer-sentencia">↶ Deshacer</button>
+        <button data-accion="abrir">Siguiente versículo →</button>
+      </div>`;
+  }
+
+  return `
+    <div class="fila-entre">
+      <button class="boton boton-secundario" data-ir="menu">← Menú</button>
+      <span class="sala">${esc(estado.code ?? '')}</span>
+    </div>
+    <main class="crecer columna" style="gap:.9rem">
+      <div class="fila-entre">
+        ${r.reference ? `<span class="ref">${esc(r.reference)}</span>` : '<span></span>'}
+        <span class="tenue mini">${listos} de ${nHuecos} a la vista</span>
+      </div>
+
+      <p class="versiculo">${esc(r.prompt)
+        .replace(/_{4,}/g, '<span class="hueco"></span>')}</p>
+
+      <details class="respuesta-host">
+        <summary>👁 Ver la respuesta</summary>
+        <p>${esc(v?.respuesta ?? 'Se revela al cerrar la ronda.')}</p>
+        ${huecos.length
+          ? `<ul class="huecos-host">${huecos.map(h =>
+              `<li class="${h.revelado ? 'visto' : ''}">${esc(h.respuesta)}${h.revelado ? ' ✓' : ''}</li>`
+            ).join('')}</ul>`
+          : ''}
+      </details>
+
+      ${listaTurnosHTML(v)}
+      ${controles}
+    </main>`;
+}
+
 function vistaHost() {
   const s = app.estado;
+
+  if (s && s.gameSlug === 'completar-versiculo') {
+    return panelVersiculo(s);
+  }
 
   if (!s) {
     const temaOk = Boolean(app.temaElegido);
@@ -968,6 +1122,21 @@ function vistaJugador() {
   const s = app.estado;
   const yo = app.yo;
 
+  // Completar el versículo tiene su propia pantalla. Se decide por lo que
+  // dice el SERVIDOR (`gameSlug`), no por lo elegido en el menú: un jugador
+  // que entra con un código no pasó por el menú, y su teléfono tiene que
+  // mostrar lo que la sala está jugando.
+  if (s && s.gameSlug === 'completar-versiculo' && app.yo) {
+    const miPulso = pulsoPropio(s);
+    return pantallaParticipante(s, {
+      miId: app.yo.playerId,
+      miPulso,
+      enviando: app.enviandoPulso,
+      rechazo: app.rechazoPulso,
+      felicitacionActual: felicitaPara(s, miPulso)
+    });
+  }
+
   if (!yo) {
     // El código se precarga desde el QR y también se puede escribir a mano:
     // quien recibe el código dictado por voz no tiene enlace que escanear.
@@ -1276,6 +1445,11 @@ function vistaTV() {
   // panel del presentador mostraba el estado del host —con la respuesta
   // correcta incluida— en una pantalla que ve todo el público.
   const s = app.tv ? app.estado : null;
+
+  if (s && s.gameSlug === 'completar-versiculo') {
+    return pantallaTV(s);
+  }
+
   if (!s) {
     // Sin estado no hay nada que proyectar: el televisor pide el código a
     // mano. Antes solo decía «Esperando la partida…» y nunca se conectaba a
@@ -1632,6 +1806,11 @@ function modalActivo() {
   const err = app.adminError;
 
   switch (m.tipo) {
+    case 'juicio':      return modalJuicioHTML(
+                          versiculoDesdeServer(app.estado),
+                          app.estado?.huecos ?? [],
+                          app.juicio?.nombre ?? ''
+                        );
     case 'procesando':  return modalProcesando({ que: m.que });
     case 'clave':       return modalClave({
                           para: m.para || 'entrar',
@@ -1846,6 +2025,9 @@ async function cerrarYSalir({ aMenu = true } = {}) {
   app.estado = null;
   app.podioPaso = 0;
   app.tablaCompleta = false;
+  app.juicio = null;
+  app.felicitaActual = null;
+  app.rechazoPulso = null;
 
   if (aMenu) ir('menu');
   return { error: null };
@@ -1944,6 +2126,11 @@ document.addEventListener('click', async ev => {
       if (hayNube) {
         const host = crearHostNube({
           topicId: app.temaElegido,
+          // El juego viaja al servidor al crear la sala: `rooms.game_slug`
+          // decide qué preguntas se pueden planificar y qué pantallas se
+          // dibujan después. Sin esto, la sala nacía siempre como selección
+          // simple y la tarjeta del juego nuevo no servía de nada.
+          gameSlug: app.juegoElegido,
           onEstado: est => { app.estado = est; render(); }
         });
         const r = await host.crear(app.cantidadPreguntas, app.segundosRonda);
@@ -2042,6 +2229,112 @@ document.addEventListener('click', async ev => {
       app.modal = { tipo: 'cambiar' };
       app.adminError = null;
       render();
+      break;
+    }
+
+    /* --- completar el versículo ---------------------------------------- */
+
+    /*
+     * Elegir juego en el menú. Guarda la elección y abre el panel del
+     * presentador. Cada juego tiene su propio tema, así que al cambiar de
+     * juego se limpia el tema elegido: si no, el panel ofrecería un tema de
+     * selección simple para una sala de versículos y la sala nacería vacía.
+     */
+    case 'elegir-juego': {
+      const juego = el.dataset.juego;
+      if (juego !== app.juegoElegido) {
+        app.juegoElegido = juego;
+        app.temaElegido = null;
+        app.temas = [];
+        app.temasCargados = false;
+      }
+      ir('host');
+      break;
+    }
+
+    /*
+     * Pulsar el botón negro. No es una respuesta: es tomar el turno.
+     *
+     * Se apaga al instante y se corrige cuando el servidor responde. Con el
+     * sondeo de 1 400 ms, esperar la confirmación hacía que el jugador
+     * pulsara dos o tres veces sin saber si el primer toque había contado.
+     */
+    case 'pulsar': {
+      const ronda = app.estado?.round;
+      if (!ronda || app.enviandoPulso) break;
+      app.enviandoPulso = true;
+      app.rechazoPulso = null;
+      render();
+      try {
+        const r = await app.cliente?.pulsar?.(ronda.id);
+        if (r?.error) {
+          // Un fallo de red no puede dejar el botón muerto: se libera y se
+          // dice qué pasó, para que la persona pueda volver a intentar.
+          app.rechazoPulso = traducirError(r.error);
+        }
+      } catch (e) {
+        app.rechazoPulso = traducirError(e?.message ?? 'No se pudo enviar.');
+      } finally {
+        app.enviandoPulso = false;
+        render();
+      }
+      break;
+    }
+
+    case 'cerrar-pulsaciones': await accionHost('cerrarPulsaciones'); break;
+    case 'deshacer-sentencia': await accionHost('deshacerSentencia'); break;
+    case 'cerrar-pregunta': await accionHost('cerrarPregunta'); break;
+
+    /*
+     * ❌ Incorrecto: se sentencia sin destapar nada y el turno pasa al
+     * siguiente. Un toque, sin confirmar: en vivo hay prisa.
+     */
+    case 'sentenciar-mal': {
+      const turno = app.estado?.turnoAnswerId;
+      if (!turno) break;
+      await accionHost('sentenciar', turno, false, []);
+      break;
+    }
+
+    /*
+     * ✅ Correcto: abre el modal para marcar qué palabras dijo bien.
+     * El sistema no puede saberlo solo, porque la respuesta se dice en voz
+     * alta y la app no oye.
+     */
+    case 'sentenciar-bien': {
+      const v = versiculoDesdeServer(app.estado);
+      if (!v?.contestando) break;
+      app.juicio = { answerId: app.estado?.turnoAnswerId, nombre: v.contestando.nombre };
+      app.modal = { tipo: 'juicio' };
+      render();
+      break;
+    }
+
+    case 'cancelar-juicio': {
+      app.juicio = null;
+      app.modal = null;
+      render();
+      break;
+    }
+
+    /*
+     * Confirmar el juicio: se mandan SOLO los huecos marcados. El servidor
+     * comprueba que ninguno estuviera ya a la vista, así que un doble toque
+     * no puede regalar puntos por una palabra que dijo otro.
+     */
+    case 'confirmar-juicio': {
+      const j = app.juicio;
+      if (!j) break;
+      const marcados = [...document.querySelectorAll('input[data-hueco]:checked')]
+        .map(i => Number(i.value));
+      if (!marcados.length) {
+        app.aviso = { tipo: 'error', texto: 'Marca al menos una palabra, o usa ❌ Incorrecto.' };
+        render();
+        break;
+      }
+      app.juicio = null;
+      app.modal = null;
+      await accionHost('sentenciar', j.answerId, true, marcados);
       break;
     }
 
@@ -2469,6 +2762,7 @@ addEventListener('pagehide', () => {
     if (guardada?.roomId && guardada?.hostToken) {
       const host = crearHostNube({
         topicId: app.temaElegido,
+        gameSlug: app.juegoElegido,
         onEstado: est => { app.estado = est; render(); }
       });
       host.reabrir(guardada).then(r => {

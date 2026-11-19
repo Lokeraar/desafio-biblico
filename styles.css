@@ -1702,3 +1702,320 @@ body.tv .tarjeta-config { padding: 1.4rem; }
 /* El televisor ya tiene su propia escala y su propio diseño de pantalla
    completa; se deja como estaba para no cambiar lo que ya funciona. */
 body.tv .opciones { grid-template-columns: 1fr; }
+
+/* =====================================================================
+   COMPLETAR EL VERSÍCULO
+   ---------------------------------------------------------------------
+   Tres pantallas: participante, televisor y presentador.
+
+   Lo que manda aquí: el versículo se lee desde lejos y el botón negro se
+   pulsa sin mirar. El resto (avisos, marcador propio) es información de
+   apoyo y va pequeño a propósito.
+
+   El tamaño del versículo lo escribe `ajuste.js` con capacidad 2+1; el
+   `clamp` de aquí es solo el respaldo si el ajuste no corriera.
+   ===================================================================== */
+
+/* ---------- el hueco tapado ---------- */
+.hueco {
+  display: inline-block;
+  min-width: 3ch;
+  border-bottom: 3px solid var(--tu-400);
+  vertical-align: baseline;
+}
+.hueco::before {
+  content: "____";
+  color: var(--tu-600);
+  letter-spacing: .08em;
+}
+
+/* ---------- pantalla del participante ---------- */
+.jugador-versiculo {
+  gap: clamp(.7rem, 2vh, 1.2rem);
+  justify-content: space-between;
+}
+
+.barra-jugador {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  font-size: var(--t-sm);
+  color: var(--tinta-suave);
+  flex: 0 0 auto;
+}
+.barra-jugador .puntos {
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  color: var(--tu-100);
+  background: rgba(111, 227, 238, .12);
+  padding: .15em .7em;
+  border-radius: 999px;
+  font-size: var(--t-xs);
+}
+
+.jugador-versiculo .ref {
+  display: block;
+  font-size: var(--t-xs);
+  font-weight: 800;
+  color: var(--tu-100);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  flex: 0 0 auto;
+}
+
+.jugador-versiculo .versiculo {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  font-size: var(--t-xl);
+  line-height: 1.38;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.pie-jugador {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+}
+
+/* ---------- el botón negro: la tecla del mando ---------- */
+.boton-ok {
+  width: 100%;
+  border: 2px solid rgba(255, 255, 255, .22);
+  border-radius: var(--radio);
+  padding: 1.1em 1em;
+  font: inherit;
+  font-size: var(--t-lg);
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: #fff;
+  background: linear-gradient(180deg, #242424 0%, #000 62%, #000 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .16),
+    0 7px 0 #000,
+    0 12px 28px rgba(0, 0, 0, .6);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.boton-ok:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .1), 0 2px 0 #000;
+}
+/* Apagado: sigue viéndose como una tecla, no como un hueco vacío. */
+.boton-ok.bloqueado,
+.boton-ok:disabled {
+  cursor: default;
+  opacity: .5;
+  background: linear-gradient(180deg, #1a1a1a, #0d0d0d);
+  border-color: rgba(255, 255, 255, .1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), 0 2px 0 #000;
+}
+
+/* ---------- pantalla de éxito grande ---------- */
+.grande-exito {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .8rem;
+  text-align: center;
+}
+.grande-exito .marca {
+  font-size: var(--t-3xl);
+  line-height: 1;
+}
+.grande-exito .titulo {
+  margin: 0;
+  font-size: var(--t-xl);
+  font-weight: 800;
+  line-height: 1.2;
+}
+.grande-exito .sub {
+  margin: 0;
+  font-size: var(--t-sm);
+  color: var(--tinta-suave);
+}
+.cita {
+  margin: 0;
+  font-size: var(--t-xs);
+  color: var(--tinta-suave);
+  text-align: center;
+}
+
+/* ---------- televisor ---------- */
+.pantalla-tv {
+  justify-content: space-between;
+  gap: clamp(.8rem, 2.5vh, 1.6rem);
+}
+.cuerpo-tv {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  text-align: center;
+}
+.cuerpo-tv .versiculo {
+  margin: 0;
+  font-size: var(--t-2xl);
+  line-height: 1.3;
+  font-weight: 800;
+  max-width: 30ch;
+  overflow-wrap: anywhere;
+}
+.pie-tv {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .5rem;
+}
+.lista-aportes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+  justify-content: center;
+  font-size: var(--t-xs);
+  color: var(--tinta-suave);
+}
+.lista-aportes span {
+  background: rgba(255, 255, 255, .06);
+  padding: .2em .8em;
+  border-radius: 999px;
+}
+
+/* ---------- sala de espera del televisor ---------- */
+.espera-caja {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(1rem, 4vw, 3rem);
+  flex-wrap: wrap;
+}
+.codigo-grande {
+  font-size: var(--t-3xl);
+  font-weight: 800;
+  letter-spacing: .18em;
+  line-height: 1;
+  color: var(--amarillo);
+  font-variant-numeric: tabular-nums;
+}
+.espera-txt {
+  margin: .5rem 0 0;
+  font-size: var(--t-base);
+  color: var(--tinta-suave);
+}
+
+/* ---------- panel del presentador ---------- */
+.fila-botones {
+  display: flex;
+  gap: .5rem;
+  flex-wrap: wrap;
+}
+.fila-botones > button { flex: 1 1 auto; min-height: 46px; }
+
+/* Ver la respuesta: cerrado por defecto, para no tapar la lista. */
+.respuesta-host {
+  background: rgba(0, 0, 0, .28);
+  border: 1px solid rgba(111, 227, 238, .2);
+  border-radius: var(--radio-sm);
+  padding: .6rem .9rem;
+  font-size: var(--t-sm);
+}
+.respuesta-host summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--tu-100);
+}
+.respuesta-host p {
+  margin: .6rem 0 0;
+  color: var(--amarillo);
+  font-weight: 700;
+}
+.huecos-host {
+  list-style: none;
+  margin: .5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+}
+.huecos-host li {
+  font-size: var(--t-xs);
+  padding: .2em .7em;
+  border-radius: 999px;
+  background: rgba(252, 209, 22, .12);
+  color: var(--amarillo);
+  border: 1px solid rgba(252, 209, 22, .3);
+}
+.huecos-host li.visto {
+  background: rgba(31, 191, 117, .14);
+  color: #5fe3a8;
+  border-color: rgba(31, 191, 117, .4);
+}
+
+/* ---------- modal del juicio ---------- */
+.modal-caja {
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+}
+.modal-caja h3 { margin: 0; font-size: var(--t-lg); }
+.modal-caja .sub {
+  margin: 0 0 .3rem;
+  font-size: var(--t-sm);
+  color: var(--tinta-suave);
+}
+.casilla {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .8em 1em;
+  border-radius: var(--radio-sm);
+  background: rgba(255, 255, 255, .05);
+  border: 2px solid transparent;
+  cursor: pointer;
+  font-size: var(--t-base);
+}
+.casilla:has(input:checked) {
+  background: rgba(31, 191, 117, .14);
+  border-color: rgba(31, 191, 117, .55);
+}
+.tick {
+  flex: 0 0 auto;
+  width: 1.6em;
+  height: 1.6em;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  font-size: .85em;
+  font-weight: 800;
+  border: 2px solid rgba(255, 255, 255, .32);
+  color: transparent;
+}
+.casilla:has(input:checked) .tick {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: #04231a;
+}
+.palabra {
+  flex: 1 1 auto;
+  font-weight: 800;
+  color: var(--amarillo);
+}
+.quien-dijo {
+  font-size: var(--t-xs);
+  color: var(--tinta-suave);
+  font-weight: 600;
+}
+
+/* Avisos: ya existen los colores base, aquí solo el tamaño del que gana. */
+.jugador-versiculo .aviso,
+.pie-tv .aviso { font-size: var(--t-sm); font-weight: 700; }
