@@ -643,7 +643,7 @@ function felicitaPara(s, miPulso) {
  */
 function panelVersiculo(estado) {
   const r = estado?.round;
-  const v = versiculoDesdeServer(estado);
+  const v = versiculoDesdeServidor(estado);
   // Una sola fuente: el estado que ya tradujo el servidor.
   const huecos = estado?.huecos ?? [];
   // En sala de espera el panel no puede ser una pantalla sin salida: por eso

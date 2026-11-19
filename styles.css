@@ -2039,7 +2039,10 @@ body.tv .opciones { grid-template-columns: 1fr; }
   font-weight: 700;
   letter-spacing: .04em;
   text-transform: uppercase;
-  font-size: var(--t-xs);
+  /* SIN font-size propio: el ajuste escribe el tamaño en el padre
+     (.menu-juego-actual) y un tamaño fijo aquí lo anularía, dejando el
+     rótulo y el valor a distinto tamaño dentro de la misma línea. La
+     jerarquía la dan el color y el peso. */
 }
 .menu-juego-actual .valor {
   color: var(--amarillo);
