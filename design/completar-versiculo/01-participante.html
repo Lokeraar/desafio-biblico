@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Completar el versículo — Participante</title>
+<style>
+  :root {
+    --tu-100: #6fe3ee; --tu-300: #2ec4d4; --tu-400: #00a0b0;
+    --tu-500: #0090a0; --tu-600: #008090; --tu-700: #007080;
+    --tu-800: #00525e; --tu-900: #0a2e33;
+    --fondo: #0b1a1d; --fondo-2: #102a2f;
+    --tinta: #fff; --tinta-suave: #a9c6ca;
+    --amarillo: #fcd116; --rojo: #cf2123;
+    --ok: #1fbf75; --error: #e0483c; --espera: #f0a33a;
+    --radio: 18px; --radio-sm: 12px;
+    --t-xs: clamp(.875rem, .85rem + .1vw, .9rem);
+    --t-sm: clamp(.9375rem, .9rem + .15vw, 1rem);
+    --t-base: clamp(1rem, .96rem + .2vw, 1.0625rem);
+    --t-lg: clamp(1.25rem, 1.1rem + .5vw, 1.5rem);
+    --t-xl: clamp(1.6rem, 1.35rem + 1vw, 2rem);
+    --t-2xl: clamp(2rem, 1.6rem + 1.6vw, 2.75rem);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 32px 24px 56px;
+    font-family: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: var(--t-base); line-height: 1.5; color: var(--tinta);
+    background: radial-gradient(120% 80% at 50% -10%, #14262a 0%, transparent 60%),
+                linear-gradient(160deg, #06110f 0%, #0b1a1d 100%);
+  }
+  header { max-width: 1360px; margin: 0 auto 28px; }
+  header h1 { margin: 0 0 .35em; font-size: var(--t-2xl); line-height: 1.1; letter-spacing: -.02em; }
+  header p { margin: 0; color: var(--tinta-suave); max-width: 62ch; }
+  .rejilla {
+    max-width: 1360px; margin: 0 auto;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+    gap: 40px 32px;
+  }
+  .estado > h2 {
+    font-size: var(--t-sm); font-weight: 700; color: var(--tu-100);
+    margin: 0 0 4px; text-transform: uppercase; letter-spacing: .08em;
+  }
+  .estado > p.nota {
+    margin: 0 0 12px; font-size: var(--t-xs); color: var(--tinta-suave);
+    min-height: 2.6em;
+  }
+  /* el teléfono */
+  .tel {
+    width: 100%; max-width: 380px; aspect-ratio: 390 / 700;
+    background: linear-gradient(170deg, var(--fondo) 0%, #071417 100%);
+    border: 1px solid rgba(111, 227, 238, .16);
+    border-radius: 28px; padding: 18px 16px 20px;
+    display: flex; flex-direction: column; gap: 14px;
+    box-shadow: 0 20px 50px rgba(0,0,0,.55);
+  }
+  .barra {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: var(--t-xs); color: var(--tinta-suave); flex: 0 0 auto;
+  }
+  .puntos {
+    font-variant-numeric: tabular-nums; font-weight: 800;
+    background: rgba(111,227,238,.12); color: var(--tu-100);
+    padding: 3px 10px; border-radius: 999px; font-size: var(--t-xs);
+  }
+  .ref {
+    font-size: var(--t-xs); color: var(--tu-100); font-weight: 700;
+    letter-spacing: .02em; text-transform: uppercase;
+  }
+  .versiculo {
+    font-size: clamp(1.25rem, 1.05rem + 1vw, 1.6rem);
+    line-height: 1.42; font-weight: 700; margin: 0; flex: 1 1 auto;
+    display: flex; align-items: center;
+  }
+  .hueco {
+    display: inline-block; min-width: 3.2ch;
+    border-bottom: 3px solid var(--tu-400);
+    color: transparent; letter-spacing: .1em;
+  }
+  .hueco::before { content: "____"; color: var(--tu-600); }
+  .relleno { color: var(--amarillo); }
+  .pie { flex: 0 0 auto; display: flex; flex-direction: column; gap: 10px; }
+
+  /* el botón negro: tecla física de mando */
+  .boton-ok {
+    width: 100%; border: 0; cursor: pointer;
+    font-family: inherit; font-size: clamp(1.25rem, 1.1rem + .8vw, 1.5rem);
+    font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+    color: #fff; padding: 1.15em 1em; border-radius: var(--radio);
+    background: linear-gradient(180deg, #242424 0%, #000 62%, #000 100%);
+    border: 2px solid rgba(255,255,255,.22);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.16),
+                0 7px 0 #000, 0 12px 28px rgba(0,0,0,.6);
+  }
+  .boton-ok.bloqueado {
+    cursor: default; opacity: .5;
+    background: linear-gradient(180deg, #1a1a1a, #0d0d0d);
+    border-color: rgba(255,255,255,.1);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 2px 0 #000;
+  }
+  .aviso {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 14px; border-radius: var(--radio-sm);
+    font-size: var(--t-sm); font-weight: 700; line-height: 1.35;
+  }
+  .aviso.turno   { background: rgba(252,209,22,.14); color: var(--amarillo); border: 1px solid rgba(252,209,22,.35); }
+  .aviso.espera  { background: rgba(111,227,238,.10); color: var(--tu-100); border: 1px solid rgba(111,227,238,.28); }
+  .aviso.error   { background: rgba(224,72,60,.14);  color: #ff8a7d;      border: 1px solid rgba(224,72,60,.4); }
+  .aviso.exito   { background: rgba(31,191,117,.14); color: #5fe3a8;      border: 1px solid rgba(31,191,117,.4); }
+  .aviso.neutro  { background: rgba(169,198,202,.08); color: var(--tinta-suave); border: 1px solid rgba(169,198,202,.2); }
+  .aviso .fuerte { font-size: var(--t-base); }
+  .grande-exito {
+    flex: 1 1 auto; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 14px; text-align: center;
+  }
+  .grande-exito .marca { font-size: clamp(3rem, 8vw, 4.5rem); line-height: 1; }
+  .grande-exito .titulo {
+    font-size: clamp(1.5rem, 1.2rem + 1.4vw, 2rem);
+    font-weight: 800; line-height: 1.2; margin: 0;
+  }
+  .grande-exito .sub { margin: 0; color: var(--tinta-suave); font-size: var(--t-sm); }
+  .cita { margin: 0; font-size: var(--t-xs); color: var(--tinta-suave); }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Participante — completar el versículo</h1>
+  <p>Siete estados de una misma pantalla. El versículo ocupa el centro; el botón negro es la tecla física del mando. El marcador propio vive en una esquina, discreto: no compite con el texto ni se lee a distancia.</p>
+</header>
+
+<div class="rejilla">
+
+  <!-- 1. ESPERANDO -->
+  <section class="estado">
+    <h2>1. En la sala de espera</h2>
+    <p class="nota">Entró con el código o el QR. Todavía no hay pregunta.</p>
+    <div class="tel">
+      <div class="barra"><span>Ana Pérez</span><span class="puntos">0 pts</span></div>
+      <div class="grande-exito">
+        <span class="marca">🙏</span>
+        <p class="titulo">Estás en la sala</p>
+        <p class="sub">Esperando que el presentador suelte la primera pregunta.</p>
+      </div>
+      <div class="pie">
+        <div class="aviso neutro"><span class="fuerte">Sala 4 K 7 M 2</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. VENTANA ABIERTA -->
+  <section class="estado">
+    <h2>2. Ventana abierta</h2>
+    <p class="nota">El presentador soltó el temporizador. El botón toma el turno; no envía una respuesta.</p>
+    <div class="tel">
+      <div class="barra"><span>Ana Pérez</span><span class="puntos">0 pts</span></div>
+      <span class="ref">2 Corintios 3:2</span>
+      <p class="versiculo">Vosotros sois nuestra <span class="hueco"></span>, escrita en nuestros <span class="hueco"></span>, conocida y <span class="hueco"></span> por todos los hombres</p>
+      <div class="pie">
+        <button class="boton-ok" type="button">Presionar</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. YA PULSO -->
+  <section class="estado">
+    <h2>3. Ya pulsó</h2>
+    <p class="nota">Su pulsación quedó anotada. El botón se apaga para que no pulse dos veces.</p>
+    <div class="tel">
+      <div class="barra"><span>Ana Pérez</span><span class="puntos">0 pts</span></div>
+      <span class="ref">2 Corintios 3:2</span>
+      <p class="versiculo">Vosotros sois nuestra <span class="hueco"></span>, escrita en nuestros <span class="hueco"></span>, conocida y <span class="hueco"></span> por todos los hombres</p>
+      <div class="pie">
+        <div class="aviso espera">Pulsaste. Espera tu turno.</div>
+        <button class="boton-ok bloqueado" type="button" disabled>Pulsaste</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. ESTAS CONTESTANDO -->
+  <section class="estado">
+    <h2>4. Le toca contestar</h2>
+    <p class="nota">Es su turno: dice el versículo en voz alta mientras el presentador lo escucha.</p>
+    <div class="tel">
+      <div class="barra"><span>Ana Pérez</span><span class="puntos">0 pts</span></div>
+      <span class="ref">2 Corintios 3:2</span>
+      <p class="versiculo">Vosotros sois nuestra <span class="hueco"></span>, escrita en nuestros <span class="hueco"></span>, conocida y <span class="hueco"></span> por todos los hombres</p>
+      <div class="pie">
+        <div class="aviso turno">
+          <span class="fuerte">🎤 Estás contestando</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. ESPERANDO TURNO -->
+  <section class="estado">
+    <h2>5. Espera su turno</h2>
+    <p class="nota">Otro está contestando. Su número de orden le dice que va segundo.</p>
+    <div class="tel">
+      <div class="barra"><span>Ana Pérez</span><span class="puntos">0 pts</span></div>
+      <span class="ref">2 Corintios 3:2</span>
+      <p class="versiculo">Vosotros sois nuestra <span class="hueco"></span>, escrita en nuestros <span class="hueco"></span>, conocida y <span class="hueco"></span> por todos los hombres</p>
+      <div class="pie">
+        <div class="aviso espera">
+          <span class="fuerte">Está contestando: Beto Ruiz</span>
+        </div>
+        <div class="aviso neutro">Fuiste el 2 en pulsar</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. ALGUIEN FALLO -->
+  <section class="estado">
+    <h2>6. El anterior no acertó</h2>
+    <p class="nota">El presentador sentenció ❌. Ahora le toca a ella.</p>
+    <div class="tel">
+      <div class="barra"><span>Ana Pérez</span><span class="puntos">0 pts</span></div>
+      <span class="ref">2 Corintios 3:2</span>
+      <p class="versiculo">Vosotros sois nuestra <span class="relleno">carta</span>, escrita en nuestros <span class="hueco"></span>, conocida y <span class="hueco"></span> por todos los hombres</p>
+      <div class="pie">
+        <div class="aviso error"><span class="fuerte">❌ Beto Ruiz no acertó</span></div>
+        <div class="aviso turno"><span class="fuerte">🎤 Es tu turno, Ana</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. ACERTO -->
+  <section class="estado">
+    <h2>7. Acertó el versículo</h2>
+    <p class="nota">Completó todos los huecos. Es una de las seis variantes de felicitación.</p>
+    <div class="tel">
+      <div class="barra"><span>Ana Pérez</span><span class="puntos">10 pts</span></div>
+      <div class="grande-exito">
+        <span class="marca">✅</span>
+        <p class="titulo">¡Acertaste, felicidades!</p>
+        <p class="sub">Ganaste los 3 huecos de este versículo.</p>
+      </div>
+      <div class="pie">
+        <p class="cita">«Vosotros sois nuestra carta, escrita en nuestros corazones, conocida y leída por todos los hombres» — 2 Corintios 3:2</p>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

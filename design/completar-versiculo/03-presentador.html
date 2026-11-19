@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Completar el versículo — Panel del presentador</title>
+<style>
+  :root {
+    --tu-100: #6fe3ee; --tu-300: #2ec4d4; --tu-400: #00a0b0;
+    --tu-500: #0090a0; --tu-600: #008090; --tu-700: #007080;
+    --tu-800: #00525e; --tu-900: #0a2e33;
+    --fondo: #0b1a1d; --fondo-2: #102a2f;
+    --tinta: #fff; --tinta-suave: #a9c6ca;
+    --amarillo: #fcd116; --rojo: #cf2123;
+    --ok: #1fbf75; --error: #e0483c; --espera: #f0a33a;
+    --radio: 18px; --radio-sm: 12px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 32px 24px 56px;
+    font-family: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 1rem; line-height: 1.5; color: var(--tinta);
+    background: radial-gradient(120% 80% at 50% -10%, #14262a 0%, transparent 60%),
+                linear-gradient(160deg, #06110f 0%, #0b1a1d 100%);
+  }
+  header { max-width: 1440px; margin: 0 auto 28px; }
+  header h1 { margin: 0 0 .35em; font-size: 2rem; line-height: 1.1; letter-spacing: -.02em; }
+  header p { margin: 0; color: var(--tinta-suave); max-width: 70ch; }
+
+  .rejilla {
+    max-width: 1440px; margin: 0 auto;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(430px, 1fr));
+    gap: 44px 32px; align-items: start;
+  }
+  .estado > h2 {
+    font-size: .875rem; font-weight: 700; color: var(--tu-100);
+    margin: 0 0 4px; text-transform: uppercase; letter-spacing: .08em;
+  }
+  .estado > p.nota { margin: 0 0 12px; font-size: .875rem; color: var(--tinta-suave); min-height: 3.4em; }
+
+  .panel {
+    background: linear-gradient(170deg, var(--fondo) 0%, #08171a 100%);
+    border: 1px solid rgba(111,227,238,.16); border-radius: 20px;
+    padding: 16px; display: flex; flex-direction: column; gap: 12px;
+    box-shadow: 0 18px 44px rgba(0,0,0,.5);
+  }
+  .cab { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .sala {
+    font-weight: 800; letter-spacing: .14em; font-size: .9rem;
+    background: rgba(111,227,238,.12); color: var(--tu-100);
+    padding: 4px 12px; border-radius: 999px;
+  }
+  .ord { font-size: .8rem; color: var(--tinta-suave); }
+  .ref {
+    font-size: .8rem; font-weight: 800; color: var(--tu-100);
+    text-transform: uppercase; letter-spacing: .06em;
+  }
+  .versiculo {
+    margin: 0; font-size: clamp(1.05rem, 1rem + .5vw, 1.3rem);
+    line-height: 1.45; font-weight: 700;
+  }
+  .hueco::before { content: "____"; color: var(--tu-500); }
+  .relleno { color: var(--amarillo); }
+  /* para el presentador, el hueco tapado se ve con su respuesta */
+  .hueco-resp {
+    color: var(--amarillo); border-bottom: 2px solid var(--amarillo);
+    padding-bottom: 1px;
+  }
+
+  .controles { display: flex; flex-direction: column; gap: 8px; }
+  .fila-botones { display: flex; gap: 8px; flex-wrap: wrap; }
+  button {
+    font: inherit; font-weight: 800; cursor: pointer; border: 0;
+    border-radius: var(--radio-sm); padding: .8em 1.05em;
+    color: var(--tu-900); background: linear-gradient(180deg, var(--tu-300), var(--tu-500));
+    box-shadow: 0 3px 0 var(--tu-700);
+    font-size: .9375rem; line-height: 1.2;
+    flex: 1 1 auto; min-height: 46px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  button.sec {
+    background: transparent; color: var(--tu-100);
+    border: 2px solid var(--tu-600); box-shadow: none;
+  }
+  button.ok {
+    background: linear-gradient(180deg, #35d98d, var(--ok)); color: #04231a;
+    box-shadow: 0 3px 0 #0d7a49;
+  }
+  button.mal {
+    background: linear-gradient(180deg, #ef6a5e, var(--rojo)); color: #fff;
+    box-shadow: 0 3px 0 #8e1719;
+  }
+  button.ancho { flex-basis: 100%; }
+
+  .temporizador {
+    display: flex; align-items: center; gap: 12px;
+    background: rgba(0,0,0,.28); border-radius: 999px; padding: 6px 14px 6px 6px;
+  }
+  .barra { flex: 1 1 auto; height: 10px; border-radius: 999px; background: rgba(255,255,255,.1); overflow: hidden; }
+  .barra > i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--tu-300), var(--amarillo)); }
+  .reloj { font-variant-numeric: tabular-nums; font-weight: 800; font-size: 1.05rem; min-width: 3.1ch; text-align: right; }
+
+  /* la lista ordenada de pulsaciones */
+  .lista { display: flex; flex-direction: column; gap: 6px; }
+  .pulso {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px; border-radius: var(--radio-sm);
+    background: rgba(255,255,255,.045);
+    border: 1px solid transparent;
+  }
+  .pulso.turno {
+    background: rgba(252,209,22,.13);
+    border-color: rgba(252,209,22,.5);
+  }
+  .pulso.hecho { opacity: .62; }
+  .pulso .num {
+    flex: 0 0 auto; width: 26px; height: 26px; border-radius: 50%;
+    display: grid; place-items: center; font-size: .8rem; font-weight: 800;
+    background: rgba(111,227,238,.18); color: var(--tu-100);
+  }
+  .pulso.turno .num { background: var(--amarillo); color: #3a2c00; }
+  .pulso .quien { flex: 1 1 auto; font-weight: 700; font-size: .9375rem; }
+  .pulso .marca { font-size: .9rem; font-weight: 800; }
+  .pulso .marca.mal { color: #ff8a7d; }
+  .pulso .marca.ok { color: #5fe3a8; }
+  .pulso .marca.par { color: var(--amarillo); }
+
+  .aviso {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: var(--radio-sm);
+    font-size: .9375rem; font-weight: 700; line-height: 1.35;
+  }
+  .aviso.turno  { background: rgba(252,209,22,.14); color: var(--amarillo); border: 1px solid rgba(252,209,22,.35); }
+  .aviso.espera { background: rgba(111,227,238,.10); color: var(--tu-100); border: 1px solid rgba(111,227,238,.28); }
+  .aviso.exito  { background: rgba(31,191,117,.14); color: #5fe3a8; border: 1px solid rgba(31,191,117,.4); }
+  .aviso.neutro { background: rgba(169,198,202,.08); color: var(--tinta-suave); border: 1px solid rgba(169,198,202,.2); }
+
+  /* el modal de juicio */
+  .modal-caja {
+    background: linear-gradient(170deg, #12262b 0%, var(--fondo-2) 100%);
+    border: 1px solid rgba(111,227,238,.3); border-radius: 20px;
+    padding: 18px; display: flex; flex-direction: column; gap: 12px;
+    box-shadow: 0 24px 60px rgba(0,0,0,.65);
+  }
+  .modal-caja h3 { margin: 0; font-size: 1.15rem; line-height: 1.25; }
+  .modal-caja .sub { margin: 0; font-size: .875rem; color: var(--tinta-suave); }
+  .casilla {
+    display: flex; align-items: center; gap: 12px; cursor: pointer;
+    padding: 12px 14px; border-radius: var(--radio-sm);
+    background: rgba(255,255,255,.05); border: 2px solid transparent;
+    font-size: 1rem;
+  }
+  .casilla.on {
+    background: rgba(31,191,117,.14);
+    border-color: rgba(31,191,117,.55);
+  }
+  .casilla .tick {
+    flex: 0 0 auto; width: 26px; height: 26px; border-radius: 7px;
+    display: grid; place-items: center; font-size: .85rem; font-weight: 800;
+    border: 2px solid rgba(255,255,255,.32); color: transparent;
+  }
+  .casilla.on .tick { background: var(--ok); border-color: var(--ok); color: #04231a; }
+  .casilla .palabra { flex: 1 1 auto; font-weight: 800; color: var(--amarillo); }
+  .casilla .quien-dijo { font-size: .8125rem; color: var(--tinta-suave); font-weight: 600; }
+
+  .vacio { color: var(--tinta-suave); font-size: .875rem; text-align: center; padding: 10px; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Presentador — completar el versículo</h1>
+  <p>Cinco momentos del panel, más el modal de juicio. El presentador es el árbitro: ve las respuestas siempre. En el juicio, el juicio completo se deshace de un toque, porque en vivo un ❌ mal pulsado no tiene vuelta.</p>
+</header>
+
+<div class="rejilla">
+
+  <!-- 1. PREPARADO -->
+  <section class="estado">
+    <h2>1. Pregunta cargada</h2>
+    <p class="nota">El temporizador no ha corrido. Ver la respuesta es para sus ojos, sin abrir la ventana.</p>
+    <div class="panel">
+      <div class="cab">
+        <span class="ref">2 Corintios 3:2</span>
+        <span class="sala">4K7M2</span>
+        <span class="ord">2 de 10</span>
+      </div>
+      <p class="versiculo">Vosotros sois nuestra <span class="hueco-resp">carta</span>, escrita en nuestros <span class="hueco-resp">corazones</span>, conocida y <span class="hueco-resp">leída</span> por todos los hombres</p>
+      <div class="aviso neutro">👁 3 huecos · solo tú ves las respuestas</div>
+      <div class="controles">
+        <div class="fila-botones">
+          <button type="button">▶ Soltar temporizador (15 s)</button>
+        </div>
+        <div class="fila-botones">
+          <button class="sec" type="button">🔄 Cambiar versículo</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. VENTANA ABIERTA -->
+  <section class="estado">
+    <h2>2. Temporizador corriendo</h2>
+    <p class="nota">Mientras corre se puede pausar, cerrar las pulsaciones antes de tiempo, o cambiar el versículo.</p>
+    <div class="panel">
+      <div class="cab">
+        <span class="ref">2 Corintios 3:2</span>
+        <span class="sala">4K7M2</span>
+        <span class="ord">2 de 10</span>
+      </div>
+      <p class="versiculo">Vosotros sois nuestra <span class="hueco-resp">carta</span>, escrita en nuestros <span class="hueco-resp">corazones</span>, conocida y <span class="hueco-resp">leída</span> por todos los hombres</p>
+      <div class="temporizador">
+        <span class="barra"><i style="width:62%"></i></span>
+        <span class="reloj">9 s</span>
+      </div>
+      <div class="aviso espera">Pulsaron 4 de 6</div>
+      <div class="controles">
+        <div class="fila-botones">
+          <button class="sec" type="button">⏸ Pausar</button>
+          <button type="button">Cerrar pulsaciones</button>
+        </div>
+        <div class="fila-botones">
+          <button class="sec" type="button">🔄 Cambiar versículo</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. JUICIO -->
+  <section class="estado">
+    <h2>3. Juicio: le toca al primero</h2>
+    <p class="nota">La lista está ordenada por la secuencia monotónica. El resaltado es a quién le toca ahora.</p>
+    <div class="panel">
+      <div class="cab">
+        <span class="ref">2 Corintios 3:2</span>
+        <span class="sala">4K7M2</span>
+      </div>
+      <div class="aviso turno">🎤 Le toca a Beto Ruiz · fue el 1 en pulsar</div>
+      <div class="lista">
+        <div class="pulso turno">
+          <span class="num">1</span>
+          <span class="quien">Beto Ruiz</span>
+          <span class="marca">contesta ahora</span>
+        </div>
+        <div class="pulso">
+          <span class="num">2</span>
+          <span class="quien">Ana Pérez</span>
+        </div>
+        <div class="pulso">
+          <span class="num">3</span>
+          <span class="quien">Caro Díaz</span>
+        </div>
+        <div class="pulso">
+          <span class="num">4</span>
+          <span class="quien">David Sol</span>
+        </div>
+      </div>
+      <div class="controles">
+        <div class="fila-botones">
+          <button class="mal" type="button">❌ Incorrecto</button>
+          <button class="ok" type="button">✅ Correcto</button>
+        </div>
+        <div class="fila-botones">
+          <button class="sec" type="button">↶ Deshacer</button>
+          <button class="sec" type="button">Cerrar pregunta</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. MODAL -->
+  <section class="estado">
+    <h2>4. El modal de «cuál acertó»</h2>
+    <p class="nota">Al pulsar ✅ se abre esto. Marca las palabras que dijo bien; el resto sigue tapado para el siguiente.</p>
+    <div class="modal-caja">
+      <h3>¿Cuáles acertó Beto Ruiz?</h3>
+      <p class="sub">Marca las palabras que dijo bien. Las que no marques quedan tapadas para el siguiente.</p>
+      <label class="casilla on">
+        <span class="tick">✓</span>
+        <span class="palabra">carta</span>
+        <span class="quien-dijo">hueco 1 de 3</span>
+      </label>
+      <label class="casilla">
+        <span class="tick">✓</span>
+        <span class="palabra">corazones</span>
+        <span class="quien-dijo">hueco 2 de 3</span>
+      </label>
+      <label class="casilla">
+        <span class="tick">✓</span>
+        <span class="palabra">leída</span>
+        <span class="quien-dijo">hueco 3 de 3</span>
+      </label>
+      <div class="controles">
+        <div class="fila-botones">
+          <button class="sec" type="button">Cancelar</button>
+          <button class="ok" type="button">Confirmar 1 palabra</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. DESPUES DEL JUICIO -->
+  <section class="estado">
+    <h2>5. Después de un acierto parcial</h2>
+    <p class="nota">Beto acertó una y falló el resto: pasa el turno, y las palabras que ganó se quedan a la vista.</p>
+    <div class="panel">
+      <div class="cab">
+        <span class="ref">2 Corintios 3:2</span>
+        <span class="sala">4K7M2</span>
+      </div>
+      <div class="aviso turno">🎤 Le toca a Ana Pérez · fue la 2 en pulsar</div>
+      <div class="lista">
+        <div class="pulso hecho">
+          <span class="num">1</span>
+          <span class="quien">Beto Ruiz</span>
+          <span class="marca par">1 de 3</span>
+        </div>
+        <div class="pulso turno">
+          <span class="num">2</span>
+          <span class="quien">Ana Pérez</span>
+          <span class="marca">contesta ahora</span>
+        </div>
+        <div class="pulso">
+          <span class="num">3</span>
+          <span class="quien">Caro Díaz</span>
+        </div>
+        <div class="pulso hecho">
+          <span class="num">4</span>
+          <span class="quien">David Sol</span>
+          <span class="marca mal">❌</span>
+        </div>
+      </div>
+      <div class="controles">
+        <div class="fila-botones">
+          <button class="mal" type="button">❌ Incorrecto</button>
+          <button class="ok" type="button">✅ Correcto</button>
+        </div>
+        <div class="fila-botones">
+          <button class="sec" type="button">↶ Deshacer</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. CERRADO -->
+  <section class="estado">
+    <h2>6. Ronda cerrada</h2>
+    <p class="nota">Todos los huecos a la vista. Solo queda pasar al siguiente versículo, o deshacer si algo salió mal.</p>
+    <div class="panel">
+      <div class="cab">
+        <span class="ref">2 Corintios 3:2</span>
+        <span class="sala">4K7M2</span>
+        <span class="ord">3 de 10</span>
+      </div>
+      <p class="versiculo">Vosotros sois nuestra <span class="relleno">carta</span>, escrita en nuestros <span class="relleno">corazones</span>, conocida y <span class="relleno">leída</span> por todos los hombres</p>
+      <div class="aviso exito">✅ El versículo quedó completo · 10 puntos repartidos</div>
+      <div class="lista">
+        <div class="pulso hecho">
+          <span class="num">1</span><span class="quien">Beto Ruiz</span><span class="marca par">1 de 3</span>
+        </div>
+        <div class="pulso hecho">
+          <span class="num">2</span><span class="quien">Ana Pérez</span><span class="marca ok">2 de 3</span>
+        </div>
+      </div>
+      <div class="controles">
+        <div class="fila-botones">
+          <button class="sec" type="button">↶ Deshacer</button>
+          <button type="button">Siguiente versículo →</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. NADIE PULSO -->
+  <section class="estado">
+    <h2>7. Nadie pulsó</h2>
+    <p class="nota">La sala se quedó callada. No hay juicio ni puntos: solo pasar al siguiente.</p>
+    <div class="panel">
+      <div class="cab">
+        <span class="ref">2 Corintios 3:2</span>
+        <span class="sala">4K7M2</span>
+      </div>
+      <p class="versiculo">Vosotros sois nuestra <span class="relleno">carta</span>, escrita en nuestros <span class="relleno">corazones</span>, conocida y <span class="relleno">leída</span> por todos los hombres</p>
+      <div class="aviso neutro">Nadie pulsó. La ronda quedó sin ganador.</div>
+      <div class="controles">
+        <div class="fila-botones">
+          <button type="button">Siguiente versículo →</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

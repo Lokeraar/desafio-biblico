@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Completar el versículo — Televisor</title>
+<style>
+  :root {
+    --tu-100: #6fe3ee; --tu-300: #2ec4d4; --tu-400: #00a0b0;
+    --tu-500: #0090a0; --tu-600: #008090; --tu-700: #007080;
+    --tu-800: #00525e; --tu-900: #0a2e33;
+    --tinta: #fff; --tinta-suave: #a9c6ca;
+    --amarillo: #fcd116; --rojo: #cf2123;
+    --ok: #1fbf75; --error: #e0483c;
+    --radio: 18px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 32px 24px 56px;
+    font-family: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: var(--tinta);
+    background: radial-gradient(120% 80% at 50% -10%, #14262a 0%, transparent 60%),
+                linear-gradient(160deg, #06110f 0%, #0b1a1d 100%);
+  }
+  header { max-width: 1400px; margin: 0 auto 28px; }
+  header h1 { margin: 0 0 .35em; font-size: 2rem; line-height: 1.1; letter-spacing: -.02em; }
+  header p { margin: 0; color: var(--tinta-suave); max-width: 66ch; font-size: 1rem; }
+
+  .rejilla {
+    max-width: 1400px; margin: 0 auto;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(520px, 1fr)); gap: 44px 36px;
+  }
+  .estado > h2 {
+    font-size: .875rem; font-weight: 700; color: var(--tu-100);
+    margin: 0 0 4px; text-transform: uppercase; letter-spacing: .08em;
+  }
+  .estado > p.nota { margin: 0 0 12px; font-size: .875rem; color: var(--tinta-suave); min-height: 2.6em; }
+
+  /* la pantalla del televisor: 16:9 */
+  .tv {
+    width: 100%; aspect-ratio: 16 / 9;
+    background: linear-gradient(165deg, #071417 0%, var(--fondo) 55%, #061012 100%);
+    border: 1px solid rgba(111,227,238,.18); border-radius: 14px;
+    padding: clamp(18px, 2.6vw, 34px); display: flex; flex-direction: column;
+    box-shadow: 0 24px 60px rgba(0,0,0,.6);
+    position: relative; overflow: hidden;
+  }
+  .tv::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(80% 60% at 50% 0%, rgba(46,196,212,.10) 0%, transparent 70%);
+  }
+  .tv-top {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; font-size: clamp(.8rem, 1.2vw, 1rem); color: var(--tinta-suave);
+    flex: 0 0 auto; z-index: 1;
+  }
+  .ref {
+    font-size: clamp(.9rem, 1.4vw, 1.15rem); font-weight: 800; color: var(--tu-100);
+    text-transform: uppercase; letter-spacing: .06em;
+  }
+  .sala {
+    font-weight: 800; color: var(--tu-100); letter-spacing: .16em;
+    background: rgba(111,227,238,.12); padding: 4px 12px; border-radius: 999px;
+  }
+  .cuerpo {
+    flex: 1 1 auto; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: clamp(12px, 2vw, 26px);
+    text-align: center; z-index: 1; min-height: 0;
+  }
+  .versiculo {
+    margin: 0; font-size: clamp(1.35rem, 3.4vw, 2.6rem);
+    line-height: 1.32; font-weight: 800; max-width: 24ch;
+  }
+  .hueco::before { content: "____"; color: var(--tu-500); letter-spacing: .08em; }
+  .relleno { color: var(--amarillo); }
+  .pie {
+    flex: 0 0 auto; display: flex; align-items: center; gap: 12px;
+    justify-content: center; flex-wrap: wrap; z-index: 1;
+  }
+  .pill {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: clamp(8px, 1.1vw, 13px) clamp(14px, 1.8vw, 22px);
+    border-radius: 999px; font-weight: 800; line-height: 1.25;
+    font-size: clamp(.85rem, 1.5vw, 1.2rem);
+  }
+  .pill.turno  { background: rgba(252,209,22,.16); color: var(--amarillo); border: 1px solid rgba(252,209,22,.4); }
+  .pill.espera { background: rgba(111,227,238,.10); color: var(--tu-100); border: 1px solid rgba(111,227,238,.3); }
+  .pill.error  { background: rgba(224,72,60,.16);  color: #ff8a7d;      border: 1px solid rgba(224,72,60,.45); }
+  .pill.exito  { background: rgba(31,191,117,.16); color: #5fe3a8;      border: 1px solid rgba(31,191,117,.45); }
+  .pill.neutro { background: rgba(169,198,202,.08); color: var(--tinta-suave); border: 1px solid rgba(169,198,202,.22); }
+
+  /* espera: código y QR a lo grande */
+  .espera-caja { display: flex; align-items: center; gap: clamp(20px, 4vw, 54px); flex-wrap: wrap; justify-content: center; }
+  .qr {
+    width: clamp(96px, 13vw, 168px); aspect-ratio: 1;
+    background: #fff; border-radius: 12px; padding: 10px;
+    display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;
+  }
+  .qr i { background: #0b1a1d; border-radius: 1px; }
+  .qr i.v { background: #fff; }
+  .codigo-grande {
+    font-size: clamp(2rem, 6vw, 4.2rem); font-weight: 800;
+    letter-spacing: .18em; line-height: 1; font-variant-numeric: tabular-nums;
+    color: var(--amarillo);
+  }
+  .espera-txt { font-size: clamp(.95rem, 1.7vw, 1.35rem); color: var(--tinta-suave); margin: 10px 0 0; }
+  .marcador-no {
+    position: absolute; bottom: 10px; right: 14px;
+    font-size: .7rem; color: rgba(169,198,202,.42); letter-spacing: .06em;
+    z-index: 1;
+  }
+  .lista-aportes {
+    display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+    font-size: clamp(.75rem, 1.2vw, .95rem); color: var(--tinta-suave);
+  }
+  .lista-aportes span { background: rgba(255,255,255,.06); padding: 4px 12px; border-radius: 999px; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Televisor — completar el versículo</h1>
+  <p>La tele no muestra marcador durante la partida y no destapa ningún hueco antes de que el presentador lo sentencie. Sí muestra quién contesta y qué número de turno tiene, para que la congregación entienda por qué le toca a esa persona.</p>
+</header>
+
+<div class="rejilla">
+
+  <section class="estado">
+    <h2>1. Sala de espera</h2>
+    <p class="nota">Código y QR a lo grande: es lo que la gente lee desde el fondo.</p>
+    <div class="tv">
+      <div class="tv-top">
+        <span class="ref">Completar el versículo</span>
+        <span class="sala">4K7M2</span>
+      </div>
+      <div class="cuerpo">
+        <div class="espera-caja">
+          <div class="qr" aria-hidden="true">
+            <i></i><i></i><i></i><i class="v"></i><i></i><i></i><i></i>
+            <i></i><i class="v"></i><i></i><i></i><i></i><i class="v"></i><i></i>
+            <i></i><i></i><i class="v"></i><i></i><i class="v"></i><i></i><i></i>
+            <i class="v"></i><i></i><i></i><i></i><i></i><i></i><i class="v"></i>
+            <i></i><i></i><i class="v"></i><i></i><i class="v"></i><i></i><i></i>
+            <i></i><i class="v"></i><i></i><i></i><i></i><i class="v"></i><i></i>
+            <i></i><i></i><i></i><i class="v"></i><i></i><i></i><i></i>
+          </div>
+          <div>
+            <div class="codigo-grande">4K7M2</div>
+            <p class="espera-txt">Entra en la app y escribe este código</p>
+          </div>
+        </div>
+      </div>
+      <div class="pie">
+        <span class="pill neutro">6 participantes en la sala</span>
+      </div>
+      <span class="marcador-no">sin marcador</span>
+    </div>
+  </section>
+
+  <section class="estado">
+    <h2>2. Ventana abierta</h2>
+    <p class="nota">Todos los huecos tapados. Nadie sabe todavía quién va a contestar.</p>
+    <div class="tv">
+      <div class="tv-top">
+        <span class="ref">2 Corintios 3:2</span>
+        <span class="sala">4K7M2</span>
+      </div>
+      <div class="cuerpo">
+        <p class="versiculo">Vosotros sois nuestra <span class="hueco"></span>, escrita en nuestros <span class="hueco"></span>, conocida y <span class="hueco"></span> por todos los hombres</p>
+      </div>
+      <div class="pie">
+        <span class="pill turno">⏱ Pulsando…</span>
+        <span class="pill neutro">4 de 6 ya pulsaron</span>
+      </div>
+      <span class="marcador-no">sin marcador</span>
+    </div>
+  </section>
+
+  <section class="estado">
+    <h2>3. Alguien está contestando</h2>
+    <p class="nota">Nombre y número de turno. El versículo sigue tapado por completo.</p>
+    <div class="tv">
+      <div class="tv-top">
+        <span class="ref">2 Corintios 3:2</span>
+        <span class="sala">4K7M2</span>
+      </div>
+      <div class="cuerpo">
+        <p class="versiculo">Vosotros sois nuestra <span class="hueco"></span>, escrita en nuestros <span class="hueco"></span>, conocida y <span class="hueco"></span> por todos los hombres</p>
+      </div>
+      <div class="pie">
+        <span class="pill turno">🎤 Contestando: Beto Ruiz</span>
+        <span class="pill espera">fue el 1 en pulsar</span>
+      </div>
+      <span class="marcador-no">sin marcador</span>
+    </div>
+  </section>
+
+  <section class="estado">
+    <h2>4. Falló y pasa el turno</h2>
+    <p class="nota">El hueco que acertó queda a la vista; el que falló sigue tapado.</p>
+    <div class="tv">
+      <div class="tv-top">
+        <span class="ref">2 Corintios 3:2</span>
+        <span class="sala">4K7M2</span>
+      </div>
+      <div class="cuerpo">
+        <p class="versiculo">Vosotros sois nuestra <span class="relleno">carta</span>, escrita en nuestros <span class="hueco"></span>, conocida y <span class="hueco"></span> por todos los hombres</p>
+      </div>
+      <div class="pie">
+        <span class="pill error">❌ Beto Ruiz no acertó</span>
+        <span class="pill turno">🎤 Contestando: Ana Pérez</span>
+        <span class="pill espera">fue la 2 en pulsar</span>
+      </div>
+      <span class="marcador-no">sin marcador</span>
+    </div>
+  </section>
+
+  <section class="estado">
+    <h2>5. Versículo completo entre varios</h2>
+    <p class="nota">Tres personas aportaron una palabra cada una. Abajo, quién aportó qué.</p>
+    <div class="tv">
+      <div class="tv-top">
+        <span class="ref">2 Corintios 3:2</span>
+        <span class="sala">4K7M2</span>
+      </div>
+      <div class="cuerpo">
+        <p class="versiculo">Vosotros sois nuestra <span class="relleno">carta</span>, escrita en nuestros <span class="relleno">corazones</span>, conocida y <span class="relleno">leída</span> por todos los hombres</p>
+        <div class="lista-aportes">
+          <span>carta — Beto</span>
+          <span>corazones — Ana</span>
+          <span>leída — Caro</span>
+        </div>
+      </div>
+      <div class="pie">
+        <span class="pill exito">✅ El versículo quedó completo</span>
+      </div>
+      <span class="marcador-no">sin marcador</span>
+    </div>
+  </section>
+
+  <section class="estado">
+    <h2>6. Ceremonia final</h2>
+    <p class="nota">Recién aquí aparece el marcador. Durante la partida nunca se mostró.</p>
+    <div class="tv">
+      <div class="tv-top">
+        <span class="ref">Ceremonia</span>
+        <span class="sala">4K7M2</span>
+      </div>
+      <div class="cuerpo" style="gap: 10px;">
+        <div style="display:flex; align-items:flex-end; gap: clamp(10px,2vw,26px);">
+          <div style="text-align:center;">
+            <div style="font-size:clamp(1.6rem,3vw,2.4rem);">🥈</div>
+            <div style="font-weight:800; font-size:clamp(.9rem,1.6vw,1.2rem);">Ana Pérez</div>
+            <div style="color:var(--amarillo); font-weight:800; font-size:clamp(1.1rem,2vw,1.5rem);">30</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:clamp(2.4rem,4.4vw,3.6rem);">🥇</div>
+            <div style="font-weight:800; font-size:clamp(1.1rem,2vw,1.5rem);">Beto Ruiz</div>
+            <div style="color:var(--amarillo); font-weight:800; font-size:clamp(1.6rem,3vw,2.4rem);">40</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:clamp(1.4rem,2.6vw,2rem);">🥉</div>
+            <div style="font-weight:800; font-size:clamp(.9rem,1.6vw,1.2rem);">Caro Díaz</div>
+            <div style="color:var(--amarillo); font-weight:800; font-size:clamp(1.1rem,2vw,1.5rem);">20</div>
+          </div>
+        </div>
+        <p style="margin:0; color:var(--tinta-suave); font-size:clamp(.8rem,1.4vw,1.05rem);">Y 3 participantes más</p>
+      </div>
+      <div class="pie">
+        <span class="pill exito">Fin del juego</span>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

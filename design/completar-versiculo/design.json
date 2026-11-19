@@ -1,0 +1,27 @@
+{
+  "title": "Completar el versículo",
+  "brief": "Segundo juego de Desafío Bíblico: un versículo con palabras tapadas, los participantes pulsan para tomar el turno, el presentador destapa las que acertó. Tres pantallas: participante, televisor y presentador.",
+  "artboards": [
+    {
+      "file": "01-participante.html",
+      "title": "Participante — siete estados",
+      "tradeoff": "El botón negro ocupa el tercio inferior y el versículo el centro: prioriza pulsar sin mirar. El precio es que en un teléfono pequeño el versículo pierde dos renglones.",
+      "width": 1440,
+      "height": 1400
+    },
+    {
+      "file": "02-televisor.html",
+      "title": "Televisor — seis estados",
+      "tradeoff": "Tipografía grande y sin marcador durante la partida: se lee desde el fondo del salón. El precio es que la congregación no sabe cómo van los puntajes hasta el final.",
+      "width": 1440,
+      "height": 1400
+    },
+    {
+      "file": "03-presentador.html",
+      "title": "Presentador — seis momentos y el modal",
+      "tradeoff": "Lista ordenada con ❌/✅ grandes y deshacer a la vista: prima no equivocarse en vivo. El precio es un panel con muchos botones para manejar de pie y con una mano.",
+      "width": 1440,
+      "height": 1600
+    }
+  ]
+}
