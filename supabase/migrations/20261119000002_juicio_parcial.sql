@@ -259,6 +259,9 @@ declare
   v_todos   int[];
   v_pagado  int;
   v_resto   int;
+  v_n       int;
+  v_ganados int;
+  v_techo   int;
   v_sobrante record;
 begin
   select * into v_round from public.rounds where id = p_round for update;
@@ -273,7 +276,11 @@ begin
          turno_answer_id = null
    where id = p_round;
 
-  select coalesce(sum(puntos), 0) into v_pagado
+  v_n := coalesce(array_length(v_todos, 1), 0);
+
+  select coalesce(sum(jsonb_array_length(huecos_ganados)), 0),
+         coalesce(sum(puntos), 0)
+    into v_ganados, v_pagado
     from public.answers where round_id = p_round;
   -- Solo se reparte el sobrante si el versículo quedó completo. Al
   -- cerrar a mano con huecos tapados, lo ganado se conserva y no se
@@ -284,10 +291,18 @@ begin
    * falso en una ronda donde no acertó ni una persona: la tabla final
    * habría dicho que hubo ganador.
    */
+  /*
+   * El techo no es 10 fijo: es 10 por los huecos que ALGUIEN ganó.
+   *
+   * Si el versículo tiene 3 huecos y solo se acertaron 2, el versículo
+   * vale floor(10 x 2 / 3) = 6 puntos, no 10. El resto se pierde: el punto
+   * de un hueco que nadie acertó no se reparte entre los demás.
+   */
+  v_techo := (10 * coalesce(v_ganados, 0)) / greatest(coalesce(v_n, 1), 1);
   v_resto := case
     when not p_repartir_sobrante then 0
     when v_pagado = 0 then 0
-    else greatest(0, 10 - v_pagado)
+    else greatest(0, v_techo - v_pagado)
   end;
 
   -- El sobrante se paga de a un punto, en orden de mérito. Se guarda en
@@ -549,3 +564,75 @@ end;
 $$;
 
 grant execute on function public.versiculo_render(text, int[]) to anon, authenticated;
+
+-- ---------------------------------------------------------------------
+-- 7. Cerrar pulsaciones: el turno salta a quien NO fue juzgado
+-- ---------------------------------------------------------------------
+-- Defecto real: al continuar la ronda por las palabras que faltan, Ana ya
+-- había sido sentenciada con un acierto parcial. Beto pulsaba, y el turno
+-- se fijaba en el PRIMER pulso de la ronda, que seguía siendo el de Ana.
+-- El presentador veía a Ana otra vez y no podía juzgar a Beto:
+-- `no_es_el_turno`.
+--
+-- Ahora el turno va al primero que pulsó y todavía NO tiene veredicto.
+create or replace function public.host_cerrar_pulsaciones(
+  p_room uuid, p_token text
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = pg_catalog, public, pg_temp
+as $$
+declare
+  v_room   public.rooms;
+  v_round  public.rounds;
+  v_pulsos int;
+  v_turno  uuid;
+begin
+  v_room := public.assert_host(p_room, p_token);
+
+  select * into v_round from public.rounds
+   where room_id = p_room and state in ('open','juicio','closed')
+   order by ordinal desc limit 1
+   for update;
+
+  if not found then
+    raise exception 'nada_que_cerrar' using errcode = 'P0001';
+  end if;
+
+  if v_round.state <> 'open' then
+    return jsonb_build_object('round_id', v_round.id, 'state', v_round.state);
+  end if;
+
+  select count(*) into v_pulsos from public.answers where round_id = v_round.id;
+
+  if v_pulsos = 0 then
+    perform public.cerrar_ronda_versiculo(v_round.id);
+    return jsonb_build_object(
+      'round_id', v_round.id, 'state', 'closed', 'pulsos', 0
+    );
+  end if;
+
+  -- El primero que pulsó y aún no fue juzgado. Se recalcula en cada
+  -- cierre porque, al continuar la ronda, los primeros ya tienen su
+  -- veredicto y no deben volver a salir.
+  select a.id into v_turno
+    from public.answers a
+   where a.round_id = v_round.id and a.veredicto is null
+   order by a.seq limit 1;
+
+  update public.rounds
+     set state = 'juicio', turno_answer_id = v_turno
+   where id = v_round.id
+   returning * into v_round;
+
+  update public.rooms set paused = false where id = p_room;
+
+  return jsonb_build_object(
+    'round_id', v_round.id, 'state', v_round.state,
+    'pulsos', v_pulsos, 'turno_answer_id', v_turno
+  );
+end;
+$$;
+
+grant execute on function public.host_cerrar_pulsaciones(uuid, text) to anon, authenticated;

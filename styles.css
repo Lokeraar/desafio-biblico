@@ -2122,3 +2122,39 @@ body.tv .opciones { grid-template-columns: 1fr; }
 
 /* ---------- panel del presentador ---------- */
 .panel-host { display: flex; flex-direction: column; gap: .8rem; }
+
+/* ---------- televisor: cabecera con el código a la derecha ---------- */
+/* Sin esta regla, `.tv-top` era un div normal con dos spans en línea y el
+   código de la sala quedaba pegado a la referencia, a la izquierda. La
+   congregación busca el código arriba a la derecha, y ahí tiene que estar
+   en todas las pantallas del televisor menos en el lobby, que tiene su
+   propio diseño con el QR grande. */
+.tv-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex: 0 0 auto;
+  width: 100%;
+}
+.tv-top .ref { text-align: left; min-width: 0; }
+.tv-top .sala { text-align: right; white-space: nowrap; }
+
+/* ---------- barra y segundos de la ronda ---------- */
+/* En las tres pantallas igual: la barra se mueve cuadro a cuadro y los
+   segundos bajan al lado. El número es lo que dice cuánto queda de verdad;
+   la barra sola no se lee a distancia. */
+.reloj-ronda {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  width: 100%;
+}
+.reloj-ronda .barra-tiempo { flex: 1 1 auto; }
+.reloj-ronda .reloj {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  min-width: 3.2ch;
+  text-align: right;
+}
