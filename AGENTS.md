@@ -42,7 +42,7 @@ git -C /storage/emulated/0/Download/Proyectos/Desafío-Bíblico push origin main
 ## Antes de dar algo por terminado
 
 ```bash
-bash scripts/probar.sh          # todo: 328 de JavaScript + 67 de SQL
+bash scripts/probar.sh          # todo: 536 de JavaScript + 158 de SQL
 bash scripts/probar.sh --js     # solo JavaScript (no necesita Postgres)
 bash scripts/probar.sh --sql    # solo SQL
 ```
@@ -50,6 +50,24 @@ bash scripts/probar.sh --sql    # solo SQL
 Sale con código 0 **solo si todo pasó**, y cuando una suite falla nombra cuál
 y muestra sus líneas `FALLA`. No hay que correr las ocho suites a mano ni
 interpretar ocho salidas distintas.
+
+### Trampa: `--sql` NO reaplica las migraciones
+
+`probar.sh --sql` corre `smoke.sql` contra la base `limpia` **tal como está**.
+Si acabas de escribir una migración y no la aplicaste, las pruebas corren
+contra el esquema viejo y dan verde: verde sobre código que no es el tuyo.
+
+Pasó el 19/11/2026 y costó veinte minutos persiguiendo un error en un archivo
+que ya estaba bien.
+
+Antes de creer un verde de SQL, reconstruir la base:
+
+```bash
+bash scripts/probar-sql-limpio.sh   # borra `limpia`, crea y aplica TODO
+bash scripts/probar.sh --sql        # ahora sí prueba el esquema real
+```
+
+Sale con código 1 y nombra el archivo si una migración falla.
 
 Si el Postgres local no está levantado, la parte de SQL se **omite** con su
 instrucción para levantarlo, en vez de reportarse como fallo: confundir «no

@@ -31,6 +31,7 @@ esac
 TOTAL_OK=0
 TOTAL_FALLAS=0
 SUITES_FALLIDAS=()
+SUITES_OMITIDAS=()
 
 # --- Pruebas de JavaScript -------------------------------------------
 if [ "$solo_sql" = false ]; then
@@ -81,11 +82,15 @@ if [ "$solo_js" = false ]; then
     # Sin base no se puede probar el SQL. No se marca como fallo: se dice
     # cómo levantarla, porque confundir «no probado» con «falló» hace
     # perseguir un error que no existe.
+    #
+    # Pero SÍ se anota como omitido y el veredicto deja de decir «TODO EN
+    # VERDE»: un verde que no miró el SQL es un verde sobre nada.
     echo "  Omitido: no hay Postgres en $SOCKET (base '$BASE')."
     echo "  Para levantarlo:"
     echo "    pg_ctl -D \"\$HOME/.cache/desafio-pg\" -l /dev/null \\"
     echo "      -o \"-k $SOCKET\" -w start"
-    echo "  Para crear la base desde cero, mira AGENTS.md."
+    echo "  Para crear la base desde cero: bash scripts/probar-sql-limpio.sh"
+    SUITES_OMITIDAS+=("smoke (SQL)" "candado (SQL)")
   else
     salida="$(psql -h "$SOCKET" -U postgres -d "$BASE" -f "$RAIZ/supabase/tests/smoke.sql" 2>&1)"
     ok="$(printf '%s\n' "$salida" | rg -c "NOTICE:\s+ok " || echo 0)"
@@ -111,6 +116,7 @@ if [ "$solo_js" = false ]; then
       TOTAL_OK=$((TOTAL_OK + ${ok_candado:-0}))
     elif printf '%s\n' "$salida_candado" | rg -q 'Omitido:'; then
       echo "  candado: omitido (sin Postgres)"
+      SUITES_OMITIDAS+=("candado (SQL)")
     else
       echo "  candado: FALLÓ"
       printf '%s\n' "$salida_candado" | rg 'FALLA' | head -5 | sed 's/^/      /'
@@ -123,12 +129,22 @@ fi
 # --- Veredicto --------------------------------------------------------
 echo
 echo "==============================================="
-if [ ${#SUITES_FALLIDAS[@]} -eq 0 ]; then
-  echo " TODO EN VERDE: $TOTAL_OK correctas, 0 fallas"
+if [ ${#SUITES_FALLIDAS[@]} -ne 0 ]; then
+  echo " HAY FALLAS en: ${SUITES_FALLIDAS[*]}"
+  echo " Total: $TOTAL_OK correctas, $TOTAL_FALLAS fallas"
   echo "==============================================="
-  exit 0
+  exit 1
 fi
-echo " HAY FALLAS en: ${SUITES_FALLIDAS[*]}"
-echo " Total: $TOTAL_OK correctas, $TOTAL_FALLAS fallas"
+
+# Un verde parcial NO es un verde. Sin esto, un Postgres caído daba
+# «TODO EN VERDE» con 536 en vez de 694 y el número no lo delataba.
+if [ ${#SUITES_OMITIDAS[@]} -ne 0 ]; then
+  echo " INCOMPLETO: $TOTAL_OK correctas, y sin probar: ${SUITES_OMITIDAS[*]}"
+  echo " No es un verde: eso no se ejecutó."
+  echo "==============================================="
+  exit 2
+fi
+
+echo " TODO EN VERDE: $TOTAL_OK correctas, 0 fallas"
 echo "==============================================="
-exit 1
+exit 0

@@ -704,6 +704,411 @@ end;
 -- pero una corrida futura que lea `admin_config` no debe encontrar basura.
 update public.admin_config set failed_attempts = 0, locked_until = null where id = true;
 
+-- =====================================================================
+-- 17. Completar el versículo
+--
+-- Cada prueba se pensó para FALLAR si el defecto estuviera presente. No
+-- alcanza con que el campo exista: se comprueba el valor.
+-- =====================================================================
+raise notice '';
+raise notice '=== 17. Completar el versículo ===';
+
+declare
+  v_top    uuid;
+  v_q      uuid;
+  v_host   jsonb;
+  v_room   uuid;
+  v_token  text;
+  v_code   text;
+  v_round  uuid;
+  v_pa jsonb; v_pb jsonb; v_pc jsonb;
+  v_ia uuid; v_ib uuid; v_ic uuid;
+  v_ta text; v_tb text; v_tc text;
+  v_pos    jsonb;
+  v_res    jsonb;
+  v_hres   jsonb;
+  v_prompt text;
+  v_pts    int;
+  v_err    text;
+  v_render text;
+  v_huecos jsonb;
+begin
+  -- -------------------------------------------------------------------
+  -- 17.1 Lo que no puede filtrarse nunca
+  -- -------------------------------------------------------------------
+  v_render := public.versiculo_render('Uno {dos} tres {cuatro} cinco {seis}', array[0]);
+
+  perform public.t_assert(
+    v_render = 'Uno dos tres ____ cinco ____',
+    'versiculo_render rellena el hueco revelado y tapa los otros');
+
+  perform public.t_assert(
+    (length(v_render) - length(replace(v_render, '____', ''))) / 4 = 2,
+    'versiculo_render deja exactamente dos huecos tapados');
+
+  -- Si `cuatro` o `seis` aparecieran, la respuesta se estaría escapando.
+  perform public.t_assert(
+    position('cuatro' in v_render) = 0 and position('seis' in v_render) = 0,
+    'versiculo_render no deja escapar ninguna respuesta tapada');
+
+  perform public.t_assert(
+    public.versiculo_render('Uno {dos} tres', array[]::int[]) = 'Uno ____ tres',
+    'versiculo_render sin nada revelado tapa todo');
+
+  v_huecos := public.versiculo_huecos('Uno {dos} tres {cuatro}');
+  perform public.t_assert(
+    jsonb_array_length(v_huecos) = 2
+    and v_huecos -> 0 ->> 'respuesta' = 'dos'
+    and v_huecos -> 1 ->> 'respuesta' = 'cuatro'
+    and (v_huecos -> 1 ->> 'indice')::int = 1,
+    'versiculo_huecos numera y extrae en orden de aparición');
+
+  perform public.t_assert(
+    jsonb_array_length(public.versiculo_huecos('Sin huecos aquí')) = 0,
+    'versiculo_huecos devuelve vacío cuando no hay llaves');
+
+  -- -------------------------------------------------------------------
+  -- 17.2 Una sala de este juego
+  -- -------------------------------------------------------------------
+  -- Idempotente a propósito: `probar.sh --sql` corre contra la base tal
+  -- como está, así que la prueba se repite sin recrear. Sin esto, la
+  -- segunda corrida choca con `topics_name_idx` y falla por basura
+  -- acumulada, no por un defecto del código.
+  select id into v_top
+    from public.topics
+   where game_slug = 'completar-versiculo'
+     and public.normalize_name(name) = public.normalize_name('Tema de prueba 17');
+
+  if v_top is null then
+    insert into public.topics (game_slug, name)
+    values ('completar-versiculo', 'Tema de prueba 17')
+    returning id into v_top;
+  else
+    delete from public.questions where topic_id = v_top;
+  end if;
+
+  insert into public.questions
+    (game_slug, topic_id, prompt, texto_marcado, reference, source)
+  values
+    ('completar-versiculo', v_top,
+     public.versiculo_render('Uno {dos} tres {cuatro} cinco {seis}', array[]::int[]),
+     'Uno {dos} tres {cuatro} cinco {seis}', 'Prueba 17:1', 'manual')
+  returning id into v_q;
+
+  -- La pregunta de selección simple sigue exigiendo sus cuatro opciones.
+  begin
+    insert into public.questions (game_slug, topic_id, prompt, options, correct_option)
+    values ('seleccion-simple', v_top, 'sin opciones', null, null);
+    perform public.t_assert(false, 'selección simple no acepta una pregunta sin opciones');
+  exception when check_violation then
+    perform public.t_assert(true, 'selección simple no acepta una pregunta sin opciones');
+  end;
+
+  v_host := public.host_create_room(v_top, 'completar-versiculo', 15);
+  v_room := (v_host ->> 'room_id')::uuid;
+  v_token := v_host ->> 'host_token';
+  v_code := v_host ->> 'code';
+
+  perform public.t_assert(
+    v_room is not null and v_code is not null,
+    'se crea la sala del juego nuevo');
+
+  v_pa := public.player_join(v_code, 'Ana Diecisiete');
+  v_pb := public.player_join(v_code, 'Beto Diecisiete');
+  v_pc := public.player_join(v_code, 'Caro Diecisiete');
+  v_ia := (v_pa ->> 'player_id')::uuid; v_ta := v_pa ->> 'player_token';
+  v_ib := (v_pb ->> 'player_id')::uuid; v_tb := v_pb ->> 'player_token';
+  v_ic := (v_pc ->> 'player_id')::uuid; v_tc := v_pc ->> 'player_token';
+
+  v_pos := public.host_open_question(v_room, v_token, v_q);
+  v_round := (v_pos ->> 'round_id')::uuid;
+
+  -- Abrir no baraja nada: no hay opciones que barajar.
+  perform public.t_assert(
+    (select option_order from public.rounds where id = v_round) = '[]'::jsonb,
+    'abrir una pregunta del juego nuevo no inventa opciones');
+
+  v_res := public.host_iniciar(v_room, v_token);
+
+  -- -------------------------------------------------------------------
+  -- 17.3 El orden de las pulsaciones
+  -- -------------------------------------------------------------------
+  v_pa := public.player_pulsar(v_ib, v_tb, v_round);   -- Beto primero
+  v_pb := public.player_pulsar(v_ia, v_ta, v_round);   -- Ana segunda
+  v_pc := public.player_pulsar(v_ic, v_tc, v_round);   -- Caro tercera
+
+  perform public.t_assert(
+    (v_pa ->> 'orden')::int = 1 and (v_pb ->> 'orden')::int = 2
+    and (v_pc ->> 'orden')::int = 3,
+    'las pulsaciones se numeran en el orden real de llegada');
+
+  perform public.t_assert(
+    (v_pa ->> 'seq')::bigint < (v_pb ->> 'seq')::bigint
+    and (v_pb ->> 'seq')::bigint < (v_pc ->> 'seq')::bigint,
+    'el seq de bigserial es estrictamente creciente');
+
+  begin
+    perform public.player_pulsar(v_ia, v_ta, v_round);
+    perform public.t_assert(false, 'nadie puede pulsar dos veces en la misma ronda');
+  exception when others then
+    perform public.t_assert(sqlerrm like '%ya_pulso%',
+      'nadie puede pulsar dos veces en la misma ronda');
+  end;
+
+  begin
+    perform public.player_pulsar(v_ia, 'token-falso', v_round);
+    perform public.t_assert(false, 'no se pulsa con un token ajeno');
+  exception when others then
+    perform public.t_assert(sqlerrm like '%no_autorizado%',
+      'no se pulsa con un token ajeno');
+  end;
+
+  -- -------------------------------------------------------------------
+  -- 17.4 Cerrar las pulsaciones y no filtrar nada
+  -- -------------------------------------------------------------------
+  perform public.host_cerrar_pulsaciones(v_room, v_token);
+
+  perform public.t_assert(
+    (select state from public.rounds where id = v_round) = 'juicio',
+    'cerrar las pulsaciones deja la ronda en juicio');
+
+  perform public.t_assert(
+    (select turno_answer_id from public.rounds where id = v_round)
+      = (select id from public.answers where round_id = v_round and player_id = v_ib),
+    'el turno es del primero que pulsó');
+
+  v_res := public.room_state(v_room);
+
+  perform public.t_assert(
+    (v_res -> 'round' -> 'versiculo' ->> 'respuesta') is null,
+    'LA REGLA: en juicio el jugador no recibe la respuesta');
+
+  perform public.t_assert(
+    (v_res -> 'round' ->> 'prompt') like '%____%',
+    'LA REGLA: en juicio el enunciado sigue mostrando los huecos tapados');
+
+  perform public.t_assert(
+    position('dos' in (v_res -> 'round' ->> 'prompt')) = 0,
+    'LA REGLA: ninguna respuesta oculta aparece en el enunciado');
+
+  perform public.t_assert(
+    jsonb_array_length(v_res -> 'round' -> 'versiculo' -> 'pulsos') = 3,
+    'el jugador ve el orden de las tres pulsaciones');
+
+  perform public.t_assert(
+    v_res -> 'round' -> 'versiculo' -> 'contestando' ->> 'nombre' = 'Beto Diecisiete'
+    and (v_res -> 'round' -> 'versiculo' -> 'contestando' ->> 'orden')::int = 1,
+    'el jugador ve quién contesta y con qué número');
+
+  -- El presentador sí es el árbitro.
+  v_hres := public.host_state(v_room, v_token);
+
+  perform public.t_assert(
+    (v_hres -> 'round' -> 'versiculo' ->> 'respuesta') is not null
+    and position('dos' in (v_hres -> 'round' -> 'versiculo' ->> 'respuesta')) > 0,
+    'el presentador SÍ ve la respuesta en juicio');
+
+  perform public.t_assert(
+    jsonb_array_length(v_hres -> 'huecos') = 3
+    and v_hres -> 'huecos' -> 0 ->> 'respuesta' = 'dos'
+    and (v_hres -> 'huecos' -> 2 ->> 'respuesta') = 'seis',
+    'el presentador ve los tres huecos con su respuesta');
+
+  -- -------------------------------------------------------------------
+  -- 17.5 Sentenciar
+  -- -------------------------------------------------------------------
+  begin
+    perform public.host_sentenciar(v_room, v_token,
+      (select id from public.answers where round_id = v_round and player_id = v_ia),
+      true, array[2]);
+    perform public.t_assert(false, 'no se puede sentenciar a quien no tiene el turno');
+  exception when others then
+    perform public.t_assert(sqlerrm like '%no_es_el_turno%',
+      'no se puede sentenciar a quien no tiene el turno');
+  end;
+
+  begin
+    perform public.host_sentenciar(v_room, v_token,
+      (select id from public.answers where round_id = v_round and player_id = v_ib),
+      true, array[]::int[]);
+    perform public.t_assert(false, 'correcto sin marcar ningún hueco es un error');
+  exception when others then
+    perform public.t_assert(sqlerrm like '%sin_huecos%',
+      'correcto sin marcar ningún hueco es un error');
+  end;
+
+  -- Beto acierta uno de los tres.
+  perform public.host_sentenciar(v_room, v_token,
+    (select id from public.answers where round_id = v_round and player_id = v_ib),
+    true, array[0]);
+
+  perform public.t_assert(
+    (select veredicto from public.answers
+      where round_id = v_round and player_id = v_ib) = 'parcial',
+    'acertar solo una parte deja el veredicto en parcial');
+
+  perform public.t_assert(
+    (select huecos_revelados from public.rounds where id = v_round) = '[0]'::jsonb,
+    'el hueco acertado se destapa');
+
+  v_res := public.room_state(v_room);
+  perform public.t_assert(
+    (v_res -> 'round' ->> 'prompt') = 'Uno dos tres ____ cinco ____',
+    'el enunciado público destapa solo lo acertado');
+
+  perform public.t_assert(
+    (select turno_answer_id from public.rounds where id = v_round)
+      = (select id from public.answers where round_id = v_round and player_id = v_ia),
+    'el turno pasa al segundo de la lista');
+
+  begin
+    perform public.host_sentenciar(v_room, v_token,
+      (select id from public.answers where round_id = v_round and player_id = v_ia),
+      true, array[0]);
+    perform public.t_assert(false, 'un hueco ya revelado no se puede volver a ganar');
+  exception when others then
+    perform public.t_assert(sqlerrm like '%hueco_ya_revelado%',
+      'un hueco ya revelado no se puede volver a ganar');
+  end;
+
+  -- Ana acierta los dos que quedaban y se completa el versículo.
+  perform public.host_sentenciar(v_room, v_token,
+    (select id from public.answers where round_id = v_round and player_id = v_ia),
+    true, array[1, 2]);
+
+  perform public.t_assert(
+    (select state from public.rounds where id = v_round) = 'revealed',
+    'completar el versículo cierra la ronda y la deja revelada');
+
+  perform public.t_assert(
+    (select veredicto from public.answers
+      where round_id = v_round and player_id = v_ia) = 'correcto',
+    'quien completa el versículo queda en correcto');
+
+  perform public.t_assert(
+    (select winner_player_id from public.rounds where id = v_round) is null,
+    'la ronda la gana el versículo, no una persona');
+
+  -- -------------------------------------------------------------------
+  -- 17.6 Los puntos: 10 por versículo, repartidos por hueco
+  -- -------------------------------------------------------------------
+  perform public.t_assert(
+    (select score from public.players where id = v_ia) = 7,
+    'Ana acertó 2 de 3 huecos: 7 puntos');
+
+  perform public.t_assert(
+    (select score from public.players where id = v_ib) = 3,
+    'Beto acertó 1 de 3 huecos: 3 puntos');
+
+  perform public.t_assert(
+    (select score from public.players where id = v_ic) = 0,
+    'quien no acertó nada no suma');
+
+  perform public.t_assert(
+    (select sum(score) from public.players where room_id = v_room) = 10,
+    'el versículo reparte 10 puntos en total, ni uno más');
+
+  -- -------------------------------------------------------------------
+  -- 17.7 Deshacer devuelve el turno y, si hacía falta, los puntos
+  -- -------------------------------------------------------------------
+  perform public.host_deshacer_sentencia(v_room, v_token);
+
+  perform public.t_assert(
+    (select state from public.rounds where id = v_round) = 'juicio',
+    'deshacer reabre la ronda cerrada');
+
+  perform public.t_assert(
+    (select sum(score) from public.players where room_id = v_room) = 0,
+    'deshacer devuelve los puntos repartidos: nadie queda con puntos de un error');
+
+  perform public.t_assert(
+    (select coalesce(sum(puntos), 0) from public.answers
+      where round_id = v_round) = 0,
+    'deshacer deja las respuestas en cero puntos: el dato no puede decir que pagó algo que ya se devolvió');
+
+  perform public.t_assert(
+    (select veredicto from public.answers
+      where round_id = v_round and player_id = v_ia) is null,
+    'deshacer borra el veredicto de la última sentencia');
+
+  perform public.t_assert(
+    (select huecos_revelados from public.rounds where id = v_round) = '[0]'::jsonb,
+    'deshacer vuelve a tapar solo los huecos de esa sentencia');
+
+  perform public.t_assert(
+    (select turno_answer_id from public.rounds where id = v_round)
+      = (select id from public.answers where round_id = v_round and player_id = v_ia),
+    'deshacer devuelve el turno a quien lo tenía');
+
+  -- -------------------------------------------------------------------
+  -- 17.8 Cerrar a mano conserva lo ganado y no reparte nada nuevo
+  -- -------------------------------------------------------------------
+  perform public.host_cerrar_pregunta(v_room, v_token);
+
+  perform public.t_assert(
+    (select state from public.rounds where id = v_round) = 'revealed',
+    'cerrar la pregunta a mano termina la ronda');
+
+  perform public.t_assert(
+    (select huecos_revelados from public.rounds where id = v_round) = '[0,1,2]'::jsonb,
+    'cerrar a mano destapa lo que faltaba');
+
+  perform public.t_assert(
+    (select sum(score) from public.players where room_id = v_room) = 3,
+    'cerrar a mano conserva lo ya ganado y no reparte puntos nuevos');
+
+  -- -------------------------------------------------------------------
+  -- 17.9 Nadie pulsa, y el reloj que vence
+  -- -------------------------------------------------------------------
+  v_pos := public.host_open_question(v_room, v_token, v_q);
+  v_round := (v_pos ->> 'round_id')::uuid;
+  perform public.host_iniciar(v_room, v_token);
+
+  update public.rounds set deadline = clock_timestamp() - interval '1 second'
+   where id = v_round;
+
+  begin
+    perform public.player_pulsar(v_ia, v_ta, v_round);
+    perform public.t_assert(false, 'pulsar con la ventana vencida es un error');
+  exception when others then
+    perform public.t_assert(sqlerrm like '%fuera_de_tiempo%',
+      'pulsar con la ventana vencida es un error');
+  end;
+
+  perform public.host_cerrar_pulsaciones(v_room, v_token);
+
+  perform public.t_assert(
+    (select state from public.rounds where id = v_round) = 'revealed'
+    and (select no_winner from public.rounds where id = v_round),
+    'sin pulsaciones la ronda se cierra sin ganador');
+
+  -- -------------------------------------------------------------------
+  -- 17.10 El juego viejo sigue intacto
+  -- -------------------------------------------------------------------
+  perform public.t_assert(
+    (select count(*) from public.questions
+      where game_slug = 'seleccion-simple' and options is not null
+        and jsonb_array_length(options) = 4) = 25,
+    'las 25 preguntas de selección simple conservan sus 4 opciones');
+
+  perform public.t_assert(
+    (select count(*) from public.questions where topic_id = v_top) = 1,
+    'el tema de prueba no se contaminó con preguntas de otro juego');
+
+  -- La prueba limpia lo que creó. `probar.sh --sql` corre contra la base
+  -- existente: dejar 30 versículos donde hay 29 hace que el siguiente
+  -- conteo mienta, y un conteo que miente es una prueba que miente.
+  -- La sala va primero: `rooms.topic_id` no tiene cascade y bloquearía
+  -- el borrado del tema. Borrarla arrastra rondas, respuestas y pulsos.
+  delete from public.rooms where id = v_room;
+  delete from public.topics where id = v_top;
+
+  perform public.t_assert(
+    (select count(*) from public.questions
+      where game_slug = 'completar-versiculo') = 29,
+    'la prueba no dejó versículos de sobra: siguen siendo los 29 de la semilla');
+end;
+
 raise notice '';
 raise notice '===============================';
 raise notice ' TODAS LAS PRUEBAS PASARON';
