@@ -1008,6 +1008,11 @@ begin
     (select sum(score) from public.players where room_id = v_room) = 10,
     'el versículo reparte 10 puntos en total, ni uno más');
 
+  perform public.t_assert(
+    (select correct_count from public.players where id = v_ia) = 1,
+    'acertar 2 huecos de un versículo cuenta como UN acierto, no dos');
+
+
   -- -------------------------------------------------------------------
   -- 17.7 Deshacer devuelve el turno y, si hacía falta, los puntos
   -- -------------------------------------------------------------------
@@ -1056,6 +1061,65 @@ begin
   perform public.t_assert(
     (select sum(score) from public.players where room_id = v_room) = 3,
     'cerrar a mano conserva lo ya ganado y no reparte puntos nuevos');
+
+  -- -------------------------------------------------------------------
+  -- 17.6b El temporizador vence: los turnos NO se pierden
+  --
+  -- `alCero` en app.js llama a host_close_round cuando vence el reloj.
+  -- Si eso cerrara la ronda entera, quien pulsó a tiempo no podría
+  -- contestar nunca y se perderían los pulsos ya anotados.
+  -- -------------------------------------------------------------------
+  v_pos := public.host_open_question(v_room, v_token, v_q);
+  v_round := (v_pos ->> 'round_id')::uuid;
+  perform public.host_iniciar(v_room, v_token);
+  perform public.player_pulsar(v_ic, v_tc, v_round);
+
+  -- El reloj vence y el panel dispara el cierre automático.
+  update public.rounds set deadline = clock_timestamp() - interval '1 second'
+   where id = v_round;
+  perform public.host_close_round(v_room, v_token);
+
+  perform public.t_assert(
+    (select state from public.rounds where id = v_round) = 'juicio',
+    'vencer el reloj abre el juicio en vez de cerrar la ronda');
+
+  perform public.t_assert(
+    (select turno_answer_id from public.rounds where id = v_round)
+      = (select id from public.answers where round_id = v_round and player_id = v_ic),
+    'vencer el reloj conserva el turno de quien pulsó a tiempo');
+
+  perform public.t_assert(
+    (select count(*) from public.answers where round_id = v_round) = 1,
+    'vencer el reloj no borra el pulso ya anotado');
+
+  -- Se puede juzgar después de vencer: el reloj limitó cuándo pulsar,
+  -- no cuándo contestar.
+  perform public.host_sentenciar(v_room, v_token,
+    (select id from public.answers where round_id = v_round and player_id = v_ic),
+    false, array[]::int[]);
+
+  perform public.t_assert(
+    (select state from public.rounds where id = v_round) = 'revealed',
+    'tras vencer el reloj todavía se puede juzgar y cerrar la ronda');
+
+  -- El temporizador sigue impidiendo pulsar fuera de tiempo.
+  v_pos := public.host_open_question(v_room, v_token, v_q);
+  v_round := (v_pos ->> 'round_id')::uuid;
+  perform public.host_iniciar(v_room, v_token);
+  update public.rounds set deadline = clock_timestamp() - interval '1 second'
+   where id = v_round;
+
+  begin
+    perform public.player_pulsar(v_ia, v_ta, v_round);
+    perform public.t_assert(false, 'vencido el plazo, ya no se pulsa');
+  exception when others then
+    perform public.t_assert(sqlerrm like '%fuera_de_tiempo%',
+      'vencido el plazo, ya no se pulsa');
+  end;
+
+  -- Se deja el versículo en marcha para el bloque de deshacer.
+  perform public.host_cerrar_pulsaciones(v_room, v_token);
+
 
   -- -------------------------------------------------------------------
   -- 17.9 Nadie pulsa, y el reloj que vence

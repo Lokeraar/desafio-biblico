@@ -47,11 +47,11 @@
   }
   /* el teléfono */
   .tel {
-    width: 100%; max-width: 380px; aspect-ratio: 390 / 700;
+    width: 100%; max-width: 380px; min-height: 620px;
     background: linear-gradient(170deg, var(--fondo) 0%, #071417 100%);
     border: 1px solid rgba(111, 227, 238, .16);
     border-radius: 28px; padding: 18px 16px 20px;
-    display: flex; flex-direction: column; gap: 14px;
+    display: flex; flex-direction: column; gap: 12px;
     box-shadow: 0 20px 50px rgba(0,0,0,.55);
   }
   .barra {
@@ -68,9 +68,10 @@
     letter-spacing: .02em; text-transform: uppercase;
   }
   .versiculo {
-    font-size: clamp(1.25rem, 1.05rem + 1vw, 1.6rem);
-    line-height: 1.42; font-weight: 700; margin: 0; flex: 1 1 auto;
-    display: flex; align-items: center;
+    /* el tamaño lo escribe el medidor de 2+1, no un clamp a ojo */
+    font-size: 26px; line-height: 1.38; font-weight: 700; margin: 0;
+    flex: 1 1 auto; display: flex; align-items: center;
+    overflow-wrap: anywhere;
   }
   .hueco {
     display: inline-block; min-width: 3.2ch;
@@ -244,5 +245,64 @@
   </section>
 
 </div>
+
+<script>
+/* =====================================================================
+   Ajuste de texto por capacidad: 2 renglones + 1 de gracia.
+   ---------------------------------------------------------------------
+   Mismo procedimiento que src/lib/ajuste.js, para que lo aprobado aquí
+   sea lo que se implementa: se mide de verdad con Range.getClientRects(),
+   nunca dividiendo alto entre interlineado.
+
+   Capacidad declarada 2, gracia 1. Si con la gracia tampoco cabe, se
+   queda en el suelo, no se inventa una capacidad mayor.
+   ===================================================================== */
+(function () {
+  const CAPACIDAD = 2;
+  const GRACIA = 1;
+  const TECHO = 26;   // pt
+  const SUELO = 12;   // pt
+  const PT_A_PX = 96 / 72;
+
+  function renglones(el) {
+    const r = document.createRange();
+    r.selectNodeContents(el);
+    const tops = [...r.getClientRects()].map(x => Math.round(x.top));
+    return new Set(tops).size || 1;
+  }
+
+  function desborda(el) {
+    return el.scrollWidth > el.clientWidth + 1;
+  }
+
+  function ajustar(el) {
+    let pt = TECHO;
+    while (pt >= SUELO) {
+      el.style.fontSize = (pt * PT_A_PX) + 'px';
+      const cabe = !desborda(el) && renglones(el) <= CAPACIDAD;
+      if (cabe) return;
+      pt -= 0.5;
+    }
+    // No cabe sin gastar la gracia: se concede UNA línea y se vuelve a
+    // medir desde el techo, no se queda en el suelo.
+    for (pt = TECHO; pt >= SUELO; pt -= 0.5) {
+      el.style.fontSize = (pt * PT_A_PX) + 'px';
+      if (!desborda(el) && renglones(el) <= CAPACIDAD + GRACIA) return;
+    }
+    el.style.fontSize = (SUELO * PT_A_PX) + 'px';
+  }
+
+  function correr() {
+    document.querySelectorAll('.versiculo').forEach(ajustar);
+  }
+
+  // Una pasada por cambio de contenido, no un listener de resize.
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(correr);
+  } else {
+    correr();
+  }
+})();
+</script>
 </body>
 </html>
