@@ -23,7 +23,7 @@ import { qrSVG } from './lib/qr.js';
 import { ceremoniaHTML, totalPasos } from './lib/render.js';
 import {
   pantallaParticipante, pantallaTV, listaTurnosHTML, modalJuicioHTML,
-  versiculoDesdeServidor, felicitacion, estadoBoton
+  versiculoDesdeServidor, felicitacion
 } from './lib/versiculo.js';
 import { crearEscalador, ajustarTextos } from './lib/ajuste.js';
 import { crearLatido } from './lib/latido.js';
@@ -200,6 +200,7 @@ const app = {
   rechazoPulso: null,
   // Última variante de felicitación mostrada, para no repetirla seguida.
   felicitaActual: null,
+  felicitaAnterior: null,
   // Juicio en curso en el panel del presentador: { answerId, nombre }.
   juicio: null,
   cantidadPreguntas: 10,
@@ -617,7 +618,7 @@ function felicitaPara(s, miPulso) {
  */
 function panelVersiculo(estado) {
   const r = estado?.round;
-  const v = versiculoDesdeServer(estado);
+  const v = versiculoDesdeServidor(estado);
   // Una sola fuente: el estado que ya tradujo el servidor.
   const huecos = estado?.huecos ?? [];
 
@@ -1629,7 +1630,12 @@ async function cargarMarca() {
 /** Carga los temas del servidor y refresca la pantalla. */
 async function cargarTemas() {
   if (!hayNube) return;
-  const { temas, error } = await admin.temas();
+  // El juego va en la consulta. Sin esto se listaban SIEMPRE los temas de
+  // selección simple: el panel del juego nuevo ofrecía «2 Corintios (25
+  // preguntas)», que es el tema del otro juego. La sala nacía pidiendo 25
+  // versículos de un tema que no tiene ninguno, el plan quedaba vacío y el
+  // presentador no podía abrir la primera pregunta.
+  const { temas, error } = await admin.temas(app.juegoElegido);
   if (error) {
     // Se libera la bandera para que al volver a entrar se reintente.
     app.temasCargados = false;
@@ -1780,7 +1786,7 @@ async function abrirTemas() {
   app.modal = { tipo: 'temas' };
   app.adminError = null;
   render();
-  const { temas, error } = await admin.temas();
+  const { temas, error } = await admin.temas(app.juegoElegido);
   if (error) app.adminError = error;
   else app.temas = temas;
   render();
@@ -1807,7 +1813,7 @@ function modalActivo() {
 
   switch (m.tipo) {
     case 'juicio':      return modalJuicioHTML(
-                          versiculoDesdeServer(app.estado),
+                          versiculoDesdeServidor(app.estado),
                           app.estado?.huecos ?? [],
                           app.juicio?.nombre ?? ''
                         );
@@ -2302,7 +2308,7 @@ document.addEventListener('click', async ev => {
      * alta y la app no oye.
      */
     case 'sentenciar-bien': {
-      const v = versiculoDesdeServer(app.estado);
+      const v = versiculoDesdeServidor(app.estado);
       if (!v?.contestando) break;
       app.juicio = { answerId: app.estado?.turnoAnswerId, nombre: v.contestando.nombre };
       app.modal = { tipo: 'juicio' };
@@ -2926,7 +2932,7 @@ document.addEventListener('submit', async ev => {
     const nombre = String(datos.get('nombre') ?? '').trim();
     if (!nombre) { app.adminError = 'Escribe un nombre para el tema.'; render(); return; }
 
-    const r = await admin.crearTema(app.adminClave, nombre);
+    const r = await admin.crearTema(app.adminClave, nombre, app.juegoElegido);
     if (r.error) { app.adminError = traducirError(r.error); render(); return; }
     app.adminError = null;
     await abrirTemas();

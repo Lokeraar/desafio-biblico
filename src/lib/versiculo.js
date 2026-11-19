@@ -416,8 +416,8 @@ export function modalJuicioHTML(vers, huecos, nombre) {
       <h3>¿Cuáles acertó ${esc(nombre)}?</h3>
       <p class="sub">Marca las palabras que dijo bien. Las que no marques quedan tapadas para el siguiente.</p>
       ${disponibles.map(h => `
-        <label class="casilla" data-hueco="${h.indice}">
-          <input type="checkbox" value="${h.indice}" hidden>
+        <label class="casilla">
+          <input type="checkbox" data-hueco="${h.indice}" value="${h.indice}" hidden>
           <span class="tick">✓</span>
           <span class="palabra">${esc(h.respuesta)}</span>
           <span class="quien-dijo">hueco ${h.indice + 1} de ${vers?.huecosTotales ?? disponibles.length}</span>
