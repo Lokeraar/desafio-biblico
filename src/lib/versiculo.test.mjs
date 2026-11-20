@@ -102,6 +102,43 @@ t((h.match(/class="hueco"/g) || []).length === 2, 'los dos huecos se vuelven ele
 const lleno = versiculoHTML('Vosotros sois nuestra carta, escrita en nuestros corazones');
 t(!lleno.includes('class="hueco"'), 'un texto completo no inventa huecos');
 
+/* ------------------------------------------------------------------ */
+console.log('\n=== El hueco se dibuja tan largo como la palabra ===');
+/* El servidor YA dibuja un guion por letra (migración
+   20261119000002_juicio_parcial.sql, función versiculo_render: «un guion por
+   letra, con un mínimo de 3 para que el hueco se vea»). Pero el hueco llegaba
+   a la pantalla siempre igual de ancho, porque el CSS le agregaba cuatro
+   guiones ENCIMA con `.hueco::before { content: "____" }`: los que mandaba el
+   servidor se ocultaban y todos los huecos se veían idénticos. Saber que
+   faltan 8 letras no revela la palabra; decirla sí. */
+const largoDe = (texto) => {
+  // el ancho del hueco tiene que venir del texto del servidor, no del CSS
+  const m = /<span class="hueco"[^>]*>([^<]*)<\/span>/.exec(texto);
+  return m ? m[1] : null;
+};
+
+const tres = versiculoHTML('En honra y ____ , como ____');
+const guiones = (tres.match(/_/g) || []).length;
+t(guiones === 8, `los guiones del servidor se conservan (${guiones}: 4 + 4)`);
+t((tres.match(/class="hueco"/g) || []).length === 2, 'y sigue habiendo un elemento por hueco');
+
+// Cada hueco conserva SU largo, no uno común.
+const desiguales = versiculoHTML('Uno ___ dos _____');
+const largos = [...desiguales.matchAll(/<span class="hueco"[^>]*>([^<]*)<\/span>/g)].map(m => m[1].length);
+t(largos[0] === 3 && largos[1] === 5, `cada hueco mantiene su propio largo (${largos.join(' y ')})`);
+
+// Y el CSS no puede volver a taparlos con guiones propios.
+// Se lee aquí y no con la constante `css` de más abajo: ese `const` se declara
+// después y usarlo antes lanzaría ReferenceError (pasó).
+const cssAhora = readFileSync(new URL('../../styles.css', import.meta.url), 'utf8');
+const cssHueco = (() => {
+  const i = cssAhora.indexOf('.hueco::before');
+  if (i < 0) return '';
+  return cssAhora.slice(i, cssAhora.indexOf('}', i));
+})();
+t(!/content\s*:\s*["']_+["']/.test(cssHueco),
+  'el CSS no agrega guiones propios: los pone el servidor');
+
 // El defecto clásico: escapar antes de marcar, y el marcado sale como texto.
 const conEtiquetas = versiculoHTML('Dijo <b>esto</b> y ____');
 t(conEtiquetas.includes('&lt;b&gt;'), 'escapa el HTML del texto');

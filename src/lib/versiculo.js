@@ -99,8 +99,17 @@ export function versiculoDesdeServidor(bruto, { completo = false } = {}) {
  */
 export function versiculoHTML(prompt) {
   const texto = esc(prompt ?? '');
-  // `____` es lo único que el servidor escribe para un hueco tapado.
-  return texto.replace(/_{3,}/g, '<span class="hueco"></span>');
+  /*
+   * `____` es lo único que el servidor escribe para un hueco tapado, y NO son
+   * siempre cuatro: `versiculo_render` dibuja un guion por letra de la palabra
+   * que falta (con un mínimo de 3). Saber que faltan 8 letras no revela cuál
+   * es; decirla sí, así que la fuga sigue cerrada.
+   *
+   * Los guiones van DENTRO del span. Antes se descartaban y el CSS ponía
+   * cuatro fijos con `.hueco::before`, así que todos los huecos se veían
+   * iguales y la pista se perdía en el último paso.
+   */
+  return texto.replace(/(_{3,})/g, '<span class="hueco">$1</span>');
 }
 
 /**

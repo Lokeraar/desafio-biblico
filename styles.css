@@ -1750,8 +1750,11 @@ body.tv .opciones { grid-template-columns: 1fr; }
   border-bottom: 3px solid var(--tu-400);
   vertical-align: baseline;
 }
-.hueco::before {
-  content: "____";
+/* Los guiones los pone el servidor, uno por letra de la palabra que falta
+   (`versiculo_render`). Aquí solo se les da color y aire. Antes esta regla
+   escribía cuatro guiones fijos ENCIMA y tapaba los del servidor, así que
+   todos los huecos se veían del mismo ancho y no daban pista ninguna. */
+.hueco {
   color: var(--tu-600);
   letter-spacing: .08em;
 }
