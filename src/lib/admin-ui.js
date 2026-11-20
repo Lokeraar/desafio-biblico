@@ -393,7 +393,7 @@ export function modalVersiculos(tema, versiculos, { error = null } = {}) {
         ${error ? `<p class="chico" style="color:var(--peligro); margin:0">${esc(error)}</p>` : ''}
 
         <div class="lista-admin" style="max-height:52vh; overflow-y:auto">
-          <ul style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:.6rem">
+          <ul class="lista-versiculos" style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:.6rem">
             ${filas}
           </ul>
         </div>
@@ -427,26 +427,60 @@ export function modalVersiculos(tema, versiculos, { error = null } = {}) {
  *   - pasos: cuántos deshacer quedan
  *   - jugado: si el versículo ya se jugó alguna vez
  */
+/**
+ * El texto del versículo con sus palabras ya tocables y tapadas.
+ *
+ * Vive aparte porque hay DOS sitios que lo dibujan: el modal completo y el
+ * refresco en vivo mientras se escribe. Si fueran dos copias, una se quedaría
+ * atrás y la vista previa dejaría de coincidir con el cuadro de texto.
+ */
+export function palabrasMarcadas(palabras, ocultas = [], modoOcultar = false) {
+  const oculto = new Set(ocultas ?? []);
+  if (!palabras?.length) {
+    return `<span class="tenue" style="font-style:italic">Escribe el versículo completo, sin marcar nada todavía. Después usa «Ocultar palabra» y toca las que quieras tapar.</span>`;
+  }
+  /* Cada palabra es un botón cuando el modo está armado y texto plano cuando
+   * no: así se puede tocar sin seleccionar letras por accidente. */
+  return palabras.map((p, i) => {
+    const tapada = oculto.has(i);
+    const clase = tapada ? 'tapada' : (modoOcultar ? 'tocable' : '');
+    if (!clase) return esc(p.texto) + esc(p.espacio);
+    return `<span class="${clase}" data-accion="tocar-palabra" data-palabra="${i}"
+                  role="button" tabindex="0" aria-pressed="${tapada}">${esc(p.texto)}</span>${esc(p.espacio)}`;
+  }).join('');
+}
+
+/**
+ * «1 palabra oculta (máximo 34 por versículo)», con el número aparte para
+ * poder pintarlo.
+ *
+ * Antes decía «1 de 34 huecos», que se lee como si fueran dos números
+ * sueltos y no dice que el segundo sea un tope.
+ */
+export function contadorHuecos(n, tope = 34) {
+  return `<strong style="color:var(--amarillo)">${n}</strong> palabra${n === 1 ? '' : 's'} ` +
+    `oculta${n === 1 ? '' : 's'} <span class="tenue">(máximo ${tope} por versículo)</span>`;
+}
+
+/** El globo que explica «Ocultar palabra». Aparte porque se abre y se cierra
+ * sin rehacer el modal, y el texto tiene que ser el mismo en los dos sitios. */
+export function globoAyuda() {
+  return `<p class="globo-ayuda" id="edv-ayuda" role="note">
+            Al pulsar <strong>Ocultar palabra</strong> y después tocar una palabra del texto,
+            esa palabra pasa a ser el hueco que verán el participante y el televisor durante
+            el juego. Nadie la ve: hay que descubrirla. Vuelve a pulsar el botón para dejar
+            de ocultar.
+          </p>`;
+}
+
 export function modalEditorVersiculo({
   temaId, versiculo = null, error = null, palabras = [], ocultas = [],
   modoOcultar = false, pasos = 0, jugado = false, tope = 34, ayudaAbierta = false
 } = {}) {
-  const oculto = new Set(ocultas ?? []);
   const ref = versiculo?.reference ?? '';
   const esNuevo = !versiculo?.id;
 
-  /* Cada palabra es un botón cuando el modo está armado y texto plano cuando
-   * no: así se puede tocar sin seleccionar letras por accidente. */
-  const cuerpo = palabras.length
-    ? palabras.map((p, i) => {
-        const tapada = oculto.has(i);
-        const clase = tapada ? 'tapada' : (modoOcultar ? 'tocable' : '');
-        if (!clase) return esc(p.texto) + esc(p.espacio);
-        return `<span class="${clase}" data-accion="tocar-palabra" data-palabra="${i}"
-                      role="button" tabindex="0" aria-pressed="${tapada}">${esc(p.texto)}</span>${esc(p.espacio)}`;
-      }).join('')
-    : `<span class="tenue" style="font-style:italic">Escribe el versículo completo, sin marcar nada todavía. Después usa «Ocultar palabra» y toca las que quieras tapar.</span>`;
-
+  const cuerpo = palabrasMarcadas(palabras, ocultas, modoOcultar);
   const n = (ocultas ?? []).length;
 
   return `
@@ -474,18 +508,17 @@ export function modalEditorVersiculo({
           <textarea id="edv-texto" name="texto" rows="3" data-accion="texto-versiculo"
                     aria-describedby="edv-contador">${esc((palabras ?? []).map(p => p.texto + p.espacio).join('').trimEnd())}</textarea>
           <div class="fila-entre" id="edv-contador" style="margin-top:.35rem">
-            <span class="chico tenue">
-              <strong style="color:var(--amarillo)">${n}</strong> de ${tope} huecos
-            </span>
+            <span class="chico tenue" id="edv-cuenta">${contadorHuecos(n, tope)}</span>
             ${modoOcultar ? '<span class="chico" style="color:var(--amarillo); font-weight:700">Modo ocultar activo</span>' : ''}
           </div>
-          ${palabras.length ? `<div class="texto-versiculo" style="margin-top:.5rem">${cuerpo}</div>` : ''}
+          ${'<div class="texto-versiculo" style="margin-top:.5rem">' + cuerpo + '</div>'}
         </div>
 
-        ${pasos > 0 ? `
-        <button class="boton boton-secundario" data-accion="deshacer-hueco" type="button">
-          ↔ Deshacer <span class="chico">(${pasos})</span>
-        </button>` : ''}
+        <div id="edv-deshacer" style="display:${pasos > 0 ? 'block' : 'none'}">
+          <button class="boton boton-secundario" data-accion="deshacer-hueco" type="button">
+            ↔ Deshacer <span class="chico">(${pasos})</span>
+          </button>
+        </div>
 
         <div class="fila" style="gap:.5rem">
           <button class="boton boton-contorno"
@@ -498,13 +531,9 @@ export function modalEditorVersiculo({
                   aria-expanded="${ayudaAbierta}" aria-controls="edv-ayuda">?</button>
         </div>
 
-        ${ayudaAbierta ? `
-        <p class="globo-ayuda" id="edv-ayuda" role="note">
-          Al pulsar <strong>Ocultar palabra</strong> y después tocar una palabra del texto,
-          esa palabra pasa a ser el hueco que verán el participante y el televisor durante
-          el juego. Nadie la ve: hay que descubrirla. Vuelve a pulsar el botón para dejar
-          de ocultar.
-        </p>` : ''}
+        <div id="edv-hueco-ayuda">
+          ${ayudaAbierta ? globoAyuda() : ''}
+        </div>
 
         <form data-form="versiculo" data-tema="${esc(temaId ?? '')}"
               data-versiculo="${esc(versiculo?.id ?? '')}">

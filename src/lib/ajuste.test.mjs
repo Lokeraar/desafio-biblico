@@ -127,12 +127,18 @@ console.log('\n=== 10. La capacidad la pone el perfil, no el rol ===');
    hereda el perfil, y el agente no inventa ninguna para que algo quepa. */
 const conCapacidadPropia = ROLES.filter(r => r.renglones != null);
 const esDelMenu = (sel) => /menu|juego-tarjeta/.test(sel);
-/* Fuera del menú, solo el VERSÍCULO declara 2: se lee, no se adivina.
-   Son tres selectores porque son tres pantallas con el mismo texto. */
+/* Fuera del menú, todo TEXTO DE VERSÍCULO declara 2 + 1. Es regla dura del
+   proyecto, declarada el 20/11/2026: un versículo parte en dos renglones casi
+   siempre y forzarlo a uno lo baja al suelo de 8 pt. Son cuatro selectores
+   porque son cuatro sitios que muestran lo mismo: el versículo en juego
+   (participante y televisor), el enunciado de una pregunta, la vista previa
+   del editor y el texto con huecos de la lista de un tema. */
 const pregunta = conCapacidadPropia.filter(r => !esDelMenu(r.sel) && r.renglones === 2);
-t(pregunta.length === 2, 'el versiculo declara 2 renglones: presentador y las otras dos pantallas');
-t(pregunta.every(r => /versiculo|enunciado/.test(r.sel)),
-  'y todos son el texto del versiculo');
+t(pregunta.length === 5, 'todo texto de versiculo declara 2 renglones (+1 de gracia)');
+t(pregunta.every(r => /versiculo|enunciado|fila-entre/.test(r.sel)),
+  'y todos son texto de un versiculo, su enunciado o su referencia');
+t(pregunta.every(r => r.renglones + PERFILES.ancho.gracia === 3),
+  'los cuatro quedan en 2 + 1');
 t(conCapacidadPropia.filter(r => !esDelMenu(r.sel) && r.renglones !== 2)
    .every(r => r.renglones === 1),
   'el resto declara 1, como el menu');

@@ -1521,6 +1521,73 @@ body.tv .qr-tv { max-width: clamp(220px, 34vmin, 380px); }
   grid-template-columns: repeat(2, max-content);
   flex: 0 1 auto;
 }
+
+/*
+ * LISTA DE VERSICULOS nada mas: «Editar» y «Borrar» desbordaban.
+ *
+ * El alcance es esta lista y no `.pregunta-fila` a proposito: esa clase la
+ * comparten las fichas de opcion multiple y los temas, y ahi el arreglo no
+ * hace falta ni conviene. Todo lo de abajo cuelga de `.lista-versiculos`, asi
+ * que no puede alcanzar a las demas pantallas.
+ *
+ * Los botones van A LA DERECHA y en UN renglon. No se bajan debajo de la
+ * referencia cuando no caben: se ajusta la letra, que es lo que hace
+ * `ajustarTextos` con el rol de `.lista-versiculos .boton-mini`. Por eso aqui
+ * NO hay `flex-wrap`, y la etiqueta lleva `nowrap`: el ajustador mide el ancho
+ * del texto, y con la etiqueta partida en dos renglones la medida vertical no
+ * dice nada y el texto se queda sin encoger.
+ *
+ * Las columnas son `minmax(0, 1fr)` y no `max-content`: asi miden lo mismo,
+ * que es lo que se aprobo en el diseno. Con `max-content` no encogen nunca y
+ * los dos botones juntos pedian mas ancho del que hay en un telefono.
+ */
+.lista-versiculos .fila {
+  /* `minmax(min-content, 1fr)` da las DOS cosas a la vez, que es lo que pide
+     el diseno: los dos botones miden lo mismo (`1fr`), pero ninguna columna
+     baja del ancho de su propio texto (`min-content`).
+     Con `1fr 1fr` a secas, la columna podia ser MAS ANGOSTA que la etiqueta y
+     el contenido se salia de la caja pintandose sobre el vecino. Con `auto
+     auto` cada uno media su texto, pero quedaban desiguales. */
+  grid-template-columns: repeat(2, minmax(min-content, 1fr));
+  /* La pareja no se encoge: lo que cede es la referencia, que puede partirse. */
+  flex: 0 0 auto;
+  max-width: 100%;
+}
+
+/* La referencia puede encogerse: es lo que decide si el texto de al lado
+   tiene sitio. Sin `min-width: 0` se queda con su ancho entero y son los
+   botones los que se salen.
+
+   `break-word` y NO `anywhere`: los dos dejan partir una palabra larguísima,
+   pero `anywhere` parte por donde sea aunque haya espacios antes. Medido en un
+   teléfono vertical: «2 Tesalonicenses 3:16» salía como «2 Tesalonicens / es
+   3:16», partiendo el nombre del libro. Con `break-word` solo se parte la
+   palabra cuando ella sola no cabe, y si hay un espacio cerca se usa ese. */
+.lista-versiculos .fila-entre > span {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+.lista-versiculos .pregunta-fila .fila .boton {
+  /* `auto` y NO `100%`: el botón mide su etiqueta más su relleno. Con `100%`
+     toma el ancho de la columna del grid, que nadie calculó a partir del
+     texto, y cuando la columna es más angosta el contenido se sale de la caja.
+     Eso era el desborde: no la tarjeta, no la fila, el texto saliéndose de su
+     propio botón.
+
+     El relleno va acotado a `.3em` porque `.pregunta-fila .fila .boton` (la
+     regla general, que va después en la hoja) pone `.7em` por lado: 28 px de
+     ~81 disponibles, y al texto le quedaban 49 cuando necesitaba 52. El
+     selector lleva `.pregunta-fila` para ganar esa cascada, que es la misma
+     especificidad. */
+  /* `100%` del ancho de su columna, que ahora garantiza `min-content`: los dos
+     botones se ven iguales y ninguno es mas angosto que su etiqueta. */
+  width: 100%;
+  min-width: 0;
+  padding-inline: .3em;
+  /* `nowrap` a proposito: la etiqueta no se parte, la encoge el ajustador. */
+  white-space: nowrap;
+}
 .tema-fila .fila .boton,
 .pregunta-fila .fila .boton {
   width: 100%;

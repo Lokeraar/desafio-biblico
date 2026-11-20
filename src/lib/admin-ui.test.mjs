@@ -3,8 +3,12 @@
    pregunta y el escapado de datos que vienen de la base. */
 import {
   validarPregunta, selectorTema, modalClave, modalCambiarClave,
-  modalTemas, modalPreguntas, modalFormPregunta, vistaConfig
+  modalTemas, modalPreguntas, modalFormPregunta, vistaConfig,
+  modalVersiculos, modalEditorVersiculo,
+  palabrasMarcadas, contadorHuecos, globoAyuda
 } from './admin-ui.js';
+import { readFileSync } from 'node:fs';
+import { palabrasDe, conTexto, alternarHueco, editorDesde } from './editor-versiculo.js';
 
 let ok = 0, fail = 0;
 const t = (c, m) => { if (c) { ok++; console.log('  ok   ' + m); } else { fail++; console.log('  FALLA ' + m); } };
@@ -164,6 +168,162 @@ t(modalClave({ para: 'lema', muestra: '<b>negrita</b>' }).includes('&lt;b&gt;'),
   'el texto de la vista previa se escapa');
 t(!modalClave({ para: 'lema', muestra: '<b>negrita</b>' }).includes('<b>negrita</b>'),
   'y no entra crudo al HTML');
+
+/* ------------------------------------------------------------------ */
+console.log('=== El editor de versiculos ===');
+
+const TEXTO = 'Porque de tal manera amo Dios al mundo, que ha dado a su Hijo.';
+const palabras = palabrasDe(TEXTO);
+const base = { temaId: 't1', palabras, ocultas: [1, 5], modoOcultar: true };
+
+/* 1. La vista previa se puede refrescar sin rehacer el modal.
+   Vive en una funcion aparte justamente para eso: el modal completo y el
+   refresco en vivo dibujan las palabras con el mismo codigo. Si se hubieran
+   escrito dos veces, una quedaria atras y la vista previa no coincidiria con
+   el cuadro de texto. */
+const previa = palabrasMarcadas(palabras, [1, 5], true);
+t(modalEditorVersiculo(base).includes(previa),
+  'la vista previa del modal sale de palabrasMarcadas');
+t(previa.includes('class="tapada"'), 'las palabras ocultas van marcadas');
+t(previa.includes('data-accion="tocar-palabra"'),
+  'y todas se pueden tocar cuando el modo esta armado');
+
+/* Sin modo armado, las palabras visibles son texto plano: tocar el texto no
+   debe tapar nada por accidente. */
+const sinModo = palabrasMarcadas(palabras, [1], false);
+t(!sinModo.includes('class="tocable"'), 'sin modo armado no hay palabras tocables');
+t(sinModo.includes('class="tapada"'), 'pero las ya tapadas siguen tapadas');
+
+/* El texto cambia y la vista previa tiene que seguirlo en el acto: esto es lo
+   que se ve mientras se escribe en «Texto completo del versiculo». */
+const escrito = 'Dios es amor';
+const estado = conTexto(editorDesde(''), escrito);
+const enVivo = palabrasMarcadas(estado.palabras, estado.ocultas, true);
+t(palabrasDe(escrito).every(p => enVivo.includes(p.texto)),
+  'lo que se escribe aparece entero en la vista previa');
+t(!enVivo.includes('Porque'), 'y el texto anterior ya no esta');
+
+/* Los huecos se conservan solo donde la palabra no cambio: si se reescribe el
+   texto, marcar por indice taparia una palabra distinta de la elegida. */
+const conHueco = { palabras: palabrasDe('Dios es amor'), ocultas: [1], historial: [] };
+const tras = conTexto(conHueco, 'Dios es luz');
+t(tras.ocultas.length === 0 || tras.palabras[tras.ocultas[0]].texto === 'es',
+  'al reescribir el texto no se tapa una palabra distinta');
+
+/* 2. El contador. Antes decia «1 de 34 huecos», que se lee como dos numeros
+   sueltos y no dice que el segundo sea un tope. */
+const uno = contadorHuecos(1, 34);
+const treinta = contadorHuecos(30, 34);
+const ninguno = contadorHuecos(0, 34);
+t(uno.includes('1') && uno.includes('palabra oculta'),
+  '«1 palabra oculta»: el numero y lo que cuenta');
+t(uno.includes('máximo 34 por versículo'), 'y el tope explicado, no «de 34»');
+t(!uno.includes('huecos'), 'ya no dice «huecos»');
+t(treinta.includes('30') && treinta.includes('palabras ocultas'),
+  'en plural concuerda: «30 palabras ocultas»');
+t(ninguno.includes('0') && ninguno.includes('palabras ocultas'),
+  'con cero tambien concuerda');
+t(modalEditorVersiculo(base).includes(contadorHuecos(2, 34)),
+  'el modal usa ese mismo contador');
+
+/* 3. Deshacer tiene que poder mostrarse sin rehacer el modal: si el boton solo
+   existiera cuando pasos > 0, al ocultar la primera palabra no habria donde
+   ponerlo sin volver a dibujar todo (que es lo que hacia saltar la pantalla). */
+const sinPasos = modalEditorVersiculo({ ...base, pasos: 0 });
+t(sinPasos.includes('id="edv-deshacer"'),
+  'el hueco de Deshacer existe aunque no haya pasos');
+t(/id="edv-deshacer"[^>]*display:none/.test(sinPasos),
+  'y arranca oculto');
+const conPasos = modalEditorVersiculo({ ...base, pasos: 3 });
+t(/id="edv-deshacer"[^>]*display:block/.test(conPasos),
+  'con pasos se muestra');
+t(conPasos.includes('(3)'), 'y lleva la cuenta de lo que queda por deshacer');
+
+/* 4. El globo de ayuda se abre y se cierra sin rehacer el modal, asi que su
+   texto vive en una funcion propia. */
+const globo = globoAyuda();
+t(globo.includes('id="edv-ayuda"'), 'el globo lleva su id para poder cerrarlo');
+t(globo.includes('Ocultar palabra'), 'y explica el boton');
+t(modalEditorVersiculo({ ...base, ayudaAbierta: true }).includes(globo),
+  'el modal abierto usa el mismo globo');
+t(modalEditorVersiculo({ ...base, ayudaAbierta: false }).includes('id="edv-hueco-ayuda"'),
+  'y el hueco donde ponerlo existe siempre');
+
+/* La vista previa ya no depende de que haya palabras: si apareciera solo al
+   escribir la primera, el primer caracter no se veria. */
+t(modalEditorVersiculo({ temaId: 't1', palabras: [] }).includes('texto-versiculo'),
+  'sin palabras la vista previa igual existe, para ver la primera letra');
+
+/* ------------------------------------------------------------------ */
+console.log('\n=== La fila de Editar y Borrar ===');
+
+const css = readFileSync(new URL('../../styles.css', import.meta.url), 'utf8');
+
+/* El arreglo cuelga de `.lista-versiculos`, que es SOLO la lista de
+   versiculos. `.pregunta-fila` la comparten las fichas de opcion multiple y
+   los temas, y ahi no se toca nada. */
+const regla = css.match(/\.lista-versiculos \.fila \{[^}]*\}/)?.[0] ?? '';
+
+/* Las dos columnas miden lo mismo y pueden encogerse. Con `max-content` no
+   encogen nunca: «Editar» y «Borrar» juntos pedian mas ancho del que hay en un
+   telefono y se salian de la tarjeta. */
+t(regla.includes('minmax(min-content, 1fr)'),
+  'las dos columnas miden lo mismo (1fr) y ninguna baja de su texto (min-content)');
+t(!regla.includes('minmax(0, 1fr)'),
+  'y no `minmax(0, ...)`, que permite una columna mas angosta que la etiqueta');
+t(!regla.includes('max-content'), 'ya no se piden a su ancho natural');
+t(regla.includes('max-width: 100%'), 'la rejilla no puede pedir mas ancho que la fila');
+
+/* La regla vieja sigue igual para el resto de las pantallas: si alguien la
+   cambiara, este arreglo habria alcanzado a los demas modales. */
+const compartida = css.match(/\.pregunta-fila \.fila \{\s*\n\s*grid-template-columns: repeat\(2, max-content\)/);
+t(!!compartida, 'la regla de las demas fichas quedo intacta');
+
+/* Y el marcado lleva la clase que acota el arreglo. */
+t(modalVersiculos({ id: 't1', name: 'Tema' }, []).includes('lista-versiculos'),
+  'la lista de versiculos lleva su clase propia');
+t(!modalPreguntas({ id: 't1', name: 'Tema' }, []).includes('lista-versiculos'),
+  'la lista de preguntas no la lleva, asi que no la alcanza');
+
+/* Los botones van A LA DERECHA y en UN renglon: cuando no caben no se bajan
+   debajo de la referencia, se encoge la letra. Por eso la fila NO lleva
+   `flex-wrap` y la etiqueta lleva `nowrap` — con la etiqueta partida, el
+   ajustador mide la altura y nunca ve que sobra ancho. */
+const filaEntre = css.match(/\.lista-versiculos \.fila-entre \{[^}]*\}/)?.[0] ?? '';
+t(!filaEntre.includes('flex-wrap: wrap'),
+  'la fila no envuelve: los botones no se bajan debajo de la referencia');
+
+const botonFila = css.match(/\.lista-versiculos \.pregunta-fila \.fila \.boton \{[^}]*\}/)?.[0] ?? '';
+t(botonFila.includes('white-space: nowrap'),
+  'la etiqueta no se parte: la encoge el ajustador');
+t(!botonFila.includes('white-space: normal'),
+  'y no se deja envolver, que es lo que impedia medir el ancho');
+
+/* EL RELLENO LATERAL TIENE QUE SER PEQUENO. Fue la causa real del desborde en
+   un telefono vertical, y mi primera version de esta prueba no lo miraba: se
+   podia volver a `.7em` (28 px de los ~81 de la caja) y las pruebas seguian en
+   verde mientras el texto se salia en pantalla. Medido: con `.7em` el texto
+   disponia de 49 px y necesitaba 52.
+
+   Ademas el selector lleva `.pregunta-fila` para GANAR la cascada. Sin esa
+   clase pesa lo mismo que la regla general y, como esa va despues en la hoja,
+   gana ella: la medida lo demostro, el relleno seguia en 14 px con la regla
+   escrita. */
+t(botonFila.includes('padding-inline: .3em'),
+  'el relleno lateral es .3em: con .7em el texto no entra');
+t(/lista-versiculos \.pregunta-fila/.test(botonFila) ||
+  /\.lista-versiculos \.pregunta-fila \.fila \.boton/.test(css),
+  'y el selector gana la cascada: lleva .pregunta-fila para no empatar con la regla general');
+
+/* El rol del ajustador declara la capacidad 1 + 1 una sola vez, en `ajuste.js`,
+   que es donde la skill manda declararla. Sin ese `renglones: 1` el ajuste
+   toma la capacidad del perfil y en telefono vuelve a bajar los botones. */
+const ajuste = readFileSync(new URL('./ajuste.js', import.meta.url), 'utf8');
+const rolBotones = ajuste.match(/\{[^}]*boton-mini[^}]*\}/)?.[0] ?? '';
+t(rolBotones.includes('renglones: 1'),
+  'los botones de la lista declaran 1 renglon (+1 de gracia)');
+t(rolBotones.includes('categoria: \'contenido\''),
+  'y son contenido: techo de 16 pt');
 
 /* ------------------------------------------------------------------ */
 console.log('\n===============================');

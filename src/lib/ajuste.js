@@ -284,6 +284,28 @@ export function contarRenglones(el) {
   return renglones;
 }
 
+/** Ancho del texto de `el`, medido con Range y no con la caja. */
+export function anchoTexto(el) {
+  if (!el || typeof document === 'undefined') return 0;
+  const r = document.createRange();
+  r.selectNodeContents(el);
+  const cajas = [...r.getClientRects()].filter(c => c.width > 0);
+  return cajas.length ? Math.max(...cajas.map(c => c.width)) : 0;
+}
+
+/** Ancho que el texto puede usar dentro de su caja: el interior, sin relleno.
+ *
+ * `clientWidth` YA excluye el borde y YA incluye el relleno, así que solo hay
+ * que descontar el relleno. Restar también el borde quitaba ~2 px de más y la
+ * cuenta decía que el texto no cabía cuando sí cabía (o al revés, según el
+ * redondeo), con lo que el ajuste se detenía un paso antes o uno después. */
+export function anchoUtil(el) {
+  if (!el || typeof getComputedStyle !== 'function') return 0;
+  const cs = getComputedStyle(el);
+  const relleno = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+  return Math.max(0, el.clientWidth - relleno);
+}
+
 /** ¿Este elemento es un título y le toca el techo de 24 pt? */
 export function esTitulo(el) {
   if (!el) return false;
@@ -419,6 +441,15 @@ export function ajustarGrupo(els, { pasos, renglones, gracia, categoria } = {}) 
       el.style.fontSize = ptARem(pt) + 'rem';
       peor = Math.max(peor, contarRenglones(el));
       if (el.clientWidth > 0 && el.scrollWidth > el.clientWidth + 2) desborda = true;
+      /* Y ADEMÁS, EL TEXTO CONTRA SU CAJA. `scrollWidth` no ve este caso: con
+       * `overflow: visible` la caja no crece, mide lo mismo que su
+       * `clientWidth`, y el texto se sale pintándose encima del botón vecino.
+       * Medido en la lista de versículos: «Editar» quedaba debajo de «Borrar»
+       * con las dos cajas perfectamente dentro de la tarjeta.
+       *
+       * La tolerancia es 1 px, no 2: con 2 el texto podía salirse un píxel y
+       * medio sin que el ajuste lo notara, y en pantalla ya se ve cortado. */
+      if (el.clientWidth > 0 && anchoTexto(el) > anchoUtil(el) + 1) desborda = true;
     }
     return { renglones: peor, desborda };
   };
@@ -530,8 +561,11 @@ export const ROLES = [
   /* Botones de las listas de administración (temas y preguntas). Son etiquetas
      cortas que comparten fila, así que van como UN grupo y con el mismo
      tamaño. Sin ajustar, el texto se salía de su caja y los botones se pisaban
-     entre sí: el nombre de la clase los deja encogerse, pero la letra no. */
-  { sel: '.lista-admin .boton-mini', categoria: 'contenido' },
+     entre sí: el nombre de la clase los deja encogerse, pero la letra no.
+     Capacidad 1 + 1 declarada por el usuario: en la lista de versículos los
+     botones van a la derecha y en un renglón, y cuando no caben se encoge la
+     letra, no se baja el botón debajo de la referencia. */
+  { sel: '.lista-admin .boton-mini', categoria: 'contenido', renglones: 1 },
   /* Datos de la cabecera de la sala. Son contenido, así que van al techo de
      16 pt y encogen si la columna del QR se ensancha. */
   { sel: '.sala-datos .mini', categoria: 'contenido' },
@@ -544,6 +578,27 @@ export const ROLES = [
      grande, y todavía tiene el renglón de gracia si el texto es más largo.
      Va aquí, en un solo lugar visible, que es donde la skill manda declararla. */
   { sel: '.enunciado', categoria: 'titulo', renglones: 2 },
+
+  /* TODO TEXTO DE VERSÍCULO VA EN 2 + 1. Regla dura del proyecto, declarada
+     por el usuario el 20/11/2026: un versículo parte en dos renglones casi
+     siempre, y forzarlo a uno obliga al ajuste a bajarlo al suelo de 8 pt,
+     donde se adivina en vez de leerse.
+
+     Son tres sitios y van los tres, con la MISMA capacidad: el versículo en
+     juego (participante y televisor, más arriba), la vista previa del editor
+     mientras se marca, y el texto con huecos de la lista de un tema. Si uno
+     se quedara fuera, el mismo versículo saldría de dos tamaños según la
+     pantalla. */
+  { sel: '.texto-versiculo', categoria: 'contenido', renglones: 2 },
+  { sel: '.lista-versiculos p', categoria: 'contenido', renglones: 2 },
+
+  /* La referencia de cada ficha, 2 + 1. En un teléfono vertical la tarjeta
+     deja ~120 px al lado de «Editar» y «Borrar», y a 16 pt
+     «2 Tesalonicenses 3:16» no entra en un renglón: sin capacidad propia se
+     parte por la mitad de la palabra («Tesalonicens / es»). Con 2 renglones
+     el ajuste encoge la letra hasta que el nombre del libro cabe entero y el
+     número baja al segundo renglón. */
+  { sel: '.lista-versiculos .fila-entre > span', categoria: 'contenido', renglones: 2 },
   /* Las cuatro respuestas comparten UNA decisión: son hermanas de la misma
      rejilla y el jugador las lee comparándolas. Van como un solo grupo para
      que las cuatro queden del mismo tamaño, no una por una. */

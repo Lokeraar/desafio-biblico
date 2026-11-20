@@ -18,6 +18,7 @@ import {
   selectorTema, modalClave, modalCambiarClave, modalTemas,
   modalPreguntas, modalFormPregunta, vistaConfig, validarPregunta,
   modalVersiculos, modalEditorVersiculo,
+  palabrasMarcadas, contadorHuecos, globoAyuda,
   modalProcesando
 } from './lib/admin-ui.js';
 import {
@@ -2549,22 +2550,38 @@ document.addEventListener('click', async ev => {
     /* El «?» abre y cierra la explicación. Es un estado y no un :hover a
      * propósito: en un teléfono no hay ratón, y en una placa de diseño un
      * globo que depende del cursor es invisible. */
+    /* Estas cuatro acciones se pintan sin `render()`.
+     *
+     * `render()` reescribe el `innerHTML` de toda la app, y eso destruye los
+     * nodos: el modal se vuelve a crear desde arriba, el navegador deja de
+     * recordar dónde estaba el desplazamiento y la pantalla salta al principio
+     * justo cuando el presentador acaba de tocar «?» para leer la ayuda. Como
+     * ninguna de estas acciones cambia la estructura del modal —solo qué
+     * palabras están tapadas y qué texto se ve—, se actualizan los nodos que
+     * cambian y el resto queda quieto, foco y desplazamiento incluidos. */
     case 'ayuda-ocultar': {
       app.ayudaOcultar = !app.ayudaOcultar;
-      render();
+      const caja = document.getElementById('edv-hueco-ayuda');
+      if (caja) {
+        caja.innerHTML = app.ayudaOcultar ? globoAyuda() : '';
+        el.setAttribute('aria-expanded', String(app.ayudaOcultar));
+      } else {
+        render();
+      }
       break;
     }
 
     case 'alternar-modo-ocultar': {
       app.modoOcultar = !app.modoOcultar;
-      render();
+      el.setAttribute('aria-pressed', String(app.modoOcultar));
+      refrescarEditor();
       break;
     }
 
     case 'deshacer-hueco': {
       const r = deshacer(app.editor);
       app.editor = r.estado;
-      render();
+      refrescarEditor();
       break;
     }
 
@@ -2580,7 +2597,7 @@ document.addEventListener('click', async ev => {
       } else {
         app.adminError = null;
       }
-      render();
+      refrescarEditor();
       break;
     }
 
@@ -3454,22 +3471,69 @@ document.addEventListener('submit', async ev => {
 /* Editor de versículos: lo que se escribe y lo que se guarda         */
 /* ------------------------------------------------------------------ */
 
-/* Mientras se escribe en el cuadro del versículo, el estado se actualiza pero
- * NO se redibuja: un render por tecla reemplaza el <textarea>, le quita el
- * foco y el cursor salta al principio en cada letra. La vista previa se
- * refresca al salir del campo. */
+/*
+ * Refresca la parte del editor que cambió, sin rehacer el modal.
+ *
+ * Por qué no `render()`: `render()` reescribe el `innerHTML` de toda la app y
+ * con ello destruye los nodos del modal. El contenedor vuelve a nacer desde
+ * arriba, el navegador pierde el desplazamiento y la pantalla salta al
+ * principio. Al presentador le pasaba cada vez que tocaba una palabra, deshacía
+ * o abría la ayuda: estaba leyendo el texto, saltaba al encabezado y tenía que
+ * bajar otra vez.
+ *
+ * Aquí se cambia solo lo que de verdad cambió: las palabras del texto, la
+ * cuenta, el botón de deshacer. El resto del modal —incluido el <textarea> con
+ * su foco y su cursor— no se toca.
+ */
+function refrescarEditor() {
+  const palabras = app.editor?.palabras ?? [];
+  const ocultas = app.editor?.ocultas ?? [];
+
+  const vista = document.querySelector('.texto-versiculo');
+  if (vista) vista.innerHTML = palabrasMarcadas(palabras, ocultas, app.modoOcultar);
+
+  const cuenta = document.getElementById('edv-cuenta');
+  if (cuenta) cuenta.innerHTML = contadorHuecos(ocultas.length, TOPE_HUECOS);
+
+  const cajaDeshacer = document.getElementById('edv-deshacer');
+  if (cajaDeshacer) {
+    const pasos = pasosDeDeshacer(app.editor) ?? 0;
+    cajaDeshacer.style.display = pasos > 0 ? 'block' : 'none';
+    const boton = cajaDeshacer.querySelector('button');
+    const chico = boton?.querySelector('.chico');
+    if (chico) chico.textContent = `(${pasos})`;
+  }
+
+  /* El campo oculto que se envía al guardar tiene que llevar el marcado
+   * actual, o se guardaría el texto de antes de estos toques. */
+  const marcado = document.querySelector('[data-form="versiculo"] input[name="marcado"]');
+  if (marcado) marcado.value = paraGuardar(app.editor, '').textoMarcado;
+}
+
+/*
+ * Mientras se escribe, el estado y la vista previa se actualizan los dos: lo
+ * que el presentador escribe es lo mismo que después va a tocar para tapar
+ * palabras, y si la vista previa se queda atrás estaría tocando un texto que no
+ * es el suyo.
+ *
+ * El <textarea> NO se redibuja a propósito: reemplazarlo en cada tecla le
+ * quita el foco y manda el cursor al principio, con lo que no se puede
+ * escribir una palabra entera.
+ */
 document.addEventListener('input', ev => {
   if (ev.target.dataset?.accion !== 'texto-versiculo') return;
   if (!app.editor) return;
   app.editor = conTexto(app.editor, ev.target.value);
+  refrescarEditor();
 });
 
-/* Al salir del cuadro sí se redibuja, para que la vista previa con los huecos
- * subrayados refleje lo que se acaba de escribir. */
+/* Al salir del cuadro no hace falta redibujar nada: la vista previa ya siguió
+ * cada tecla. Se deja el estado al día por si el cambio llegó sin `input`
+ * (autocompletar, deshacer del navegador, pegar con el menú del sistema). */
 document.addEventListener('change', ev => {
   if (ev.target.dataset?.accion === 'texto-versiculo') {
     app.editor = conTexto(app.editor, ev.target.value);
-    render();
+    refrescarEditor();
     return;
   }
 

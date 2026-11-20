@@ -97,6 +97,49 @@ retrocede datos de salas vivas.
 
 ---
 
+## Ajuste de texto: los versículos SIEMPRE en 2 + 1
+
+**Regla dura, declarada por Christian el 20/11/2026.** Todo texto que muestre
+un versículo se ajusta con **capacidad 2 renglones + 1 de gracia**. Sin
+excepciones, en cualquier pantalla: juego, administración, editor, televisor.
+
+Vale para el texto completo del versículo, para la vista previa del editor y
+para el texto con huecos de la lista de versículos. La razón es de lectura, no
+estética: un versículo parte en dos renglones casi siempre, y forzarlo a uno
+solo obliga al ajustador a bajarlo al suelo de 8 pt, donde se adivina en vez
+de leerse.
+
+**El resto del texto de la interfaz va en 1 + 1.** Una fila que ocupa dos
+renglones empuja a su hermana y la lista deja de leerse como lista.
+
+**Dónde se declara: en un solo sitio, `ROLES` de `src/lib/ajuste.js`.** No en
+el CSS y no en la hoja de cada componente. La capacidad es una decisión de
+diseño y se escribe una vez, visible:
+
+```js
+{ sel: '.jugador-versiculo .versiculo, .cuerpo-tv .versiculo',
+  categoria: 'titulo', renglones: 2 },        // 2 + 1
+{ sel: '.texto-versiculo', categoria: 'contenido', renglones: 2 },  // 2 + 1
+```
+
+Trampas que ya costaron tiempo aquí:
+
+- **`white-space: nowrap` es obligatorio** en el texto que se ajusta. Con la
+  etiqueta partida en dos renglones, el ajustador mira la altura y nunca ve que
+  sobra ancho, así que declara «cabe» y el texto se sale de su caja.
+- **La prueba de desborde tiene que ser sobre el texto, no sobre la caja.**
+  `scrollWidth > clientWidth` en el botón no ve nada cuando el texto desborda
+  la caja con `overflow: visible`: los dos miden lo mismo y el texto se pinta
+  encima del vecino. Se mide con `Range` sobre el contenido.
+- **`font-size: inherit` en los hijos.** Un `clamp()` con suelo en `rem` dentro
+  de un texto ajustado no encoge con su padre y acaba más grande que el texto
+  al que pertenece.
+- **`container-type` y `fit-content` no pueden convivir** en la misma caja.
+
+Detalle completo de la metodología: skill `text-fitting`.
+
+---
+
 ## Supabase
 
 La API de administración se usa con `POST
