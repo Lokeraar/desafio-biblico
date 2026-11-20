@@ -1265,9 +1265,66 @@ function vistaCeremonia(s) {
 /* ------------------------------------------------------------------ */
 /* VISTA: jugador                                                      */
 /* ------------------------------------------------------------------ */
+/**
+ * Fin de partida en el teléfono del participante.
+ *
+ * `ceremony` es la tabla de clasificación; `closed` es la sala que se cerró,
+ * sea antes o después de la ceremonia. Se separó de `vistaJugador` para
+ * poder llamarla ANTES de la guarda del juego: el final de la partida no
+ * depende de qué juego se estaba jugando.
+ */
+function finDePartidaJugador(s, yo) {
+  if (s.status === 'ceremony') {
+    const tabla = E.tablaFinal(s);
+    const footer = `
+      <button class="boton" data-accion="salir-host">🙋 Jugar de nuevo</button>
+      <button class="boton boton-secundario" data-ir="menu">← Menú</button>`;
+    // `miId` resalta su propia fila: en un teléfono, buscar el nombre entre
+    // veinte es trabajo. Con la fila marcada se encuentra solo.
+    return ceremoniaHTML(tabla, app.podioPaso, {
+      miId: yo.playerId,
+      footer,
+      vacio: 'Nadie participó en esta partida.'
+    });
+  }
+
+  return `
+    <main class="crecer columna centro" style="gap:1rem">
+      <div class="aviso espera centro" style="text-align:center">
+        ${motivoCierre(s) ?? 'El presentador cerró la sala.'}
+      </div>
+      ${/*
+        Sin afirmar si la partida llegó al final o no: `closed` cubre los
+        dos casos (cerrada a media partida y cerrada después de la
+        ceremonia), y decir «no llegó al final» cuando sí terminó sería
+        mentirle al jugador que acaba de ver la tabla.
+      */''}
+      <p class="tenue centro chico" style="text-align:center; max-width:32ch">
+        Gracias por participar. Puedes volver al menú y entrar a otra sala.
+      </p>
+      <button class="boton boton-secundario" data-ir="menu">← Menú</button>
+    </main>`;
+}
+
 function vistaJugador() {
   const s = app.estado;
   const yo = app.yo;
+
+  /*
+   * El FIN DE PARTIDA se decide antes que cualquier juego.
+   *
+   * Defecto real: esta guarda venia primero, asi que en Completar el
+   * versiculo el jugador se quedaba mirando el ultimo versiculo para
+   * siempre. Terminaba la partida, el presentador veia la tabla, y el
+   * telefono de cada participante seguia igual, sin saber que ya habia
+   * terminado. Lo mismo al cerrar la sala.
+   *
+   * La ceremonia y el cierre de sala son estados de la SALA, no del juego:
+   * valen para los dos juegos y por eso van antes del `gameSlug`.
+   */
+  if (s && yo && (s.status === 'ceremony' || s.status === 'closed')) {
+    return finDePartidaJugador(s, yo);
+  }
 
   // Completar el versículo tiene su propia pantalla. Se decide por lo que
   // dice el SERVIDOR (`gameSlug`), no por lo elegido en el menú: un jugador
@@ -1340,43 +1397,6 @@ function vistaJugador() {
   const yaRespondi = mias.length > 0 || !!miRegistro;
   const miPuntaje = s.players.find(p => p.id === yo.playerId);
   const enEspera = miPuntaje?.waiting;
-
-  /* --- ceremonia: la misma tabla, con su propio pie --- */
-  if (s.status === 'ceremony') {
-    const tabla = E.tablaFinal(s);
-    const footer = `
-      <button class="boton" data-accion="salir-host">🙋 Jugar de nuevo</button>
-      <button class="boton boton-secundario" data-ir="menu">← Menú</button>`;
-    return ceremoniaHTML(tabla, app.podioPaso, {
-      miId: yo.playerId,
-      footer,
-      vacio: 'Nadie participó en esta partida.'
-    });
-  }
-
-  /*
-   * La sala se cerró antes de terminar (el presentador se fue).
-   * Sin este caso el jugador se quedaba mirando «espera la respuesta» para
-   * siempre: el servidor ya no manda rondas y la pantalla nunca cambia.
-   */
-  if (s.status === 'closed') {
-    return `
-      <main class="crecer columna centro" style="gap:1rem">
-        <div class="aviso espera centro" style="text-align:center">
-          ${motivoCierre(s) ?? 'El presentador cerró la sala.'}
-        </div>
-        ${/*
-          Sin afirmar si la partida llegó al final o no: `closed` cubre los
-          dos casos (cerrada a media partida y cerrada después de la
-          ceremonia), y decir «no llegó al final» cuando sí terminó sería
-          mentirle al jugador que acaba de ver la tabla.
-        */''}
-        <p class="tenue centro chico" style="text-align:center; max-width:32ch">
-          Gracias por participar. Puedes volver al menú y entrar a otra sala.
-        </p>
-        <button class="boton boton-secundario" data-ir="menu">← Menú</button>
-      </main>`;
-  }
 
   if (enEspera) {
     return `
@@ -1593,12 +1613,61 @@ function salaEsperaHTML(s) {
     </div>`;
 }
 
+/**
+ * Fin de partida en el televisor del salón.
+ *
+ * La tabla sale COMPLETA de una vez, no paso a paso, y esa es la diferencia
+ * con el presentador y el participante. La ceremonia revela puestos de abajo
+ * hacia arriba y avanza cuando alguien toca la pantalla (`revelarSiguientePodio`).
+ * La tele no se toca: si se le pasara `app.podioPaso` tal cual, quedaría en 0
+ * y el salón vería un marco vacío para siempre. Se le pasa el último paso.
+ */
+function finDePartidaTV(s) {
+  if (s.status === 'ceremony') {
+    const tabla = E.tablaFinal(s);
+    return ceremoniaHTML(tabla, totalPasos(tabla), {
+      // El televisor no tiene botones de juego: solo muestra. Se deja el Menú
+      // porque ninguna pantalla del proyecto puede quedarse sin camino de
+      // vuelta, ni siquiera la del televisor al terminar la partida.
+      footer: '<button class="boton boton-secundario" data-ir="menu">← Menú</button>'
+    });
+  }
+
+  // Sala cerrada: el presentador se fue. Se avisa y se deja de consultar,
+  // porque ya no va a llegar nada nuevo por más que se pregunte.
+  return `
+    <main class="crecer columna centro" style="gap:1rem">
+      <h1>Desafío Bíblico</h1>
+      <div class="aviso espera centro" style="text-align:center">
+        ${motivoCierre(s) ?? 'El presentador cerró la sala.'}
+      </div>
+      <p class="tenue centro chico" style="text-align:center; max-width:32ch">
+        Esta pantalla puede conectarse a otra sala con su código.
+      </p>
+      <button class="boton boton-secundario" data-accion="tv-otra-sala">Escribir otro código</button>
+      <button class="boton boton-secundario" data-ir="menu">← Menú</button>
+    </main>`;
+}
+
 function vistaTV() {
   // El televisor solo se cree su PROPIO sondeo. `app.estado` lo comparten
   // todas las vistas: sin esta condición, abrir el televisor después del
   // panel del presentador mostraba el estado del host —con la respuesta
   // correcta incluida— en una pantalla que ve todo el público.
   const s = app.tv ? app.estado : null;
+
+  /*
+   * El FIN DE PARTIDA se decide antes que cualquier juego, igual que en el
+   * teléfono del participante.
+   *
+   * Defecto real: la guarda del juego venia primero, así que al terminar la
+   * partida el televisor se quedaba congelado en el último versículo
+   * mientras el presentador veía la tabla. En el salón no se enteraba nadie
+   * de quién había ganado.
+   */
+  if (s && (s.status === 'ceremony' || s.status === 'closed')) {
+    return finDePartidaTV(s);
+  }
 
   if (s && s.gameSlug === 'completar-versiculo') {
     // El QR se dibuja aquí: la URL de la sala la conoce esta capa.
@@ -1658,35 +1727,6 @@ function vistaTV() {
   }
 
   const r = s.round;
-
-  /*
-   * Sala cerrada: el presentador se fue. Se avisa y se deja de consultar,
-   * porque ya no va a llegar nada nuevo por más que se pregunte.
-   */
-  if (s.status === 'closed') {
-    return `
-      <main class="crecer columna centro" style="gap:1rem">
-        <h1>Desafío Bíblico</h1>
-        <div class="aviso espera centro" style="text-align:center">
-          ${motivoCierre(s) ?? 'El presentador cerró la sala.'}
-        </div>
-        <p class="tenue centro chico" style="text-align:center; max-width:32ch">
-          Esta pantalla puede conectarse a otra sala con su código.
-        </p>
-        <button class="boton boton-secundario" data-accion="tv-otra-sala">Escribir otro código</button>
-        <button class="boton boton-secundario" data-ir="menu">← Menú</button>
-      </main>`;
-  }
-
-  if (s.status === 'ceremony') {
-    // El televisor no tiene botones de juego: solo muestra. Se deja el Menú
-    // porque ninguna pantalla del proyecto puede quedarse sin camino de
-    // vuelta, ni siquiera la del televisor al terminar la partida.
-    return ceremoniaHTML(E.tablaFinal(s), app.podioPaso, {
-      footer: '<button class="boton boton-secundario" data-ir="menu">← Menú</button>'
-    });
-  }
-
   return `
     ${barraVolver({ extra: '<span class="mini tenue">Pantalla del televisor</span>' })}
     <main class="crecer columna" style="gap:1.5rem">

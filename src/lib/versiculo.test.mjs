@@ -418,6 +418,48 @@ t(appSrc.includes('function vistaSalaCerrada('),
 const copias = (appSrc.match(/La sala está cerrada/g) || []).length;
 t(copias === 1, 'y está escrita UNA vez, no copiada por vista');
 
+/* El mismo defecto, en las otras dos vistas.
+ *
+ * En el panel del presentador ya se había corregido y se probó. En el
+ * teléfono del participante y en el televisor seguía vivo: terminaba la
+ * partida, el presentador veía la tabla, y las otras dos pantallas se
+ * quedaban congeladas en el último versículo. La ceremonia y el cierre son
+ * estados de la SALA, no del juego, así que tienen que mirarse antes de
+ * desviar por `gameSlug`. */
+const cuerpoDe = (nombre) => {
+  const ini = appSrc.indexOf(`function ${nombre}(`);
+  if (ini < 0) return '';
+  const resto = appSrc.slice(ini + 10);
+  const fin = resto.search(/\nfunction [a-zA-Z]/);
+  return fin < 0 ? resto : resto.slice(0, fin);
+};
+
+for (const vista of ['vistaJugador', 'vistaTV']) {
+  const cuerpo = cuerpoDe(vista);
+  t(cuerpo.length > 200, `se localiza el cuerpo de ${vista}`);
+
+  const iFin = cuerpo.indexOf("status === 'ceremony'");
+  const iJuego = cuerpo.indexOf("completar-versiculo");
+  t(iFin >= 0, `${vista} mira el estado 'ceremony'`);
+  t(iJuego >= 0, `${vista} desvía por juego`);
+  t(iFin >= 0 && iJuego > iFin,
+    `${vista}: el fin de partida se mira ANTES de desviar por juego`);
+
+  t(cuerpo.includes("'closed'"),
+    `${vista}: y también mira la sala cerrada antes del juego`);
+}
+
+// El televisor no recibe toques: la tabla tiene que salir completa sola.
+// `app.podioPaso` arranca en 0 y solo sube con `revelarSiguientePodio`, que
+// engancha el toque en pantalla. Si se le pasara tal cual, el salón vería
+// un marco vacío para siempre.
+const cuerpoTVFin = cuerpoDe('finDePartidaTV');
+t(cuerpoTVFin.length > 100, 'existe finDePartidaTV');
+t(/totalPasos\s*\(/.test(cuerpoTVFin),
+  'la tele pide el ÚLTIMO paso de la tabla, no el actual');
+t(!/podioPaso/.test(cuerpoTVFin),
+  'y NO usa app.podioPaso, que se queda en 0 porque nadie toca la tele');
+
 /* ------------------------------------------------------------------ */
 console.log('\n=== La MATRIZ completa de estados, sin casos sueltos ===');
 // Encontrar defectos uno por uno, mirando capturas, deja siempre el próximo
