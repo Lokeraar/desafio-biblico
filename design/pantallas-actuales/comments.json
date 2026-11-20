@@ -728,9 +728,10 @@
       "excerpt": "TABLA DE CLASIFICACIÓN 🎉 ¡Felicitaciones, Miriam Ortiz! 👑 Miriam Ortiz 24.3 s · 7 aciertos 7 pts 🥈 Ana Lucía Paredes 26.1 s · 5 aciertos 5 pts 🥉 Beto Salas 29.4 s · 3 aciertos 3 pts Toca para ver el resto de la tabla 🙋 Jugar de nuevo ← Menú",
       "comment": "Usa este mismo estilo en cuanto al confeti en la otras pantallas (televisor y presentador) en sus respectivas tablas de clasificación.",
       "createdAt": "2026-11-20T12:59:16.031Z",
-      "status": "open",
+      "status": "resolved",
       "sentAt": "2026-11-20T12:59:16.226Z",
-      "resolvedAt": null
+      "resolvedAt": "2026-11-20T13:03:16.332Z",
+      "resolution": "Confeti con el mismo mecanismo (30 piezas, 6 colores, animación caer) en las tres tablas: presentador y televisor lo recibieron, y las tres comparten el token --alto-confeti medido por marco."
     }
   ]
 }
