@@ -8,7 +8,7 @@ import {
   REM, UMBRAL_ZOOM, TOPE_FACTOR, factorEscala,
   TECHO_CONTENIDO, TECHO_TITULO, SUELO, PASOS,
   PERFILES, perfilPara, ptARem, ROLES, PASOS_TITULO, esTitulo, cabe,
-  esCajaDeTexto, ajustarGrupo
+  esCajaDeTexto, ajustarGrupo, agruparPorCaja
 } from './ajuste.js';
 
 let ok = 0, fail = 0;
@@ -357,6 +357,52 @@ const parrafo = {
 ajustarGrupo([parrafo], { renglones: 1 });
 t(parrafo.style.fontSize !== undefined,
   'un <p> de verdad SI se ajusta: la guarda no apaga el ajuste');
+
+
+/* ------------------------------------------------------------------ */
+console.log('\n=== Cada tarjeta de versículo se ajusta por su cuenta ===');
+
+/* Un doble mínimo: solo lo que `agruparPorCaja` usa, `closest`. Lo que se
+   prueba es la DECISIÓN de agrupar, no el navegador. */
+const tarjeta = (n) => ({ nombre: 'tarjeta' + n });
+const ficha = (caja) => ({ closest: () => caja });
+
+const t1 = tarjeta(1), t2 = tarjeta(2), t3 = tarjeta(3);
+const grupos = agruparPorCaja([ficha(t1), ficha(t1), ficha(t2), ficha(t3), ficha(t3)], '.tarjeta');
+
+t(grupos.length === 3, 'tres tarjetas dan tres grupos, no uno solo');
+t(grupos[0].length === 2 && grupos[1].length === 1 && grupos[2].length === 2,
+  'cada grupo lleva solo los elementos de su tarjeta');
+t(grupos[0][0].closest() === grupos[0][1].closest(),
+  'y los hermanos de una tarjeta van juntos');
+
+/* Lo que este cambio arregla, dicho como prueba: si las tres tarjetas fueran un
+   solo grupo, la corta se encogería hasta el tamaño que necesita la larga. Con
+   grupos separados, cada una decide sola. */
+t(agruparPorCaja([ficha(t1), ficha(t2)], '.tarjeta').length !== 1,
+  'una tarjeta corta no queda atada al tamaño de la larga');
+
+/* Un elemento que no cuelga de ninguna caja se descarta: no hay grupo donde
+   ponerlo, y meterlo en el primero lo ajustaría con la capacidad de otra. */
+t(agruparPorCaja([{ closest: () => null }, ficha(t1)], '.tarjeta').length === 1,
+  'lo que no esta dentro de una tarjeta se descarta');
+t(agruparPorCaja([], '.tarjeta').length === 0, 'sin elementos no hay grupos');
+t(agruparPorCaja(null, '.tarjeta').length === 0, 'y sin lista tampoco falla');
+
+/* Los tres roles de la lista de versiculos declaran `porCaja`: sin eso, el
+   ajuste los juntaria a todos y el arreglo no serviria de nada. */
+const rolesTarjeta = ROLES.filter(r => r.sel.includes('lista-versiculos'));
+t(rolesTarjeta.length === 3, 'los tres roles de la lista de versiculos existen');
+t(rolesTarjeta.every(r => r.porCaja === '.pregunta-fila'),
+  'y los tres ajustan por tarjeta, no todos juntos');
+
+/* El rol generico de botones de administracion NO puede volver a incluir los de
+   versiculos: los juntaria otra vez y anularia el ajuste por tarjeta. */
+const generico = ROLES.find(r => r.sel.includes('editar-pregunta'));
+t(generico && !generico.sel.includes('lista-versiculos'),
+  'el rol generico de botones no toca los de la lista de versiculos');
+t(generico && !generico.porCaja,
+  'la lista de preguntas sigue en un solo grupo: sus etiquetas se comparan');
 
 console.log('\n===============================================');
 if (fail === 0) console.log(` TODO EN VERDE: ${ok} correctas, 0 fallas`);

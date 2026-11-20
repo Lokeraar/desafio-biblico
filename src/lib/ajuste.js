@@ -565,7 +565,16 @@ export const ROLES = [
      Capacidad 1 + 1 declarada por el usuario: en la lista de versículos los
      botones van a la derecha y en un renglón, y cuando no caben se encoge la
      letra, no se baja el botón debajo de la referencia. */
-  { sel: '.lista-admin .boton-mini', categoria: 'contenido', renglones: 1 },
+  { sel: '.lista-versiculos .boton-mini', categoria: 'contenido', renglones: 1,
+    porCaja: '.pregunta-fila' },
+  /* Los botones que NO son de la lista de versículos, nombrados por su acción.
+     Los de versículos ya se ajustaron arriba, cada tarjeta por su cuenta; si
+     entraran también aquí volverían a juntarse en un solo grupo y se perdería
+     ese ajuste. Se nombran por `data-accion` y no con un `:not(...)` de
+     descendiente, que es frágil y no todos los navegadores resuelven igual. */
+  { sel: '[data-accion="editar-pregunta"], [data-accion="borrar-pregunta"], ' +
+         '[data-accion="borrar-tema"]',
+    categoria: 'contenido', renglones: 1 },
   /* Datos de la cabecera de la sala. Son contenido, así que van al techo de
      16 pt y encogen si la columna del QR se ensancha. */
   { sel: '.sala-datos .mini', categoria: 'contenido' },
@@ -590,7 +599,8 @@ export const ROLES = [
      se quedara fuera, el mismo versículo saldría de dos tamaños según la
      pantalla. */
   { sel: '.texto-versiculo', categoria: 'contenido', renglones: 2 },
-  { sel: '.lista-versiculos p', categoria: 'contenido', renglones: 2 },
+  { sel: '.lista-versiculos p', categoria: 'contenido', renglones: 2,
+    porCaja: '.pregunta-fila' },
 
   /* La referencia de cada ficha, 2 + 1. En un teléfono vertical la tarjeta
      deja ~120 px al lado de «Editar» y «Borrar», y a 16 pt
@@ -598,13 +608,39 @@ export const ROLES = [
      parte por la mitad de la palabra («Tesalonicens / es»). Con 2 renglones
      el ajuste encoge la letra hasta que el nombre del libro cabe entero y el
      número baja al segundo renglón. */
-  { sel: '.lista-versiculos .fila-entre > span', categoria: 'contenido', renglones: 2 },
+  { sel: '.lista-versiculos .fila-entre > span', categoria: 'contenido', renglones: 2,
+    porCaja: '.pregunta-fila' },
   /* Las cuatro respuestas comparten UNA decisión: son hermanas de la misma
      rejilla y el jugador las lee comparándolas. Van como un solo grupo para
      que las cuatro queden del mismo tamaño, no una por una. */
   { sel: '.opciones .opcion > span:not(.letra)', categoria: 'contenido' },
 
 ];
+
+/**
+ * Separa los elementos por la caja a la que pertenecen.
+ *
+ * Vive aparte de `ajustarTextos` para poder probarla sin navegador: recibe
+ * elementos con `closest` y devuelve listas. Sin esto, la única forma de
+ * comprobar que cada tarjeta se ajusta por su cuenta seria mirar la pantalla.
+ *
+ * Los elementos que no cuelgan de ninguna caja se descartan: no hay a qué
+ * grupo pertenecerlos.
+ *
+ * @param {Array} els      elementos candidatos
+ * @param {string} selector del ancestro que define la caja
+ * @returns {Array<Array>} un grupo por caja, en el orden en que aparecen
+ */
+export function agruparPorCaja(els, selector) {
+  const cajas = new Map();
+  for (const el of els || []) {
+    const caja = el && typeof el.closest === 'function' ? el.closest(selector) : null;
+    if (!caja) continue;
+    if (!cajas.has(caja)) cajas.set(caja, []);
+    cajas.get(caja).push(el);
+  }
+  return [...cajas.values()];
+}
 
 /**
  * Ajusta los textos declarados en ROLES, agrupados por familia.
@@ -628,12 +664,35 @@ export function ajustarTextos(raiz) {
   for (const rol of ROLES) {
     const els = [...base.querySelectorAll(rol.sel)];
     if (!els.length) continue;
-    // Todos los hermanos de un rol comparten tamaño: es un grupo, no casos
-    // sueltos, para que la lista no acabe con tres tamaños distintos.
-    ajustarGrupo(els, {
+    const opciones = {
       ...(rol.renglones != null ? { renglones: rol.renglones } : {}),
       ...(rol.categoria ? { categoria: rol.categoria } : {})
-    });
+    };
+
+    /* CON `porCaja`, CADA CAJA ES SU PROPIA DECISIÓN.
+     *
+     * Por omisión todos los elementos de un rol son UN grupo y comparten un
+     * solo tamaño, que es lo correcto cuando se leen comparándolos (las cuatro
+     * respuestas de una pregunta, los botones de una fila).
+     *
+     * Pero las tarjetas de versículos no se comparan: una puede tener 140
+     * caracteres y la de al lado 40. Metidas en el mismo grupo, la corta se
+     * encoge hasta el tamaño de la larga y queda con letra chica sin motivo,
+     * y una tercera partida en dos renglones tampoco puede crecer. Lo pidió
+     * el usuario el 20/11/2026: cada tarjeta ajusta sola.
+     *
+     * `porCaja` es el selector del ancestro que define la tarjeta; los
+     * elementos que cuelgan del mismo ancestro van juntos. */
+    if (rol.porCaja) {
+      for (const grupo of agruparPorCaja(els, rol.porCaja)) {
+        ajustarGrupo(grupo, opciones);
+        n += grupo.length;
+      }
+      continue;
+    }
+
+    // Sin `porCaja`: todos los hermanos de un rol comparten tamaño.
+    ajustarGrupo(els, opciones);
     n += els.length;
   }
   return n;
