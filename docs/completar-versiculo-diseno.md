@@ -233,7 +233,16 @@ tema.
   modo queda armado hasta que se vuelve a pulsar. Tocar una palabra ya
   marcada la desmarca.
 - Las palabras ocultas se ven **subrayadas** en el formulario.
-- **↶ Deshacer último** y **Quitar todo**.
+- **↔ Deshacer**, encima del botón de ocultar, visible solo cuando hay algo
+  que deshacer, y deshaciendo **de a una palabra** en orden inverso. Guarda
+  los últimos 10 pasos.
+- **Tope de 34 huecos: bloquea.** Al intentar ocultar la 35 no se oculta y se
+  avisa. Antes el tope solo estaba escrito aquí; el editor no lo comprobaba.
+
+> **Cambio del 20/11/2026:** se quitó **Quitar todo** a propósito. Deshacer ya
+> es secuencial y de a un paso, así que un botón que vacía todos los huecos de
+> golpe solo servía para perder trabajo sin querer. Si hiciera falta, se agrega
+> después con confirmación.
 - Al guardar se serializa con llaves, se recalculan los huecos y se reescribe
   la pregunta. Si el versículo ya se jugó alguna vez, se avisa antes de
   guardar: cambiarlo altera partidas pasadas.

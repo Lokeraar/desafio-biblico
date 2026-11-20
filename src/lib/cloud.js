@@ -817,5 +817,29 @@ export const admin = {
   async borrarPregunta(clave, id) {
     const { error } = await rpc('question_delete', { p_key: clave, p_question: id });
     return { error };
+  },
+
+  /* ------------------------------------------------------------------ */
+  /* Versículos (Completar el versículo)                                */
+  /* ------------------------------------------------------------------ */
+  /* No usan `question_save`: esa exige cuatro opciones y una correcta, y un
+   * versículo no tiene opciones. Sus huecos van dentro del texto, con
+   * formato `{palabra}`, en `texto_marcado`. */
+
+  /** Guarda un versículo. `pregunta` es el id si se está editando. */
+  async guardarVersiculo(clave, { topicId, id = null, textoMarcado, referencia = null }) {
+    const { dato, error } = await rpc('versiculo_save', {
+      p_key: clave,
+      p_topic: topicId,
+      p_question: id,
+      p_marcado: textoMarcado,
+      p_reference: referencia
+    });
+    return error ? { error } : { versiculo: dato };
+  },
+
+  async borrarVersiculo(clave, id) {
+    const { error } = await rpc('versiculo_delete', { p_key: clave, p_question: id });
+    return { error };
   }
 };

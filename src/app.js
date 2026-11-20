@@ -17,8 +17,13 @@ import { hayNube } from './config.js';
 import {
   selectorTema, modalClave, modalCambiarClave, modalTemas,
   modalPreguntas, modalFormPregunta, vistaConfig, validarPregunta,
+  modalVersiculos, modalEditorVersiculo,
   modalProcesando
 } from './lib/admin-ui.js';
+import {
+  editorDesde, conTexto, alternarHueco, deshacer, pasosDeDeshacer,
+  resumenHuecos, validarVersiculo, paraGuardar, TOPE_HUECOS
+} from './lib/editor-versiculo.js';
 import { qrSVG } from './lib/qr.js';
 import { ceremoniaHTML, totalPasos } from './lib/render.js';
 import {
@@ -236,6 +241,15 @@ const app = {
   adminError: null,    // mensaje de error dentro del modal
   preguntasTema: [],   // preguntas del tema abierto en el modal
   editarPregunta: null, // pregunta que se está editando (null = nueva)
+  /* Editor de versículos. `versiculosTema` son los del tema abierto;
+   * `editor` es el estado puro de editor-versiculo.js (palabras, ocultas,
+   * historial) y `modoOcultar` dice si el próximo toque en una palabra la
+   * tapa. */
+  versiculosTema: [],
+  editor: null,
+  modoOcultar: false,
+  ayudaOcultar: false,   // si el globo del «?» está abierto
+  editarVersiculo: null,
 
   // --- marca del menú: el lema y la portada ---
   marca: null,         // lo que devuelve la base; null = todavía no se pidió
@@ -2005,6 +2019,47 @@ async function abrirTemas() {
   render();
 }
 
+/** Abre el contenido de un tema, según lo que juegue ese juego. */
+async function abrirContenidoTema(temaId) {
+  if (app.juegoElegido === 'completar-versiculo') return abrirVersiculos(temaId);
+  return abrirPreguntas(temaId);
+}
+
+/**
+ * Abre los versículos de un tema.
+ *
+ * Se separa de `abrirPreguntas` porque un versículo no tiene respuestas: lo
+ * que tiene son palabras tapadas. Reusar la pantalla de preguntas obligaba a
+ * inventar cuatro opciones para poder editar.
+ */
+async function abrirVersiculos(temaId) {
+  const tema = app.temas.find(t => t.id === temaId);
+  app.modal = { tipo: 'versiculos', tema };
+  app.adminError = null;
+  app.versiculosTema = [];
+  render();
+  const { preguntas, error } = await admin.preguntas(app.adminClave, temaId);
+  if (error) app.adminError = error;
+  else app.versiculosTema = preguntas;
+  render();
+}
+
+/** Abre el editor de un versículo: nuevo si no hay id, edición si lo hay. */
+function abrirEditorVersiculo(temaId, versiculoId = null) {
+  const versiculo = versiculoId
+    ? app.versiculosTema.find(v => v.id === versiculoId) ?? null
+    : null;
+  app.editarVersiculo = versiculo;
+  app.modoOcultar = false;
+  app.ayudaOcultar = false;
+  app.adminError = null;
+  /* Se abre CON sus huecos: el editor lee `texto_marcado`, que los 29
+   * versículos sembrados ya traen. Sin esto habría que rehacerlos. */
+  app.editor = editorDesde({ textoMarcado: versiculo?.texto_marcado ?? null });
+  app.modal = { tipo: 'versiculo', temaId };
+  render();
+}
+
 /** Abre las preguntas de un tema. */
 async function abrirPreguntas(temaId) {
   const tema = app.temas.find(t => t.id === temaId);
@@ -2044,6 +2099,19 @@ function modalActivo() {
                           temaId: m.temaId,
                           pregunta: app.editarPregunta,
                           error: err
+                        });
+    case 'versiculos':  return modalVersiculos(m.tema, app.versiculosTema, { error: err });
+    case 'versiculo':   return modalEditorVersiculo({
+                          temaId: m.temaId,
+                          versiculo: app.editarVersiculo,
+                          error: err,
+                          palabras: app.editor?.palabras ?? [],
+                          ocultas: app.editor?.ocultas ?? [],
+                          modoOcultar: app.modoOcultar,
+                          pasos: pasosDeDeshacer(app.editor),
+                          jugado: !!app.editarVersiculo?.last_played_at,
+                          tope: TOPE_HUECOS,
+                          ayudaAbierta: app.ayudaOcultar
                         });
     default: return '';
   }
@@ -2449,7 +2517,70 @@ document.addEventListener('click', async ev => {
     }
 
     case 'ver-preguntas': {
-      await abrirPreguntas(el.dataset.tema);
+      await abrirContenidoTema(el.dataset.tema);
+      break;
+    }
+
+    case 'ver-versiculos': {
+      await abrirVersiculos(el.dataset.tema);
+      break;
+    }
+
+    case 'nuevo-versiculo': {
+      abrirEditorVersiculo(el.dataset.tema);
+      break;
+    }
+
+    case 'editar-versiculo': {
+      abrirEditorVersiculo(app.modal?.tema?.id ?? null, el.dataset.versiculo);
+      break;
+    }
+
+    case 'borrar-versiculo': {
+      const r = await admin.borrarVersiculo(app.adminClave, el.dataset.versiculo);
+      if (r.error) { app.adminError = traducirError(r.error); render(); return; }
+      await abrirVersiculos(app.modal?.tema?.id ?? null);
+      break;
+    }
+
+    /* Arma o desarma el modo. Queda armado hasta que se vuelve a pulsar: el
+     * siguiente toque en una palabra la tapa, y el que sigue a ese la
+     * destapa. */
+    /* El «?» abre y cierra la explicación. Es un estado y no un :hover a
+     * propósito: en un teléfono no hay ratón, y en una placa de diseño un
+     * globo que depende del cursor es invisible. */
+    case 'ayuda-ocultar': {
+      app.ayudaOcultar = !app.ayudaOcultar;
+      render();
+      break;
+    }
+
+    case 'alternar-modo-ocultar': {
+      app.modoOcultar = !app.modoOcultar;
+      render();
+      break;
+    }
+
+    case 'deshacer-hueco': {
+      const r = deshacer(app.editor);
+      app.editor = r.estado;
+      render();
+      break;
+    }
+
+    /* Tocar una palabra: solo cuenta si el modo está armado. */
+    case 'tocar-palabra': {
+      if (!app.modoOcultar) break;
+      const i = Number(el.dataset.palabra);
+      const r = alternarHueco(app.editor, i);
+      app.editor = r.estado;
+      if (r.accion === 'tope') {
+        app.adminError = `Ya hay ${TOPE_HUECOS} huecos, que es el máximo. ` +
+          'Quita uno antes de ocultar otra palabra.';
+      } else {
+        app.adminError = null;
+      }
+      render();
       break;
     }
 
@@ -3258,6 +3389,37 @@ document.addEventListener('submit', async ev => {
     return;
   }
 
+  /* --- guardar un versículo (nuevo o editado) --- */
+  /* No pasa por `validarPregunta`: esa exige cuatro respuestas y una correcta,
+   * y un versículo no tiene ni una cosa ni la otra. Sus huecos van dentro del
+   * texto, con llaves. */
+  if (tipo === 'versiculo') {
+    const referencia = String(datos.get('referencia') ?? '').trim();
+    const texto = String(datos.get('texto') ?? '');
+    const marcado = String(datos.get('marcado') ?? '');
+    const ocultas = app.editor?.ocultas ?? [];
+
+    const problema = validarVersiculo({ referencia, texto, ocultas });
+    if (problema) { app.adminError = problema; render(); return; }
+
+    const r = await admin.guardarVersiculo(app.adminClave, {
+      topicId: form.dataset.tema,
+      id: form.dataset.versiculo || null,
+      textoMarcado: marcado,
+      referencia: referencia || null
+    });
+    if (r.error) { app.adminError = traducirError(r.error); render(); return; }
+
+    /* Se relee de la base en vez de darlo por hecho: si el servidor recalculó
+     * los huecos, la lista tiene que mostrar los suyos. */
+    app.adminError = null;
+    app.editarVersiculo = null;
+    app.editor = null;
+    app.modoOcultar = false;
+    await abrirVersiculos(form.dataset.tema);
+    return;
+  }
+
   /* --- guardar una pregunta (nueva o editada) --- */
   if (tipo === 'pregunta') {
     const enunciado = String(datos.get('enunciado') ?? '');
@@ -3288,7 +3450,29 @@ document.addEventListener('submit', async ev => {
 });
 
 /* --- elegir tema o cantidad de preguntas --- */
+/* ------------------------------------------------------------------ */
+/* Editor de versículos: lo que se escribe y lo que se guarda         */
+/* ------------------------------------------------------------------ */
+
+/* Mientras se escribe en el cuadro del versículo, el estado se actualiza pero
+ * NO se redibuja: un render por tecla reemplaza el <textarea>, le quita el
+ * foco y el cursor salta al principio en cada letra. La vista previa se
+ * refresca al salir del campo. */
+document.addEventListener('input', ev => {
+  if (ev.target.dataset?.accion !== 'texto-versiculo') return;
+  if (!app.editor) return;
+  app.editor = conTexto(app.editor, ev.target.value);
+});
+
+/* Al salir del cuadro sí se redibuja, para que la vista previa con los huecos
+ * subrayados refleje lo que se acaba de escribir. */
 document.addEventListener('change', ev => {
+  if (ev.target.dataset?.accion === 'texto-versiculo') {
+    app.editor = conTexto(app.editor, ev.target.value);
+    render();
+    return;
+  }
+
   if (ev.target.id === 'sel-tema') {
     app.temaElegido = ev.target.value || null;
     render();

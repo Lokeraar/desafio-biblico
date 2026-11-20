@@ -329,6 +329,208 @@ export function modalPreguntas(tema, preguntas, { error = null } = {}) {
 }
 
 /* ------------------------------------------------------------------ */
+/* ------------------------------------------------------------------ */
+/* Lista de VERSÍCULOS de un tema (Completar el versículo)             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * La lista de un tema del juego del versículo.
+ *
+ * Es distinta de `modalPreguntas` a propósito: aquí no hay respuestas ni
+ * «correcta», lo que hay son **palabras tapadas dentro del texto**. Cada fila
+ * muestra la referencia, el texto con sus huecos subrayados y cuántos huecos
+ * tiene, que es lo primero que el documento del juego pide ver.
+ *
+ * @param {object} tema      { id, name }
+ * @param {Array}  versiculos  del listado, ya con `texto_marcado` y `huecos`
+ */
+export function modalVersiculos(tema, versiculos, { error = null } = {}) {
+  const lista = Array.isArray(versiculos) ? versiculos : [];
+  const nombre = tema?.name ?? 'Versículos';
+
+  /* El texto guardado viene con llaves: `... el hermano {Timoteo} a ...`. Para
+   * mostrarlo subrayado se cambia cada `{x}` por un span. Se escapa PRIMERO y
+   * se marca después, para que un `<script>` escrito en un versículo no
+   * ejecute nada. */
+  const conHuecos = (marcado) => {
+    const seguro = esc(marcado ?? '');
+    return seguro.replace(/\{([^}]+)\}/g, '<span class="hueco-host">$1</span>');
+  };
+
+  const filas = lista.length === 0
+    ? `<p class="chico tenue centro" style="margin:1rem 0">Este tema todavía no tiene versículos.</p>`
+    : lista.map((v, i) => {
+        const n = Number(v.huecos ?? 0);
+        const jugado = v.last_played_at ? 'ya se jugó' : 'todavía no se jugó';
+        return `
+        <li class="pregunta-fila">
+          <div class="fila-entre" style="gap:.5rem">
+            <span class="chico tenue">
+              <strong style="color:var(--tu-100)">${esc(v.reference ?? `Versículo ${i + 1}`)}</strong>
+            </span>
+            <span class="fila" style="gap:.35rem">
+              <button class="boton boton-contorno boton-mini" data-accion="editar-versiculo"
+                      data-versiculo="${esc(v.id)}">Editar</button>
+              <button class="boton boton-peligro boton-mini" data-accion="borrar-versiculo"
+                      data-versiculo="${esc(v.id)}">Borrar</button>
+            </span>
+          </div>
+          <p style="margin:.3rem 0 0; font-size:var(--t-sm)">${conHuecos(v.texto_marcado)}</p>
+          <p class="chico tenue" style="margin:.3rem 0 0">
+            <strong style="color:var(--amarillo)">${n} hueco${n === 1 ? '' : 's'}</strong> ·
+            ${jugado}
+          </p>
+        </li>`;
+      }).join('');
+
+  return `
+    <div class="modal-fondo" data-accion="cerrar-admin" data-solo-fondo="1">
+      <div class="modal modal-ancho" role="dialog" aria-modal="true" aria-labelledby="t-vers">
+        <h2 id="t-vers" style="font-size:var(--t-lg)">${esc(nombre)}</h2>
+        <p class="chico tenue" style="margin:0">
+          ${lista.length} versículo${lista.length === 1 ? '' : 's'} en este tema.
+        </p>
+        ${error ? `<p class="chico" style="color:var(--peligro); margin:0">${esc(error)}</p>` : ''}
+
+        <div class="lista-admin" style="max-height:52vh; overflow-y:auto">
+          <ul style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:.6rem">
+            ${filas}
+          </ul>
+        </div>
+
+        <div class="fila" style="gap:.6rem">
+          <button class="boton boton-oro" data-accion="nuevo-versiculo"
+                  data-tema="${esc(tema?.id ?? '')}" style="flex:1">
+            ➕ Nuevo versículo
+          </button>
+          <button class="boton boton-secundario" data-accion="abrir-temas">Volver</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ------------------------------------------------------------------ */
+/* Editor de UN versículo                                              */
+/* ------------------------------------------------------------------ */
+
+/**
+ * El formulario de un versículo: referencia, texto y nada más.
+ *
+ * Sin respuestas ni «correcta»: los huecos se marcan tocando palabras del
+ * propio texto, después de armar el modo con «Ocultar palabra».
+ *
+ * @param {object} opciones
+ *   - temaId, versiculo (si se edita), error
+ *   - palabras: [{texto, espacio}] ya partidas
+ *   - ocultas: índices de las palabras tapadas
+ *   - modoOcultar: si el próximo toque oculta
+ *   - pasos: cuántos deshacer quedan
+ *   - jugado: si el versículo ya se jugó alguna vez
+ */
+export function modalEditorVersiculo({
+  temaId, versiculo = null, error = null, palabras = [], ocultas = [],
+  modoOcultar = false, pasos = 0, jugado = false, tope = 34, ayudaAbierta = false
+} = {}) {
+  const oculto = new Set(ocultas ?? []);
+  const ref = versiculo?.reference ?? '';
+  const esNuevo = !versiculo?.id;
+
+  /* Cada palabra es un botón cuando el modo está armado y texto plano cuando
+   * no: así se puede tocar sin seleccionar letras por accidente. */
+  const cuerpo = palabras.length
+    ? palabras.map((p, i) => {
+        const tapada = oculto.has(i);
+        const clase = tapada ? 'tapada' : (modoOcultar ? 'tocable' : '');
+        if (!clase) return esc(p.texto) + esc(p.espacio);
+        return `<span class="${clase}" data-accion="tocar-palabra" data-palabra="${i}"
+                      role="button" tabindex="0" aria-pressed="${tapada}">${esc(p.texto)}</span>${esc(p.espacio)}`;
+      }).join('')
+    : `<span class="tenue" style="font-style:italic">Escribe el versículo completo, sin marcar nada todavía. Después usa «Ocultar palabra» y toca las que quieras tapar.</span>`;
+
+  const n = (ocultas ?? []).length;
+
+  return `
+    <div class="modal-fondo" data-accion="cerrar-admin" data-solo-fondo="1">
+      <div class="modal modal-ancho" role="dialog" aria-modal="true" aria-labelledby="t-edv">
+        <h2 id="t-edv" style="font-size:var(--t-lg)">
+          ${esNuevo ? 'Nuevo versículo' : 'Editar versículo'}
+        </h2>
+
+        ${error ? `<p class="chico" style="color:var(--peligro); margin:0">${esc(error)}</p>` : ''}
+
+        ${jugado ? `<div class="aviso espera">
+          Este versículo ya se jugó alguna vez. Si lo cambias, las partidas
+          pasadas quedan con un texto que ya no coincide con lo que se jugó.
+        </div>` : ''}
+
+        <div class="campo">
+          <label for="edv-ref">Referencia</label>
+          <input id="edv-ref" name="referencia" type="text" maxlength="120"
+                 placeholder="Ej.: 2 Corintios 5:17" value="${esc(ref)}">
+        </div>
+
+        <div class="campo">
+          <label for="edv-texto">Texto completo del versículo</label>
+          <textarea id="edv-texto" name="texto" rows="3" data-accion="texto-versiculo"
+                    aria-describedby="edv-contador">${esc((palabras ?? []).map(p => p.texto + p.espacio).join('').trimEnd())}</textarea>
+          <div class="fila-entre" id="edv-contador" style="margin-top:.35rem">
+            <span class="chico tenue">
+              <strong style="color:var(--amarillo)">${n}</strong> de ${tope} huecos
+            </span>
+            ${modoOcultar ? '<span class="chico" style="color:var(--amarillo); font-weight:700">Modo ocultar activo</span>' : ''}
+          </div>
+          ${palabras.length ? `<div class="texto-versiculo" style="margin-top:.5rem">${cuerpo}</div>` : ''}
+        </div>
+
+        ${pasos > 0 ? `
+        <button class="boton boton-secundario" data-accion="deshacer-hueco" type="button">
+          ↔ Deshacer <span class="chico">(${pasos})</span>
+        </button>` : ''}
+
+        <div class="fila" style="gap:.5rem">
+          <button class="boton boton-contorno"
+                  data-accion="alternar-modo-ocultar" type="button"
+                  aria-pressed="${modoOcultar}" style="flex:1">
+            👁 Ocultar palabra
+          </button>
+          <button class="boton boton-secundario" type="button" style="width:auto; flex:0 0 auto"
+                  data-accion="ayuda-ocultar" aria-label="Qué hace Ocultar palabra"
+                  aria-expanded="${ayudaAbierta}" aria-controls="edv-ayuda">?</button>
+        </div>
+
+        ${ayudaAbierta ? `
+        <p class="globo-ayuda" id="edv-ayuda" role="note">
+          Al pulsar <strong>Ocultar palabra</strong> y después tocar una palabra del texto,
+          esa palabra pasa a ser el hueco que verán el participante y el televisor durante
+          el juego. Nadie la ve: hay que descubrirla. Vuelve a pulsar el botón para dejar
+          de ocultar.
+        </p>` : ''}
+
+        <form data-form="versiculo" data-tema="${esc(temaId ?? '')}"
+              data-versiculo="${esc(versiculo?.id ?? '')}">
+          <input type="hidden" name="marcado" value="${esc(serializarMarcado(palabras, ocultas))}">
+          <div class="fila" style="gap:.6rem">
+            ${esNuevo ? '' : '<button class="boton boton-secundario" data-ir="menu" type="button" style="flex:0 0 auto; padding:.7em .8em">← Menú</button>'}
+            <button class="boton boton-secundario" data-accion="ver-versiculos"
+                    data-tema="${esc(temaId ?? '')}" type="button" style="flex:1">Cancelar</button>
+            <button type="submit" class="boton boton-oro" style="flex:1">
+              ${jugado ? 'Guardar igual' : 'Guardar'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>`;
+}
+
+/** El texto con llaves, para el campo oculto del formulario. */
+function serializarMarcado(palabras, ocultas) {
+  const puestas = new Set(ocultas ?? []);
+  return (palabras ?? [])
+    .map((p, i) => (puestas.has(i) ? `{${p.texto}}` : p.texto) + p.espacio)
+    .join('')
+    .trimEnd();
+}
+
 /* Modal: formulario de pregunta (crear o editar)                      */
 /* ------------------------------------------------------------------ */
 
