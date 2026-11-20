@@ -416,5 +416,74 @@ const copias = (appSrc.match(/La sala está cerrada/g) || []).length;
 t(copias === 1, 'y está escrita UNA vez, no copiada por vista');
 
 /* ------------------------------------------------------------------ */
+console.log('\n=== La MATRIZ completa de estados, sin casos sueltos ===');
+// Encontrar defectos uno por uno, mirando capturas, deja siempre el próximo
+// escondido. Esta prueba recorre TODOS los estados de ronda que el servidor
+// produce y comprueba en cada uno las mismas cuatro cosas:
+//
+//   1. que el aviso del participante exista (null se ve como app colgada);
+//   2. que el botón tenga texto;
+//   3. que ninguna pantalla deje «undefined» ni «NaN» a la vista;
+//   4. que la respuesta no se filtre antes de revelarse.
+//
+// Los estados salen del CHECK de la base, no de una lista inventada.
+const ESTADOS_RONDA = ['prepared', 'open', 'juicio', 'closed', 'revealed', 'annulled'];
+const yaRevelado = (r) => r === 'revealed' || r === 'closed';
+
+const universo = (ronda) => ({
+  status: 'question', code: 'ABCDE', gameSlug: 'completar-versiculo',
+  players: [{ id: 'p1', name: 'Ana', score: 0 }, { id: 'p2', name: 'Beto', score: 0 }],
+  round: ronda ? {
+    id: 'r1', state: ronda, prompt: 'Uno ____ dos ____ tres', reference: '2 Co 1:1',
+    options: [], deadlineMs: 15000,
+    versiculo: {
+      huecos_totales: 2,
+      revelados: yaRevelado(ronda) ? [0, 1] : [],
+      completo: ronda === 'revealed',
+      respuesta: ronda === 'revealed' ? 'Uno a dos b tres' : null,
+      contestando: ronda === 'juicio' ? { nombre: 'Beto', orden: 1 } : null,
+      pulsos: (ronda === 'juicio' || ronda === 'revealed')
+        ? [{ orden: 1, player_id: 'p2', nombre: 'Beto', veredicto: null }] : []
+    }
+  } : null
+});
+
+const SECRETO = 'Uno a dos b tres';
+for (const ronda of ESTADOS_RONDA) {
+  const e = universo(ronda);
+  const v = versiculoDesdeServidor(e);
+
+  const aviso = avisoParticipante({
+    estado: ronda,
+    contestando: v?.contestando ?? null,
+    quedanHuecos: v ? v.huecosTotales - v.revelados.length : 0
+  });
+  const boton = estadoBoton({ estado: ronda });
+  t(Boolean(boton?.texto), `en '${ronda}' el botón tiene texto`);
+
+  /* La invariante de verdad no es «siempre hay aviso»: con el reloj corriendo
+     el aviso es nulo a propósito, porque el botón activo ya lo dice todo.
+     Lo que no puede pasar es que el participante se quede SIN SEÑAL —ni
+     aviso ni botón que se pueda pulsar—, que es como se ve una app colgada. */
+  const tieneAviso = Boolean(aviso?.texto);
+  const puedePulsar = Boolean(boton?.activo);
+  t(tieneAviso || puedePulsar,
+    `en '${ronda}' el participante tiene una señal: aviso o botón activo`);
+
+  const jug = pantallaParticipante(e, { miId: 'p1', restanteMs: 9000, totalMs: 15000 });
+  const tv = pantallaTV(e, { qr: '', restanteMs: 9000, totalMs: 15000 });
+
+  for (const [nom, html] of [['participante', jug], ['televisor', tv]]) {
+    t(html.trim().length > 0, `en '${ronda}' la pantalla del ${nom} no sale vacía`);
+    for (const malo of ['undefined', 'NaN', '[object Object]']) {
+      t(!html.includes(malo), `en '${ronda}' el ${nom} no muestra «${malo}»`);
+    }
+    if (!yaRevelado(ronda)) {
+      t(!html.includes(SECRETO), `en '${ronda}' el ${nom} NO filtra la respuesta`);
+    }
+  }
+}
+
+/* ------------------------------------------------------------------ */
 console.log(`\n${ok} correctas, ${fail} fallas`);
 process.exit(fail ? 1 : 0);

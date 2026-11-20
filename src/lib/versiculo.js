@@ -218,6 +218,21 @@ export function avisoParticipante({
     return { tipo: 'neutro', texto: 'Esperando que el presentador suelte la primera pregunta.' };
   }
 
+  /* La pregunta YA está abierta pero el reloj todavía no corre. Sin este
+     caso, el aviso salía nulo y el participante veía el versículo con el
+     botón en «Esperando» y ninguna explicación: parecía que la app se había
+     quedado colgada justo cuando el presentador está leyendo en voz alta. */
+  if (estado === 'prepared') {
+    return { tipo: 'neutro', texto: 'El presentador está por soltar el reloj.' };
+  }
+
+  /* La ronda se anuló: es lo que pasa al cambiar de versículo. El que ya
+     había pulsado tiene que enterarse de que su pulsación no vale, en vez de
+     quedarse mirando un botón que no responde. */
+  if (estado === 'annulled') {
+    return { tipo: 'neutro', texto: 'Esta ronda se anuló: viene otro versículo.' };
+  }
+
   if (estado === 'juicio') {
     if (yoContesto) {
       return { tipo: 'turno', texto: '🎤 Estás contestando' };
