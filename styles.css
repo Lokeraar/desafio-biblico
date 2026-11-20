@@ -1758,7 +1758,10 @@ body.tv .opciones { grid-template-columns: 1fr; }
   display: block;
   font-size: var(--t-xs);
   font-weight: 800;
-  color: var(--tu-100);
+  /* GRIS, como la referencia del juego de selección simple (que usa
+     `.tenue`). Estaba en cian y competía con el versículo: la referencia es
+     un dato de ubicación, no el contenido que hay que leer en voz alta. */
+  color: var(--tinta-suave);
   text-transform: uppercase;
   letter-spacing: .06em;
   flex: 0 0 auto;
@@ -2137,7 +2140,7 @@ body.tv .opciones { grid-template-columns: 1fr; }
   flex: 0 0 auto;
   width: 100%;
 }
-.tv-top .ref { text-align: left; min-width: 0; }
+.tv-top .ref { text-align: left; min-width: 0; color: var(--tinta-suave); }
 .tv-top .sala { text-align: right; white-space: nowrap; }
 
 /* ---------- barra y segundos de la ronda ---------- */

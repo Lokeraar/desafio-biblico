@@ -485,5 +485,34 @@ for (const ronda of ESTADOS_RONDA) {
 }
 
 /* ------------------------------------------------------------------ */
+console.log('\n=== La referencia va en gris, como en selección simple ===');
+// En el juego viejo la referencia usa `.tenue`, que es `--tinta-suave`.
+// En el nuevo estaba en cian (`--tu-100`) y competía con el versículo: la
+// referencia dice DE DÓNDE es el texto, no es lo que se lee en voz alta.
+const css = readFileSync(new URL('../../styles.css', import.meta.url), 'utf8');
+
+const reglaDe = (selector) => {
+  const i = css.indexOf(selector + ' {');
+  if (i < 0) return '';
+  return css.slice(i, css.indexOf('}', i));
+};
+
+const refJug = reglaDe('.jugador-versiculo .ref');
+t(refJug.length > 0, 'existe la regla de la referencia del participante');
+t(refJug.includes('var(--tinta-suave)'),
+  'y usa el gris de `.tenue`, no el cian del acento');
+t(!refJug.includes('var(--tu-100)'),
+  'NO queda en cian: era el color que competía con el versículo');
+
+const refTv = reglaDe('.tv-top .ref');
+t(refTv.includes('var(--tinta-suave)'),
+  'la referencia del televisor también es gris');
+
+// El gris tiene que ser EL MISMO que usa el juego viejo, no uno parecido.
+const tenue = reglaDe('.tenue');
+t(tenue.includes('var(--tinta-suave)'),
+  'el gris es el mismo token que usa `.tenue` en selección simple');
+
+/* ------------------------------------------------------------------ */
 console.log(`\n${ok} correctas, ${fail} fallas`);
 process.exit(fail ? 1 : 0);
