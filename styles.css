@@ -369,9 +369,31 @@ button:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
   font-size: var(--t-sm);
 }
 .aviso.info   { background: rgba(0,160,176,.18); border: 1px solid var(--tu-500); }
-.aviso.ok     { background: rgba(31,191,117,.18); border: 1px solid var(--ok); }
+/* `.exito` y `.ok` son el mismo verde: el juego del versiculo emite
+   `exito` para el acierto y no tenia regla, asi que el aviso mas
+   importante de la ronda salia como texto suelto. */
+.aviso.ok,
+.aviso.exito { background: rgba(31,191,117,.18); border: 1px solid var(--ok); }
 .aviso.error  { background: rgba(224,72,60,.18); border: 1px solid var(--error); }
 .aviso.espera { background: rgba(240,163,58,.16); border: 1px solid var(--espera); }
+
+/* Neutro: informacion sin carga. Sin caja de color, la clase no existia y
+   «Nadie pulso esta ronda» se leia como si fuera parte del pie. */
+.aviso.neutro {
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.16);
+  color: var(--tinta-suave);
+}
+
+/* Turno: a quien le toca hablar. Es lo que el salon y el presentador tienen
+   que encontrar de un vistazo, asi que pesa mas que cualquier otro aviso. */
+.aviso.turno {
+  background: rgba(111,227,238,.2);
+  border: 1px solid var(--tu-100);
+  color: #eafdff;
+  font-size: var(--t-base);
+  box-shadow: 0 0 22px rgba(111,227,238,.18);
+}
 
 /* ---------- formularios ---------- */
 input, textarea, select {
@@ -2160,4 +2182,76 @@ body.tv .opciones { grid-template-columns: 1fr; }
   font-weight: 800;
   min-width: 3.2ch;
   text-align: right;
+}
+
+/* ---------- lista de turnos del presentador ---------- */
+/* `listaTurnosHTML` emite `.lista`, `.vacio` y `.pulso`, y ninguna tenia
+   regla. Ojo con `.pulso`: styles.css:477 ya lo usa como utilidad de
+   animacion para «Conectando…», asi que cada fila heredaba la animacion y
+   parpadeaba en bucle mientras el juicio estaba abierto. La fila pasa a
+   llamarse `.fila-turno`; la utilidad se queda donde estaba. */
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+  width: 100%;
+}
+
+.fila-turno {
+  display: grid;
+  grid-template-columns: 2.2ch minmax(0, 1fr) auto;
+  align-items: center;
+  gap: .7rem;
+  padding: .5em .8em;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .04);
+}
+
+/* Al que le toca: mismo cian que el aviso de turno, para que las dos cosas
+   se lean como una sola. */
+.fila-turno.turno {
+  background: rgba(111, 227, 238, .14);
+  box-shadow: inset 0 0 0 1px rgba(111, 227, 238, .45);
+}
+
+/* Los ya sentenciados bajan el tono pero siguen legibles. */
+.fila-turno.hecho .quien { color: var(--tinta-suave); }
+
+.fila-turno .num {
+  font-variant-numeric: tabular-nums;
+  font-size: var(--t-xs);
+  font-weight: 700;
+  color: var(--tinta-suave);
+  text-align: right;
+}
+
+.fila-turno .quien {
+  font-weight: 700;
+  font-size: var(--t-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Marcas del veredicto. El emoji ya dice el resultado; el color lo confirma
+   para quien mira de lejos. */
+.fila-turno .marca {
+  font-size: var(--t-sm);
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+}
+.fila-turno .marca.ok  { color: var(--ok); }
+.fila-turno .marca.mal { color: var(--error); }
+.fila-turno .marca.par {
+  color: var(--espera);
+  font-size: var(--t-xs);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.vacio {
+  margin: 0;
+  font-size: var(--t-xs);
+  color: var(--tinta-suave);
 }

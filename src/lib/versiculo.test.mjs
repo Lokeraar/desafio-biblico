@@ -282,7 +282,10 @@ const lista = listaTurnosHTML({
   ]
 });
 t(lista.includes('turno'), 'resalta a quién le toca');
-t((lista.match(/class="pulso/g) || []).length === 2, 'una fila por pulso');
+t((lista.match(/class="fila-turno/g) || []).length === 2, 'una fila por pulso');
+/* La fila NO puede llamarse `pulso`: esa clase ya es una utilidad de
+   animacion (styles.css:477) y cada fila parpadeaba en bucle. */
+t(!lista.includes('class="pulso'), 'la fila no toma prestada la utilidad .pulso');
 t(lista.indexOf('Beto') < lista.indexOf('Ana'), 'respeta el orden de llegada');
 
 t(listaTurnosHTML({ pulsos: [] }).includes('nadie'), 'sin pulsos lo dice claramente');
@@ -492,9 +495,20 @@ console.log('\n=== La referencia va en gris, como en selección simple ===');
 const css = readFileSync(new URL('../../styles.css', import.meta.url), 'utf8');
 
 const reglaDe = (selector) => {
-  const i = css.indexOf(selector + ' {');
-  if (i < 0) return '';
-  return css.slice(i, css.indexOf('}', i));
+  /* El selector puede venir con espacios de más (`.aviso.info   {`) o dentro de
+     una lista separada por comas (`.aviso.ok,\n.aviso.exito {`). Un
+     `indexOf(selector + ' {')` fallaba en los dos casos y hacia creer que la
+     regla no existía. Se busca el selector como palabra completa y se toma el
+     bloque hasta su llave de cierre. */
+  const esc = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const re = new RegExp(esc + '(?![\\w-])');
+  const m = re.exec(css);
+  if (!m) return '';
+  const abre = css.indexOf('{', m.index);
+  if (abre < 0) return '';
+  const cierra = css.indexOf('}', abre);
+  if (cierra < 0) return '';
+  return css.slice(abre + 1, cierra);
 };
 
 const refJug = reglaDe('.jugador-versiculo .ref');
@@ -512,6 +526,51 @@ t(refTv.includes('var(--tinta-suave)'),
 const tenue = reglaDe('.tenue');
 t(tenue.includes('var(--tinta-suave)'),
   'el gris es el mismo token que usa `.tenue` en selección simple');
+
+/* ------------------------------------------------------------------ */
+console.log('\n=== Clases emitidas sin regla en el CSS ===');
+/* Defecto real: `listaTurnosHTML` emitia `.lista`, `.vacio`, `.marca.ok` y
+   `.pulso` sin ninguna regla, y los avisos `.neutro`, `.turno` y `.exito`
+   tambien. Se veian como texto suelto. Peor: `.pulso` ya era una utilidad de
+   animacion, asi que cada fila de participante parpadeaba en bucle.
+
+   Esta comprobacion NO mira un caso: barre todas las clases que el modulo
+   escribe y exige que cada una tenga regla. Si mañana alguien agrega una
+   clase nueva y se olvida del CSS, esto falla y dice cual. */
+const clasesEmitidas = (() => {
+  const fuente = readFileSync(new URL('./versiculo.js', import.meta.url), 'utf8');
+  const vistas = new Set();
+  for (const m of fuente.matchAll(/class="([^"]*)"/g)) {
+    const crudo = m[1];
+    // literales entre comillas dentro de las interpolaciones
+    for (const lit of crudo.matchAll(/'([^']*)'/g)) {
+      for (const c of lit[1].split(/\s+/)) if (c) vistas.add(c);
+    }
+    // la parte fija: se tira lo que va dentro de ${...}
+    for (const c of crudo.replace(/\$\{[^}]*\}/g, ' ').split(/\s+/)) if (c) vistas.add(c);
+  }
+  return vistas;
+})();
+
+t(clasesEmitidas.size > 20, `se encontraron las clases del modulo (${clasesEmitidas.size})`);
+
+const huerfanas = [...clasesEmitidas].filter(c => {
+  const esc = c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return !new RegExp('\\.' + esc + '(?![\\w-])').test(css);
+});
+t(huerfanas.length === 0,
+  'toda clase que el juego escribe tiene regla en styles.css' +
+  (huerfanas.length ? ' — faltan: ' + huerfanas.join(', ') : ''));
+
+// Las cuatro familias de aviso tienen que existir: el aviso mas importante de
+// la ronda (acierto, turno) es justo el que se habia quedado sin caja.
+for (const tipo of ['info', 'ok', 'error', 'espera', 'neutro', 'turno', 'exito']) {
+  t(reglaDe('.aviso.' + tipo).length > 0, `el aviso \`.${tipo}\` tiene regla propia`);
+}
+
+// Y la fila de turnos no puede volver a llamarse como la utilidad de animacion.
+t(!clasesEmitidas.has('pulso'),
+  'la fila de turnos no vuelve a usar `.pulso` (es la utilidad de animacion)');
 
 /* ------------------------------------------------------------------ */
 console.log(`\n${ok} correctas, ${fail} fallas`);

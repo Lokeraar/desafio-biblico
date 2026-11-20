@@ -500,7 +500,7 @@ export function listaTurnosHTML(vers, turnoAnswerId = null) {
                Beto · fue el 1 en pulsar». */
             : '';
       return `
-        <div class="pulso${esTurno ? ' turno' : ''}${p.veredicto ? ' hecho' : ''}">
+        <div class="fila-turno${esTurno ? ' turno' : ''}${p.veredicto ? ' hecho' : ''}">
           <span class="num">${p.orden}</span>
           <span class="quien">${esc(p.nombre)}</span>
           ${marca}
