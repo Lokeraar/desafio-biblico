@@ -2282,3 +2282,31 @@ body.tv .opciones { grid-template-columns: 1fr; }
   font-size: var(--t-xs);
   color: var(--tinta-suave);
 }
+
+/* ---------- Reconectando: reintento de la pulsación en segundo plano ---------- */
+/* El botón ya está bloqueado porque el toque ocurrió. Esto solo dice que se
+   sigue intentando, para que la espera no parezca un cuelgue. */
+.reconectando {
+  display: flex;
+  align-items: center;
+  gap: .5em;
+  margin: 0;
+  font-size: var(--t-sm);
+  font-weight: 700;
+  color: var(--espera);
+}
+.girando {
+  width: 1em;
+  height: 1em;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  border: 2px solid rgba(240, 163, 58, .35);
+  border-top-color: var(--espera);
+  animation: girar .9s linear infinite;
+}
+@keyframes girar {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .girando { animation: none; }
+}

@@ -36,7 +36,7 @@ SUITES_OMITIDAS=()
 # --- Pruebas de JavaScript -------------------------------------------
 if [ "$solo_sql" = false ]; then
   echo "=== Pruebas de JavaScript ==="
-  for suite in engine local partida cloud render qr admin-ui ajuste latido imagen versiculo; do
+  for suite in engine local partida cloud render qr admin-ui ajuste latido imagen reintento versiculo; do
     archivo="$RAIZ/src/lib/$suite.test.mjs"
     if [ ! -f "$archivo" ]; then
       echo "  FALTA $archivo"

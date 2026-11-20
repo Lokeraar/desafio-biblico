@@ -284,12 +284,15 @@ export function miTurnoTexto(miPulso) {
  * botón cuando hay algo que explicar.
  */
 export function estadoBoton({
-  estado, miPulso = null, enviando = false, rechazo = null
+  estado, miPulso = null, enviando = false, rechazo = null, reintentando = false
 }) {
   if (rechazo) {
     return { activo: false, texto: 'No se pudo enviar', nota: rechazo };
   }
-  if (enviando) {
+  /* Mientras se reintenta, el botón muestra el mismo texto que al enviar: el
+     participante ya pulsó y no tiene que volver a intentarlo. Lo único que
+     cambia es el indicador de arriba, que dice que se está reconectando. */
+  if (enviando || reintentando) {
     return { activo: false, texto: 'Pulsaste…', nota: null };
   }
   if (miPulso) {
@@ -321,7 +324,7 @@ export function estadoBoton({
  */
 export function pantallaParticipante(estado, {
   miId = null, miPulso = null, enviando = false, rechazo = null,
-  felicitacionActual = null, restanteMs = null, totalMs = null
+  reintentando = false, felicitacionActual = null, restanteMs = null, totalMs = null
 } = {}) {
   const r = estado?.round;
   const vers = versiculoDesdeServidor(estado);
@@ -350,7 +353,7 @@ export function pantallaParticipante(estado, {
   // Cuando yo contesto, el aviso ya lo dice: no hace falta repetir el color
   // de turno en el botón.
   const boton = estadoBoton({
-    estado: r.state, miPulso, enviando, rechazo
+    estado: r.state, miPulso, enviando, rechazo, reintentando
   });
 
   const aviso = avisoParticipante({
@@ -396,6 +399,9 @@ export function pantallaParticipante(estado, {
       ${r.state === 'open' ? relojHTML(restanteMs, totalMs, 'reloj-jug') : ''}
       <p class="versiculo">${versiculoHTML(sinReferenciaAlFinal(r.prompt, r.reference))}</p>
       <div class="pie-jugador">
+        ${reintentando
+          ? '<p class="reconectando" role="status" aria-live="polite"><span class="girando" aria-hidden="true"></span>Reconectando…</p>'
+          : ''}
         ${aviso ? `<div class="aviso ${aviso.tipo}">${esc(aviso.texto)}</div>` : ''}
         ${turno ? `<div class="aviso neutro">${esc(turno)}</div>` : ''}
         ${boton.activo

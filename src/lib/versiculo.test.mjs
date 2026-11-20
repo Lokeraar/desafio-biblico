@@ -223,6 +223,48 @@ const falloRed = estadoBoton({ estado: 'open', rechazo: 'Sin conexión' });
 t(!falloRed.activo && falloRed.nota === 'Sin conexión', 'un fallo de red se explica');
 
 /* ------------------------------------------------------------------ */
+console.log('\n=== 6b. Reintento en segundo plano ===');
+/* Un toque por ronda: al pulsar, el botón se apaga y NO vuelve a aceptar
+   aunque el envío esté reintentando. Si se liberara, el participante tocaría
+   otra vez y se arriesgaría a dos pulsaciones por un solo turno. */
+const reintentando = estadoBoton({ estado: 'open', enviando: false, reintentando: true });
+t(!reintentando.activo, 'mientras reintenta, el botón no acepta toques');
+t(reintentando.texto === 'Pulsaste…', 'y sigue diciendo que ya pulsó, no que falle');
+
+const reintentandoYMiPulso = estadoBoton({ estado: 'open', miPulso: { orden: 1 }, reintentando: true });
+t(!reintentandoYMiPulso.activo, 'con pulso ya confirmado tampoco');
+
+// El indicador se pinta en el pie, con su texto exacto.
+const pantallaReintento = pantallaParticipante(
+  { code: 'ABCDE', gameSlug: 'completar-versiculo', status: 'question',
+    players: [{ id: 'p1', name: 'Ana', score: 0 }],
+    round: { id: 'r1', state: 'open', prompt: 'Uno ____ dos', reference: '2 Co 1:1',
+             versiculo: { huecos_totales: 1, revelados: [], pulsos: [], respuesta: null, contestando: null } } },
+  { miId: 'p1', reintentando: true }
+);
+t(pantallaReintento.includes('Reconectando…'), 'la pantalla dice «Reconectando…»');
+t(pantallaReintento.includes('class="reconectando"'), 'con su clase para el estilo');
+t(pantallaReintento.includes('girando'), 'y el indicador que gira');
+t(pantallaReintento.includes('aria-live'), 'se anuncia a quien usa lector de pantalla');
+t(pantallaReintento.includes('boton-ok bloqueado'), 'el botón queda bloqueado');
+
+// Sin reintento, el indicador NO aparece: no debe quedar pegado.
+const pantallaNormal = pantallaParticipante(
+  { code: 'ABCDE', gameSlug: 'completar-versiculo', status: 'question',
+    players: [{ id: 'p1', name: 'Ana', score: 0 }],
+    round: { id: 'r1', state: 'open', prompt: 'Uno ____ dos', reference: '2 Co 1:1',
+             versiculo: { huecos_totales: 1, revelados: [], pulsos: [], respuesta: null, contestando: null } } },
+  { miId: 'p1' }
+);
+t(!pantallaNormal.includes('Reconectando'), 'sin reintento no se dibuja el indicador');
+
+// El mensaje final, exacto, cuando la red no dejó entrar la pulsación.
+const MENSAJE_RED = 'Por problemas de red no pudiste participar en esta ronda.';
+t(MENSAJE_RED.length > 20, 'el mensaje final de red está definido');
+const appFuente = readFileSync(new URL('../app.js', import.meta.url), 'utf8');
+t(appFuente.includes(MENSAJE_RED), 'y app.js lo usa tal cual al rendirse');
+
+/* ------------------------------------------------------------------ */
 console.log('\n=== 7. Pantalla del participante ===');
 const enEspera = pantallaParticipante(estadoDe({ state: 'prepared', versiculo: {} }), { miId: 'p1' });
 t(enEspera.includes('Ana Pérez'), 'lleva el nombre propio');

@@ -29,6 +29,7 @@ import {
 } from './lib/versiculo.js';
 import { crearEscalador, ajustarTextos } from './lib/ajuste.js';
 import { crearLatido } from './lib/latido.js';
+import { reintentarPulso } from './lib/reintento.js';
 import { aWebp, crearImagenNavegador, lienzoNavegador, prefijoData } from './lib/imagen.js';
 
 const $app = document.getElementById('app');
@@ -200,6 +201,14 @@ const app = {
   // jugador pulsa dos veces porque no ve nada pasar.
   enviandoPulso: false,
   rechazoPulso: null,
+  /* Reintento en segundo plano de la pulsación. Un toque por ronda: al primer
+   * toque `pulsoPendiente` se queda en true aunque el envío siga intentando,
+   * y el botón no vuelve a aceptar toques. El toque cuenta desde que se
+   * pulsó, no desde que llegó: es lo único coherente cuando la red falla,
+   * aunque el tiempo registrado sea el de llegada. */
+  reintentandoPulso: false,
+  pulsoPendiente: false,
+  pulsoRonda: null,
   // Última variante de felicitación mostrada, para no repetirla seguida.
   felicitaActual: null,
   felicitaAnterior: null,
@@ -1342,6 +1351,7 @@ function vistaJugador() {
       miPulso,
       enviando: app.enviandoPulso,
       rechazo: app.rechazoPulso,
+      reintentando: app.reintentandoPulso,
       felicitacionActual: felicitaPara(s, miPulso),
       restanteMs: base ? E.restanteMs(base) : null,
       totalMs: rr?.deadlineMs ?? null
@@ -2042,6 +2052,22 @@ function modalActivo() {
 function render() {
   const { vista } = rutaActual();
 
+  /*
+   * El toque es por RONDA, no por partida: cuando llega una ronda distinta el
+   * botón vuelve a aceptar. Sin esto, `pulsoPendiente` se quedaría en true
+   * después de la primera ronda y el botón negro moriría para el resto del
+   * juego: se pulsó una vez y nunca más.
+   *
+   * Se hace aquí y no en cada sondeo porque render() es el único sitio por
+   * donde pasan todos los estados, incluidos los de otro dispositivo.
+   */
+  const rondaAhora = app.estado?.round?.id ?? null;
+  if (rondaAhora !== app.pulsoRonda) {
+    app.pulsoRonda = rondaAhora;
+    app.pulsoPendiente = false;
+    app.reintentandoPulso = false;
+  }
+
   /* Si hay una sala viva, SU juego es el último que se jugó: entra a valer
      como el elegido aunque se haya llegado con un código y sin pasar por el
      menú. Se hace aquí, en el único sitio por donde pasan todos los estados,
@@ -2513,23 +2539,64 @@ document.addEventListener('click', async ev => {
      */
     case 'pulsar': {
       const ronda = app.estado?.round;
-      if (!ronda || app.enviandoPulso) break;
+      /* Un toque por ronda. `pulsoPendiente` sobrevive al fallo del envío: si
+       * se liberara, el participante tocaría otra vez y se arriesgaría a dos
+       * pulsaciones por un solo turno. */
+      if (!ronda || app.pulsoPendiente) break;
+      app.pulsoPendiente = true;
       app.enviandoPulso = true;
       app.rechazoPulso = null;
       render();
-      try {
-        const r = await app.cliente?.pulsar?.(ronda.id);
-        if (r?.error) {
-          // Un fallo de red no puede dejar el botón muerto: se libera y se
-          // dice qué pasó, para que la persona pueda volver a intentar.
-          app.rechazoPulso = traducirError(r.error);
+
+      /* El reloj se consulta ANTES de cada espera, no una vez: lo que importa
+       * es cuánto queda cuando toca dormir, no al empezar. */
+      const restante = () => {
+        const rr = app.estado?.round;
+        if (!rr) return 0;
+        return E.restanteMs({
+          openedAt: rr.openedAt, pausedAt: rr.pausedAt,
+          pausedTotal: rr.pausedTotal, durationMs: rr.deadlineMs
+        });
+      };
+
+      let primero = true;
+      const resultado = await reintentarPulso({
+        intentar: () => app.cliente?.pulsar?.(ronda.id) ?? Promise.resolve({ error: 'red' }),
+        restante,
+        dormir: async (ms) => {
+          /* El primer fallo NO se anuncia: puede ser un parpadeo de red que se
+           * arregla solo y avisar sería ruido. A partir de ahí sí, porque la
+           * espera empieza a notarse. */
+          if (primero) { primero = false; return new Promise(r => setTimeout(r, ms)); }
+          app.reintentandoPulso = true;
+          app.enviandoPulso = false;
+          render();
+          return new Promise(r => setTimeout(r, ms));
         }
-      } catch (e) {
-        app.rechazoPulso = traducirError(e?.message ?? 'No se pudo enviar.');
-      } finally {
-        app.enviandoPulso = false;
+      });
+
+      app.reintentandoPulso = false;
+      app.enviandoPulso = false;
+
+      if (resultado.ok) {
+        /* Entró, aunque fuera al tercer intento. El botón queda en "Pulsaste"
+         * porque `miPulso` ya viene del servidor: no hay nada que anunciar. */
+        app.rechazoPulso = null;
+        app.pulsoPendiente = false;
         render();
+        break;
       }
+
+      /* No entró. Si fue por red, se dice tal cual y se libera el toque para
+       * que pueda volver a intentarlo si la ronda sigue en pie. Si fue un
+       * error del servidor, se muestra su mensaje. */
+      if (resultado.motivo === 'red') {
+        app.rechazoPulso = 'Por problemas de red no pudiste participar en esta ronda.';
+      } else {
+        app.rechazoPulso = traducirError(resultado.motivo);
+      }
+      app.pulsoPendiente = false;
+      render();
       break;
     }
 
