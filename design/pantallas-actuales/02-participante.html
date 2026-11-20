@@ -141,6 +141,20 @@
     background:linear-gradient(180deg,#1a1a1a,#0d0d0d);border-color:rgba(255,255,255,.1);
   }
 
+  /* Reintento en segundo plano: el boton ya esta bloqueado porque el toque
+     ocurrio. Esto solo dice que se sigue intentando. */
+  .reconectando{
+    display:flex;align-items:center;gap:.5em;margin:0;
+    font-size:var(--t-sm);font-weight:700;color:var(--espera);
+  }
+  .girando{
+    width:1em;height:1em;flex:0 0 auto;border-radius:50%;
+    border:2px solid rgba(240,163,58,.35);border-top-color:var(--espera);
+    animation:girar .9s linear infinite;
+  }
+  @keyframes girar{ to{transform:rotate(360deg)} }
+  @media (prefers-reduced-motion:reduce){ .girando{animation:none} }
+
   .reloj-ronda{display:flex;align-items:center;gap:.6rem;width:100%}
   .reloj-ronda .barra-tiempo{flex:1 1 auto}
   .reloj-ronda .reloj{flex:0 0 auto;font-variant-numeric:tabular-nums;font-weight:800;min-width:3.2ch;text-align:right}
@@ -597,9 +611,9 @@
     <!-- 12. no se pudo enviar -->
     <section class="celda">
       <div class="rotulo">
-        <h2>Fallo de red al pulsar</h2>
-        <span class="estado">error de envío</span>
-        <span class="linea">versiculo.js:287-288</span>
+        <h2>Fallo de red al pulsar: reintenta solo</h2>
+        <span class="estado">reintentando</span>
+        <span class="linea">versiculo.js:287-295</span>
       </div>
       <div class="marco">
         <div class="pantalla jugador-versiculo">
@@ -614,11 +628,12 @@
           </div>
           <p class="versiculo">Porque de tal manera <span class="hueco">___</span> Dios al <span class="hueco">_____</span>, que ha dado a su Hijo <span class="hueco">_________</span></p>
           <div class="pie-jugador">
-            <button class="boton-ok bloqueado" type="button" disabled>No se pudo enviar</button>
+            <p class="reconectando" role="status" aria-live="polite"><span class="girando" aria-hidden="true"></span>Reconectando…</p>
+            <button class="boton-ok bloqueado" type="button" disabled>Pulsaste…</button>
           </div>
         </div>
       </div>
-      <p class="nota">El teléfono lo dice pero <b>no ofrece reintentar</b>: la tecla queda apagada y el reloj sigue corriendo. Es el caso que la regla del proyecto llama dejarse bloqueado sin salida.</p>
+      <p class="nota"><b>Corregido.</b> Antes decía «No se pudo enviar» con la tecla muerta. Ahora reintenta solo, con espera creciente, hasta que se acaba el reloj de la ronda: <b>un toque por ronda</b>, la tecla sigue bloqueada diciendo «Pulsaste…» y arriba se ve <b>Reconectando…</b>. Si al agotarse el tiempo no entró: «Por problemas de red no pudiste participar en esta ronda.»</p>
     </section>
 
     <!-- 13. rechazo de la sala cerrada -->
