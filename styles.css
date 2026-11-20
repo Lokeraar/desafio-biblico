@@ -2310,3 +2310,68 @@ body.tv .opciones { grid-template-columns: 1fr; }
 @media (prefers-reduced-motion: reduce) {
   .girando { animation: none; }
 }
+
+/* =====================================================================
+   EDITOR DE VERSÍCULOS
+   ---------------------------------------------------------------------
+   El formulario donde el presentador escribe un versículo y marca qué
+   palabras quedan tapadas. Lo que ve aquí es lo que verán después el
+   participante y el televisor, así que el hueco se dibuja igual que en el
+   juego (subrayado amarillo, como `.hueco-host`).
+   ===================================================================== */
+
+/* El recuadro del texto con sus huecos. Capacidad 2+1: dos líneas más una de
+   gracia. `max-height` en `em` y no en píxeles para que crezca con la letra;
+   ojo con `border-box`: el tope incluye el relleno, por eso 7.2em y no 4.8. */
+.texto-versiculo {
+  font-size: var(--t-base);
+  line-height: 1.6;
+  font-weight: 600;
+  background: rgba(0, 0, 0, .28);
+  border: 2px solid rgba(110, 227, 238, .28);
+  border-radius: var(--radio-sm);
+  padding: .6em .75em;
+  max-height: 7.2em;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  overflow-wrap: anywhere;
+}
+
+/* La explicación del botón «Ocultar palabra». Ocupa el ancho del modal y
+   nunca desborda: `overflow-wrap` parte palabras largas en vez de estirar la
+   caja. Va en el flujo, no flotando encima, para que no tape el pie. */
+.globo-ayuda {
+  margin: 0;
+  padding: .65em .8em;
+  border-radius: var(--radio-sm);
+  background: rgba(10, 46, 51, .92);
+  border: 1px solid var(--tu-100);
+  color: var(--tinta);
+  font-size: var(--t-sm);
+  line-height: 1.5;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* Una palabra ya tapada: el mismo subrayado amarillo del juego. */
+.tapada {
+  color: var(--amarillo);
+  border-bottom: 2px solid var(--amarillo);
+  padding-bottom: 1px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+/* Una palabra que se puede tocar mientras el modo «Ocultar palabra» está
+   armado. El fondo al pasar es la única pista de que es tocable: sin él, el
+   presentador no sabe dónde apuntar. */
+.tocable {
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background .12s;
+}
+.tocable:hover,
+.tocable:focus-visible {
+  background: rgba(252, 209, 22, .24);
+  outline: none;
+}
