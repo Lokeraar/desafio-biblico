@@ -23,6 +23,7 @@ import { qrSVG } from './lib/qr.js';
 import { ceremoniaHTML, totalPasos } from './lib/render.js';
 import {
   pantallaParticipante, pantallaTV, listaTurnosHTML, modalJuicioHTML,
+  sinReferenciaAlFinal, relojHTML,
   versiculoHostHTML,
   versiculoDesdeServidor, felicitacion
 } from './lib/versiculo.js';
@@ -711,12 +712,17 @@ function panelVersiculo(estado) {
       <h3 style="font-size:var(--t-sm); margin:0">Participantes</h3>
       ${jugando.length === 0
         ? '<p class="mini tenue">Nadie ha entrado todavía. Comparte el código.</p>'
+        /* SIN botón de expulsar. En el panel de este juego la lista es
+           informativa: dice quién está y cuántos puntos lleva. Retirar a
+           alguien en mitad de un versículo deja huecos que nadie va a
+           reclamar y puntos que ya se pagaron. Para cortar la partida está
+           «Terminar juego», que cierra la sala de una vez.
+           Puntos y nombre ocupan las dos columnas que quedan, sin dejar el
+           hueco vacío del botón: se ancla el marcador a la última. */
         : `<ul class="lista-jugadores">${jugando.map(p => `
             <li>
               <span class="nombre-j">${esc(p.name)}</span>
-              <span class="chico tenue">${p.score ?? 0} pt${(p.score ?? 0) === 1 ? '' : 's'}</span>
-              <button class="mini-btn" data-accion="expulsar" data-id="${p.id}"
-                title="Retirar de la sala">✕</button>
+              <span class="chico tenue" style="grid-column:-2/-1; text-align:right">${p.score ?? 0} pt${(p.score ?? 0) === 1 ? '' : 's'}</span>
             </li>`).join('')}</ul>`}
     </div>`;
 
@@ -796,7 +802,12 @@ function panelVersiculo(estado) {
         </span>
       </div>
 
-      ${r.state === 'open' && !estado.paused ? barraTiempoHTML(r) : ''}
+      ${r.state === 'open' && !estado.paused
+        ? relojHTML(E.restanteMs({
+            openedAt: r.openedAt, pausedAt: r.pausedAt,
+            pausedTotal: r.pausedTotal, durationMs: r.deadlineMs
+          }), r.deadlineMs, 'reloj')
+        : ''}
 
       ${/*
         El presentador ve el versículo COMPLETO, con las palabras ocultas
@@ -804,7 +815,7 @@ function panelVersiculo(estado) {
         que repita la respuesta. Las que ya se destaparon van sin subrayar,
         porque ya las ve todo el mundo.
       */''}
-      <p class="enunciado">${versiculoHostHTML(r.prompt, huecos)}</p>
+      <p class="enunciado">${versiculoHostHTML(sinReferenciaAlFinal(r.prompt, r.reference), huecos)}</p>
 
       ${listaTurnosHTML(v)}
       ${controles}
@@ -2092,7 +2103,10 @@ function render() {
         for (const sel of ['#reloj', '#reloj-jug', '#reloj-tv']) {
           const el = document.querySelector(sel);
           if (!el) continue;
-          const nuevo = texto + (sel === '#reloj' ? 's' : '');
+          /* La unidad va en las TRES. `relojHTML` escribe «9 s» al
+             pintar, así que sin esto el número cambiaba de forma en el
+             primer cuadro: empezaba en «9 s» y pasaba a «9». */
+          const nuevo = texto + ' s';
           if (el.textContent !== nuevo) el.textContent = nuevo;
         }
         const barra = document.querySelector('#barra > i');

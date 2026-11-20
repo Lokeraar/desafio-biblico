@@ -114,6 +114,27 @@ export function versiculoHTML(prompt) {
  * @param {object} vers  bloque del servidor: { contestando, revelados }
  * @param {Array}  huecos [{ indice, respuesta, revelado }] del presentador
  */
+/**
+ * Quita la referencia que el texto trae al final.
+ *
+ * Los versículos están sembrados TAL CUAL vienen del documento, y casi
+ * todos terminan con la cita entre paréntesis: «…se pierden. (2 Corintios
+ * 2:15)». La cabecera del panel ya muestra esa misma referencia, así que
+ * sin esto se lee dos veces seguidas.
+ *
+ * Solo se quita si COINCIDE con la referencia de la ronda: un paréntesis
+ * que hable de otra cosa es parte del versículo y se queda.
+ */
+export function sinReferenciaAlFinal(texto, reference) {
+  const t = String(texto ?? '');
+  const ref = String(reference ?? '').trim();
+  if (!t || !ref) return t;
+  // Paréntesis, corchetes o guion largo, con o sin punto delante.
+  const esc_ = ref.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const re = new RegExp('\\s*[.·]?\\s*[\\(\\[]\\s*' + esc_ + '\\s*[\\)\\]]\\s*[.]?\\s*$', 'i');
+  return t.replace(re, '').trimEnd();
+}
+
 export function versiculoHostHTML(prompt, huecos = []) {
   const texto = prompt ?? '';
   if (!texto) return '';
@@ -349,7 +370,7 @@ export function pantallaParticipante(estado, {
       </div>
       ${r.reference ? `<span class="ref">${esc(r.reference)}</span>` : ''}
       ${r.state === 'open' ? relojHTML(restanteMs, totalMs, 'reloj-jug') : ''}
-      <p class="versiculo">${versiculoHTML(r.prompt)}</p>
+      <p class="versiculo">${versiculoHTML(sinReferenciaAlFinal(r.prompt, r.reference))}</p>
       <div class="pie-jugador">
         ${aviso ? `<div class="aviso ${aviso.tipo}">${esc(aviso.texto)}</div>` : ''}
         ${turno ? `<div class="aviso neutro">${esc(turno)}</div>` : ''}
@@ -432,7 +453,7 @@ export function pantallaTV(estado, { qr = '', restanteMs = null, totalMs = null 
         <span class="sala">${esc(estado.code ?? '')}</span>
       </div>
       <div class="cuerpo-tv">
-        <p class="versiculo">${versiculoHTML(r.prompt)}</p>
+        <p class="versiculo">${versiculoHTML(sinReferenciaAlFinal(r.prompt, r.reference))}</p>
       </div>
       ${r.state === 'open' ? relojHTML(restanteMs, totalMs, 'reloj-tv') : ''}
       <div class="pie-tv">${pie}</div>
@@ -458,7 +479,11 @@ export function listaTurnosHTML(vers, turnoAnswerId = null) {
           ? '<span class="marca ok">✅</span>'
           : p.veredicto === 'parcial'
             ? '<span class="marca par">parcial</span>'
-            : (esTurno ? '<span class="marca">contesta ahora</span>' : '');
+            /* Sin marca de turno aqui: quien contesta ya lo dice el
+               aviso de arriba con su nombre. Repetirlo en la lista era
+               ruido: «1 Beto contesta ahora» justo encima de «Le toca a
+               Beto · fue el 1 en pulsar». */
+            : '';
       return `
         <div class="pulso${esTurno ? ' turno' : ''}${p.veredicto ? ' hecho' : ''}">
           <span class="num">${p.orden}</span>

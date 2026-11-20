@@ -6,7 +6,8 @@
 import {
   felicitacion, todasLasFelicitaciones, versiculoDesdeServidor,
   versiculoHTML, versiculoHostHTML, avisoParticipante, miTurnoTexto, estadoBoton,
-  pantallaParticipante, pantallaTV, listaTurnosHTML, modalJuicioHTML
+  pantallaParticipante, pantallaTV, listaTurnosHTML, modalJuicioHTML,
+  sinReferenciaAlFinal, relojHTML
 } from './versiculo.js';
 
 let ok = 0, fail = 0;
@@ -299,6 +300,46 @@ t((modal.match(/data-hueco=/g) || []).length === 1, 'una casilla por hueco dispo
 
 const todoRevelado = modalJuicioHTML({ huecosTotales: 2 }, huecos.map(h => ({ ...h, revelado: true })), 'Ana');
 t(todoRevelado.includes('No quedan huecos'), 'sin huecos libres lo dice en vez de mostrar un modal vacío');
+
+/* ------------------------------------------------------------------ */
+console.log('\n=== La referencia no se lee dos veces ===');
+// El texto viene sembrado TAL CUAL del documento y casi todos los versículos
+// terminan con su cita entre paréntesis. La cabecera del panel ya la muestra,
+// así que sin limpiarla el presentador ve «(2 Corintios 2:15)» dos veces.
+t(sinReferenciaAlFinal('Hola mundo. (2 Corintios 2:15)', '2 Corintios 2:15') === 'Hola mundo',
+  'la cita entre paréntesis del final se quita');
+t(sinReferenciaAlFinal('Hola mundo (2 Corintios 2:15).', '2 Corintios 2:15') === 'Hola mundo',
+  'también con el punto por fuera');
+t(sinReferenciaAlFinal('Hola mundo [2 Corintios 2:15]', '2 Corintios 2:15') === 'Hola mundo',
+  'y con corchetes');
+t(sinReferenciaAlFinal('Hola mundo.', '2 Corintios 2:15') === 'Hola mundo.',
+  'si no trae la cita, no se toca nada');
+t(sinReferenciaAlFinal('Hola (otra cosa)', '2 Corintios 2:15') === 'Hola (otra cosa)',
+  'un paréntesis que NO es la referencia se queda: es parte del versículo');
+// La cita solo se quita si COINCIDE. Si no, se comería texto del versículo.
+t(sinReferenciaAlFinal('Hola (2 Corintios 2:16)', '2 Corintios 2:15') === 'Hola (2 Corintios 2:16)',
+  'una cita DISTINTA a la de la ronda no se toca');
+t(sinReferenciaAlFinal('', '2 Corintios 2:15') === '', 'texto vacío devuelve vacío');
+t(sinReferenciaAlFinal('Hola (2 Corintios 2:15)', '') === 'Hola (2 Corintios 2:15)',
+  'sin referencia no se adivina qué quitar');
+
+console.log('\n=== El reloj se ve en las TRES pantallas ===');
+// Se pidió tres veces: presentador, participante y televisor. Es fácil que
+// una se quede atrás al tocar solo dos.
+const reloj = relojHTML(9000, 15000, 'reloj-x');
+t(reloj.includes('barra-tiempo'), 'el reloj trae la barra');
+t(reloj.includes('reloj-x'), 'y el hueco del número, con su id');
+t(reloj.includes('9 s'), 'y el número de segundos, no solo la barra');
+t(relojHTML(0, 15000, 'r').includes('0 s'), 'a cero muestra 0 s');
+t(relojHTML(9000, 0, 'r') === '', 'sin duración no inventa un reloj');
+
+const estR = { code:'A', players:[{id:'p1',name:'Ana'}],
+  round:{ id:'r', state:'open', prompt:'Uno ___ dos', reference:'2 Co 1:1', options:[],
+    versiculo:{ huecos_totales:1, revelados:[], pulsos:[], respuesta:null, contestando:null } } };
+const tv = pantallaTV(estR, { qr:'', restanteMs:9000, totalMs:15000 });
+const ju = pantallaParticipante(estR, { miId:'p1', restanteMs:9000, totalMs:15000 });
+t(tv.includes('id="reloj-tv"'), 'el televisor tiene su número de segundos');
+t(ju.includes('id="reloj-jug"'), 'el participante tiene el suyo');
 
 /* ------------------------------------------------------------------ */
 console.log(`\n${ok} correctas, ${fail} fallas`);
