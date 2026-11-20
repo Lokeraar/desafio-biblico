@@ -11,6 +11,7 @@
     --tu-600:#008090; --tu-700:#007080; --tu-800:#00525e; --tu-900:#0a2e33;
     --amarillo:#fcd116; --rojo:#cf2123; --ok:#1fbf75; --error:#e0483c; --espera:#f0a33a;
     --radio:18px; --radio-sm:12px;
+    --alto-confeti:740px; /* el marco del telefono mide 720 de alto */
     --sombra:0 10px 30px rgba(0,0,0,.45);
     /* El fondo de la tabla final, aplicado a todas las pantallas del juego.
        Sale de un solo token para que el de la ceremonia y el del resto no se
@@ -281,7 +282,7 @@
   @keyframes caer{
     0%{transform:translateY(-14px) rotate(0deg);opacity:0}
     8%{opacity:.95}
-    100%{transform:translateY(740px) rotate(600deg);opacity:.85}
+    100%{transform:translateY(var(--alto-confeti)) rotate(600deg);opacity:.85}
   }
   @media (prefers-reduced-motion:reduce){ .confeti i{animation:none;display:none} }
 

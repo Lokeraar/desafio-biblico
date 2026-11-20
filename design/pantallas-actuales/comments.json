@@ -720,6 +720,17 @@
       "sentAt": null,
       "resolvedAt": "2026-11-20T12:40:50.069Z",
       "resolution": "Corona en el 1.º, medalla duplicada fuera, título centrado, huecos con un guion por letra, botón circular al ancho del marco, versículo y texto dobles, lobby en columna con el QR a 1,5× (el doble desbordaba 1080 px), confeti y fondo reutilizados, botón «Salir» con confirmación, tipografía text-fitting."
+    },
+    {
+      "id": "39pew6af",
+      "file": "02-participante.html",
+      "selector": "body > main > div:nth-of-type(2) > section:nth-of-type(14) > div:nth-of-type(2) > div > div",
+      "excerpt": "TABLA DE CLASIFICACIÓN 🎉 ¡Felicitaciones, Miriam Ortiz! 👑 Miriam Ortiz 24.3 s · 7 aciertos 7 pts 🥈 Ana Lucía Paredes 26.1 s · 5 aciertos 5 pts 🥉 Beto Salas 29.4 s · 3 aciertos 3 pts Toca para ver el resto de la tabla 🙋 Jugar de nuevo ← Menú",
+      "comment": "Usa este mismo estilo en cuanto al confeti en la otras pantallas (televisor y presentador) en sus respectivas tablas de clasificación.",
+      "createdAt": "2026-11-20T12:59:16.031Z",
+      "status": "open",
+      "sentAt": "2026-11-20T12:59:16.226Z",
+      "resolvedAt": null
     }
   ]
 }

@@ -11,6 +11,7 @@
     --tu-600:#008090; --tu-700:#007080; --tu-800:#00525e; --tu-900:#0a2e33;
     --amarillo:#fcd116; --rojo:#cf2123; --ok:#1fbf75; --error:#e0483c; --espera:#f0a33a;
     --radio:18px; --radio-sm:12px;
+    --alto-confeti:520px; /* alto aproximado de la tarjeta de ceremonia */
     --sombra:0 10px 30px rgba(0,0,0,.45);
     --t-xs:.815rem; --t-sm:.9rem; --t-base:1rem; --t-lg:1.2rem;
     --t-xl:1.5rem; --t-2xl:2rem; --t-3xl:2.8rem;
@@ -201,7 +202,8 @@
     padding:1rem;border-radius:var(--radio);
   }
   .marco-oro{
-    position:relative;padding:1rem;border:3px solid #d9a520;border-radius:10px;
+    /* `overflow:hidden` para que el confeti no se salga de la tarjeta. */
+    position:relative;overflow:hidden;padding:1rem;border:3px solid #d9a520;border-radius:10px;
     background:linear-gradient(180deg,rgba(0,0,0,.2),rgba(0,0,0,.4));
     box-shadow:0 0 0 2px rgba(0,0,0,.5) inset,0 0 26px rgba(217,165,32,.35);
     display:flex;flex-direction:column;gap:.6rem;
@@ -253,6 +255,27 @@
   .rev-puntos{font-weight:800;font-size:1.3rem;color:var(--raya);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
   .rev-puntos .rev-pts{font-size:.6em;font-weight:700;color:var(--tinta-suave)}
   .pista-ceremonia{margin:0;text-align:center;font-size:var(--t-xs);color:rgba(255,255,255,.6)}
+
+  /* --- confeti de la tabla final (render.js:52 y styles.css:1046) ---
+     El juego lo dibuja en las TRES vistas: `ceremoniaHTML` lo pone cuando el
+     primer puesto ya se ve, y lo usan el presentador, el participante y el
+     televisor (app.js:1258, 1284 y 1628). Este artboard lo omitia; ahora lo
+     tiene igual que los otros dos.
+     La caida se mide contra el alto de ESTE marco y no con `vh`: en el juego
+     la ceremonia ocupa la pantalla entera (position:fixed), asi que ahi 105vh
+     es correcto, pero aqui es una tarjeta dentro de una placa y `vh` seria el
+     alto de la ventana. */
+  .confeti{position:absolute;inset:0;overflow:hidden;pointer-events:none;border-radius:10px}
+  .confeti i{
+    position:absolute;top:-12px;width:7px;height:11px;border-radius:1px;opacity:.9;
+    animation:caer linear infinite;
+  }
+  @keyframes caer{
+    0%{transform:translateY(-14px) rotate(0deg);opacity:0}
+    8%{opacity:.95}
+    100%{transform:translateY(var(--alto-confeti)) rotate(600deg);opacity:.85}
+  }
+  @media (prefers-reduced-motion:reduce){ .confeti i{animation:none;display:none} }
   .ceremonia-footer{display:flex;gap:.7rem;flex-wrap:wrap}
   .ceremonia-footer > *{flex:1 1 0;min-width:0}
 
@@ -728,6 +751,38 @@
         <div class="pantalla-ceremonia">
           <div class="marco-oro">
             <span class="marco-esquinas"></span>
+            <div class="confeti" aria-hidden="true">
+              <i style="left:0%;background:#f5c93b;animation-delay:0.0s;animation-duration:3.2s"></i>
+              <i style="left:37%;background:#ffffff;animation-delay:1.3s;animation-duration:3.9000000000000004s"></i>
+              <i style="left:74%;background:#3fae86;animation-delay:2.6s;animation-duration:4.6s"></i>
+              <i style="left:11%;background:#d9a520;animation-delay:3.9s;animation-duration:5.300000000000001s"></i>
+              <i style="left:48%;background:#2b7f96;animation-delay:1.2s;animation-duration:3.6s"></i>
+              <i style="left:85%;background:#ff5c8a;animation-delay:2.5s;animation-duration:4.300000000000001s"></i>
+              <i style="left:22%;background:#f5c93b;animation-delay:3.8s;animation-duration:5.0s"></i>
+              <i style="left:59%;background:#ffffff;animation-delay:1.1s;animation-duration:3.3000000000000003s"></i>
+              <i style="left:96%;background:#3fae86;animation-delay:2.4s;animation-duration:4.0s"></i>
+              <i style="left:33%;background:#d9a520;animation-delay:3.7s;animation-duration:4.7s"></i>
+              <i style="left:70%;background:#2b7f96;animation-delay:1.0s;animation-duration:5.4s"></i>
+              <i style="left:7%;background:#ff5c8a;animation-delay:2.3s;animation-duration:3.7s"></i>
+              <i style="left:44%;background:#f5c93b;animation-delay:3.6s;animation-duration:4.4s"></i>
+              <i style="left:81%;background:#ffffff;animation-delay:0.9s;animation-duration:5.1s"></i>
+              <i style="left:18%;background:#3fae86;animation-delay:2.2s;animation-duration:3.4000000000000004s"></i>
+              <i style="left:55%;background:#d9a520;animation-delay:3.5s;animation-duration:4.1000000000000005s"></i>
+              <i style="left:92%;background:#2b7f96;animation-delay:0.8s;animation-duration:4.800000000000001s"></i>
+              <i style="left:29%;background:#ff5c8a;animation-delay:2.1s;animation-duration:5.5s"></i>
+              <i style="left:66%;background:#f5c93b;animation-delay:3.4s;animation-duration:3.8000000000000003s"></i>
+              <i style="left:3%;background:#ffffff;animation-delay:0.7s;animation-duration:4.5s"></i>
+              <i style="left:40%;background:#3fae86;animation-delay:2.0s;animation-duration:5.2s"></i>
+              <i style="left:77%;background:#d9a520;animation-delay:3.3s;animation-duration:3.5s"></i>
+              <i style="left:14%;background:#2b7f96;animation-delay:0.6s;animation-duration:4.2s"></i>
+              <i style="left:51%;background:#ff5c8a;animation-delay:1.9s;animation-duration:4.9s"></i>
+              <i style="left:88%;background:#f5c93b;animation-delay:3.2s;animation-duration:3.2s"></i>
+              <i style="left:25%;background:#ffffff;animation-delay:0.5s;animation-duration:3.9000000000000004s"></i>
+              <i style="left:62%;background:#3fae86;animation-delay:1.8s;animation-duration:4.6s"></i>
+              <i style="left:99%;background:#d9a520;animation-delay:3.1s;animation-duration:5.300000000000001s"></i>
+              <i style="left:36%;background:#2b7f96;animation-delay:0.4s;animation-duration:3.6s"></i>
+              <i style="left:73%;background:#ff5c8a;animation-delay:1.7s;animation-duration:4.300000000000001s"></i>
+            </div>
             <h1 class="titulo-ceremonia">Tabla de clasificación</h1>
             <p class="felicitacion">🎉 ¡Felicitaciones, Miriam Ortiz!</p>
             <ul class="lista-ceremonia" aria-live="polite">
