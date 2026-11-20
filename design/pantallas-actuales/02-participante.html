@@ -273,10 +273,15 @@
     position:absolute;top:-12px;width:7px;height:11px;border-radius:1px;opacity:.9;
     animation:caer linear infinite;
   }
+  /* El original del juego usa 105vh porque su tabla ocupa la pantalla
+     entera. Aqui el marco mide 720 px y `vh` es la VENTANA del navegador, que
+     puede ser mas alta: las piezas se iban mucho antes de «caer» y al
+     reiniciar la animacion reaparecian arriba, que es el parpadeo. Se usa el
+     alto del marco. */
   @keyframes caer{
     0%{transform:translateY(-14px) rotate(0deg);opacity:0}
     8%{opacity:.95}
-    100%{transform:translateY(105vh) rotate(600deg);opacity:.85}
+    100%{transform:translateY(740px) rotate(600deg);opacity:.85}
   }
   @media (prefers-reduced-motion:reduce){ .confeti i{animation:none;display:none} }
 

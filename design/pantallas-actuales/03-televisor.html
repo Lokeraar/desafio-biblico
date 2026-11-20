@@ -135,12 +135,29 @@
      las pantallas de la partida menos la tabla final, que ya trae su
      «Volver al menu». Pide confirmacion: salir deja la tele sin sala y hay
      que volver a escribir el codigo. */
+  /* Botones del proyecto (styles.css:99-130). Faltaban: este artboard los
+     usaba en la tabla final, la sala cerrada y la confirmacion de salida,
+     pero no habia ni una regla `.boton`, asi que salian con el estilo crudo
+     del navegador. */
+  button, .boton{
+    font:inherit;font-weight:700;cursor:pointer;border:0;border-radius:var(--radio-sm);
+    padding:.85em 1.4em;color:var(--tu-900);
+    background:linear-gradient(180deg,var(--tu-300),var(--tu-500));
+    box-shadow:0 4px 0 var(--tu-700),var(--sombra);
+    width:auto;
+  }
+  .boton-secundario{
+    background:transparent;color:var(--tu-100);
+    border:2px solid var(--tu-600);box-shadow:none;
+  }
+  .boton-peligro{background:linear-gradient(180deg,#e8635a,var(--rojo));color:#fff;box-shadow:0 4px 0 #7a1416,var(--sombra)}
+
   .tv-salir{
     display:flex;align-items:center;gap:.5rem;flex:0 0 auto;
     padding:.5em .9em;border-radius:10px;cursor:pointer;
     background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.22);
     color:var(--tinta);font-size:var(--t-sm);font-weight:700;font-family:inherit;
-    width:auto;
+    box-shadow:none;width:auto;
   }
   .tv-bar{
     display:flex;align-items:center;justify-content:space-between;gap:1rem;
@@ -148,12 +165,16 @@
   }
   /* La confirmacion, encima de la pantalla: la tele no tiene modales propios
      porque nadie la maneja de cerca, asi que se resuelve con una franja. */
+  /* La confirmacion es un ESTADO: aparece al tocar «Salir» y se va al
+     cancelar. Antes de esto la habia dejado fija en el marcado, y entonces
+     empujaba el versiculo hacia abajo todo el tiempo. */
   .tv-confirmar{
-    display:flex;align-items:center;justify-content:center;gap:1.2rem;flex-wrap:wrap;
+    display:none;align-items:center;justify-content:center;gap:1.2rem;flex-wrap:wrap;
     padding:.8em 1.2em;border-radius:12px;
     background:rgba(240,163,58,.16);border:1px solid var(--espera);
     font-size:var(--t-base);font-weight:700;flex:0 0 auto;width:100%;
   }
+  .tv-confirmar.visible{display:flex}
   .tv-confirmar button{
     width:auto;flex:0 0 auto;font-size:var(--t-sm);padding:.7em 1.1em;
   }
@@ -346,13 +367,13 @@
         <div class="tv-escala">
           <div class="pantalla-tv">
             <div class="tv-bar">
-              <button class="tv-salir" type="button">← Salir de esta partida</button>
+              <button class="tv-salir" type="button" data-salir>← Salir de esta partida</button>
               <span></span>
             </div>
             <div class="tv-confirmar" role="alertdialog" aria-label="Confirmar salida">
               <span>¿Salir de esta partida? La pantalla vuelve a pedir el código.</span>
-              <button class="boton" type="button">Sí, salir</button>
-              <button class="boton boton-secundario" type="button">Seguir viendo</button>
+              <button class="boton" type="button" data-confirmar>Salir</button>
+              <button class="boton boton-secundario" type="button" data-cancelar>Seguir viendo</button>
             </div>
             <div class="tv-top">
               <span class="ref">Juan 3:16</span>
@@ -379,7 +400,7 @@
         <div class="tv-escala">
           <div class="pantalla-tv">
             <div class="tv-bar">
-              <button class="tv-salir" type="button">← Salir de esta partida</button>
+              <button class="tv-salir" type="button" data-salir>← Salir de esta partida</button>
               <span></span>
             </div>
             <div class="tv-top">
@@ -413,7 +434,7 @@
         <div class="tv-escala">
           <div class="pantalla-tv">
             <div class="tv-bar">
-              <button class="tv-salir" type="button">← Salir de esta partida</button>
+              <button class="tv-salir" type="button" data-salir>← Salir de esta partida</button>
               <span></span>
             </div>
             <div class="tv-top">
@@ -443,7 +464,7 @@
         <div class="tv-escala">
           <div class="pantalla-tv">
             <div class="tv-bar">
-              <button class="tv-salir" type="button">← Salir de esta partida</button>
+              <button class="tv-salir" type="button" data-salir>← Salir de esta partida</button>
               <span></span>
             </div>
             <div class="tv-top">
@@ -474,7 +495,7 @@
         <div class="tv-escala">
           <div class="pantalla-tv">
             <div class="tv-bar">
-              <button class="tv-salir" type="button">← Salir de esta partida</button>
+              <button class="tv-salir" type="button" data-salir>← Salir de esta partida</button>
               <span></span>
             </div>
             <div class="tv-top">
@@ -504,7 +525,7 @@
         <div class="tv-escala">
           <div class="pantalla-tv">
             <div class="tv-bar">
-              <button class="tv-salir" type="button">← Salir de esta partida</button>
+              <button class="tv-salir" type="button" data-salir>← Salir de esta partida</button>
               <span></span>
             </div>
             <div class="tv-top">
@@ -608,5 +629,25 @@
 
   </div>
 </main>
+<script>
+/* El boton de salida pide confirmacion. Dentro de un artboard no se puede
+   volver de verdad a la pantalla del televisor, asi que la confirmacion se
+   dibuja en su sitio: es la misma franja que mostraria el juego, con los dos
+   caminos. Un listener por documento, delegado, para que funcione en las
+   seis pantallas sin repetir codigo. */
+document.addEventListener('click', (ev) => {
+  const tarjeta = ev.target.closest('.tv-escala');
+  if (!tarjeta) return;
+  if (ev.target.closest('[data-salir]')) {
+    const franja = tarjeta.querySelector('.tv-confirmar');
+    if (franja) franja.classList.add('visible');
+    return;
+  }
+  if (ev.target.closest('[data-confirmar], [data-cancelar]')) {
+    const franja = tarjeta.querySelector('.tv-confirmar');
+    if (franja) franja.classList.remove('visible');
+  }
+});
+</script>
 </body>
 </html>
