@@ -823,11 +823,27 @@ function panelVersiculo(estado) {
       <button class="boton boton-peligro" data-accion="pedir-terminar">
         Terminar juego
       </button>
+
     </main>`;
 }
 
 function vistaHost() {
   const s = app.estado;
+
+  /*
+   * LOS ESTADOS FINALES SE MIRAN ANTES DEL JUEGO, NO DESPUÉS.
+   *
+   * `panelVersiculo` dibuja la partida: sala de espera, versículo, juicio.
+   * No conoce la ceremonia ni la sala cerrada, y no tiene por qué: son
+   * pantallas que no dependen del juego.
+   *
+   * Con el desvío por juego arriba, «Terminar juego» hacía su trabajo en el
+   * servidor —la sala pasaba a 'ceremony'— y el panel seguía dibujando la
+   * partida, así que el botón se veía muerto. Lo mismo con una sala que
+   * cerró el barrido.
+   */
+  if (s && s.status === 'ceremony') return vistaCeremonia(s);
+  if (s && s.status === 'closed') return vistaSalaCerrada(s);
 
   if (s && s.gameSlug === 'completar-versiculo') {
     return panelVersiculo(s);
@@ -904,19 +920,7 @@ function vistaHost() {
    * También se llega aquí si el cierre lo hizo otro dispositivo con el
    * mismo enlace: en los dos casos lo honesto es decirlo y ofrecer salida.
    */
-  if (s.status === 'closed') {
-    return `
-      <main class="crecer columna centro" style="gap:1rem">
-        <h1>La sala está cerrada</h1>
-        <div class="aviso espera centro" style="text-align:center">
-          ${motivoCierre(s) ?? 'La sala se cerró.'}
-        </div>
-        <p class="tenue centro chico" style="text-align:center; max-width:34ch">
-          Los participantes ya salieron. Puedes crear otra sala cuando quieras.
-        </p>
-        <button class="boton" data-accion="olvidar-sala-cerrada">Crear otra sala</button>
-      </main>`;
-  }
+  if (s.status === 'closed') return vistaSalaCerrada(s);
 
   return `
     <div class="fila-entre">
@@ -1041,8 +1045,7 @@ function vistaHost() {
         </div>` : ''}
     </main>
 
-    ${app.confirmar === 'terminar' ? modalConfirmarCierre() : ''}
-    ${app.confirmar === 'sala' ? modalCerrarSala() : ''}`;
+    `;
 }
 
 
@@ -1213,6 +1216,29 @@ function modalCerrarSala() {
         </div>
       </div>
     </div>`;
+}
+
+/**
+ * La pantalla de una sala que ya se cerró.
+ *
+ * Vive aparte porque la necesitan los dos juegos: `vistaHost` la usa antes de
+ * desviar por juego, y el panel del versículo también puede toparse con una
+ * sala cerrada por el barrido. Estaba escrita a mano dentro de `vistaHost`, y
+ * al desviar por juego antes de mirar el estado, el panel seguía dibujando los
+ * botones de una partida que ya no existía.
+ */
+function vistaSalaCerrada(s) {
+  return `
+      <main class="crecer columna centro" style="gap:1rem">
+        <h1>La sala está cerrada</h1>
+        <div class="aviso espera centro" style="text-align:center">
+          ${motivoCierre(s) ?? 'La sala se cerró.'}
+        </div>
+        <p class="tenue centro chico" style="text-align:center; max-width:34ch">
+          Los participantes ya salieron. Puedes crear otra sala cuando quieras.
+        </p>
+        <button class="boton" data-accion="olvidar-sala-cerrada">Crear otra sala</button>
+      </main>`;
 }
 
 function vistaCeremonia(s) {
@@ -2007,6 +2033,18 @@ function render() {
   // El modal se dibuja ENCIMA de la vista, sin reemplazarla: así al
   // cerrarlo no se pierde lo que el usuario estaba escribiendo debajo.
   if (app.modal) html += modalActivo();
+
+  /*
+   * LAS CONFIRMACIONES TAMBIÉN VAN AQUÍ, UNA SOLA VEZ.
+   *
+   * «← Menú» y «Terminar juego» existen en varias pantallas, y los dos
+   * hacen lo mismo: `app.confirmar = '...'` y volver a dibujar. Pintarlas
+   * dentro de una vista concreta las dejaba muertas en las demás: el botón
+   * cambiaba el estado y no aparecía nada. Aquí, encima de cualquier vista,
+   * funcionan en todas y solo hay un sitio que recordar.
+   */
+  if (app.confirmar === 'terminar') html += modalConfirmarCierre();
+  if (app.confirmar === 'sala') html += modalCerrarSala();
 
   /*
    * Solo se reescribe el DOM si el HTML cambió.

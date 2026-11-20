@@ -3,6 +3,7 @@
    Cada caso está pensado para FALLAR si el defecto estuviera presente. La
    más importante es la de fuga: si la respuesta aparece en pantalla antes
    de revelarse, el juego se pierde entero. */
+import { readFileSync } from 'node:fs';
 import {
   felicitacion, todasLasFelicitaciones, versiculoDesdeServidor,
   versiculoHTML, versiculoHostHTML, avisoParticipante, miTurnoTexto, estadoBoton,
@@ -340,6 +341,79 @@ const tv = pantallaTV(estR, { qr:'', restanteMs:9000, totalMs:15000 });
 const ju = pantallaParticipante(estR, { miId:'p1', restanteMs:9000, totalMs:15000 });
 t(tv.includes('id="reloj-tv"'), 'el televisor tiene su número de segundos');
 t(ju.includes('id="reloj-jug"'), 'el participante tiene el suyo');
+
+/* ------------------------------------------------------------------ */
+console.log('\n=== Las confirmaciones se pintan UNA vez, para todas las vistas ===');
+// Defecto real: «← Menú» y «Terminar juego» existen en varias pantallas, y
+// los dos solo hacen `app.confirmar = '...'` + redibujar. Pintar la
+// confirmación DENTRO de una vista concreta las dejaba muertas en las demás:
+// el botón cambiaba el estado y no aparecía nada.
+//
+// La amenaza contraria también cuenta: si se pintaran solo dentro de una
+// vista, arreglar la de hoy rompe la de mañana. Por eso van en `render()`,
+// que es el único sitio por donde pasan todas.
+const soloCodigo = (x) => x
+  .replace(/\/\*[\s\S]*?\*\//g, ' ')
+  .replace(/(^|[^:])\/\/.*$/gm, '$1');
+const appSrc = soloCodigo(readFileSync(new URL('../app.js', import.meta.url), 'utf8'));
+
+const cuerpoRender = (() => {
+  const ini = appSrc.indexOf('function render(');
+  if (ini < 0) return '';
+  const resto = appSrc.slice(ini + 10);
+  const fin = resto.search(/\nfunction [a-zA-Z]/);
+  return fin < 0 ? resto : resto.slice(0, fin);
+})();
+
+t(cuerpoRender.length > 500, 'se localiza el cuerpo de render');
+t(/app\.confirmar === 'terminar'[^;]*modalConfirmarCierre/.test(cuerpoRender),
+  'render pinta la confirmación de terminar juego');
+t(/app\.confirmar === 'sala'[^;]*modalCerrarSala/.test(cuerpoRender),
+  'y la de cerrar la sala');
+
+// Y NO se pintan desde una vista concreta: eso era el defecto. Se busca en
+// todas las funciones de pantalla, no solo en la que falló.
+const vistas = [...appSrc.matchAll(/function (panelVersiculo|vistaHost|vistaJugador|vistaTV)\s*\(/g)];
+t(vistas.length >= 4, 'se localizan las cuatro vistas');
+for (const v of vistas) {
+  const resto = appSrc.slice(v.index + 10);
+  const fin = resto.search(/\nfunction [a-zA-Z]/);
+  const cuerpo = fin < 0 ? resto : resto.slice(0, fin);
+  t(!cuerpo.includes('modalConfirmarCierre()') && !cuerpo.includes('modalCerrarSala()'),
+    `${v[1]} NO pinta confirmaciones por su cuenta: van en render()`);
+}
+
+/* ------------------------------------------------------------------ */
+console.log('\n=== La ceremonia y la sala cerrada, ANTES del juego ===');
+// Defecto real: «Terminar juego» hacía su trabajo en el servidor —la sala
+// pasaba a 'ceremony'— y el panel seguía dibujando la partida, así que el
+// botón se veía muerto. La causa: `vistaHost` desviaba al panel del juego
+// antes de mirar el estado final, y ese panel no sabe dibujar la ceremonia.
+const cuerpoVistaHost = (() => {
+  const ini = appSrc.indexOf('function vistaHost(');
+  if (ini < 0) return '';
+  const resto = appSrc.slice(ini + 10);
+  const fin = resto.search(/\nfunction [a-zA-Z]/);
+  return fin < 0 ? resto : resto.slice(0, fin);
+})();
+
+t(cuerpoVistaHost.length > 200, 'se localiza el cuerpo de vistaHost');
+t(cuerpoVistaHost.includes('vistaCeremonia'),
+  'vistaHost sabe dibujar la ceremonia');
+t(cuerpoVistaHost.includes('vistaSalaCerrada'),
+  'y la sala cerrada');
+
+// El ORDEN es lo que fallaba: el estado final se mira antes del desvío.
+const iFin = cuerpoVistaHost.indexOf("status === 'ceremony'");
+const iJuego = cuerpoVistaHost.indexOf("completar-versiculo");
+t(iFin >= 0 && iJuego > iFin,
+  'los estados finales se miran ANTES de desviar por juego');
+
+// Y una sola pantalla de sala cerrada, no dos copias que se separan.
+t(appSrc.includes('function vistaSalaCerrada('),
+  'la pantalla de sala cerrada vive en una función');
+const copias = (appSrc.match(/La sala está cerrada/g) || []).length;
+t(copias === 1, 'y está escrita UNA vez, no copiada por vista');
 
 /* ------------------------------------------------------------------ */
 console.log(`\n${ok} correctas, ${fail} fallas`);
