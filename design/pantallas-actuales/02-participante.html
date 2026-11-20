@@ -194,10 +194,18 @@
     gap:.8rem;text-align:center;
   }
   .grande-exito .marca{font-size:var(--t-3xl);line-height:1}
-  .grande-exito .titulo{margin:0;font-size:var(--t-xl);font-weight:800;line-height:1.2}
+  /* text-fitting 1+1. El titulo del acierto es lo primero que se mira: pasa
+     al doble del cuerpo y usa el ancho del marco, con 1 linea de gracia. */
+  .grande-exito .titulo{
+    margin:0;font-size:1.75rem;font-weight:800;line-height:1.2;
+    text-wrap:balance;max-width:100%;
+  }
+  /* vp0kxsda pide 2+1: la cita es el versiculo completo y merece leerse, no
+     adivinarse. Sube al cuerpo grande con dos lineas de gracia. */
   .grande-exito .cita{
-    margin:0;font-size:var(--t-sm);color:var(--tinta-suave);font-style:italic;
+    margin:0;font-size:1rem;line-height:1.5;color:var(--tinta-suave);font-style:italic;
     border-left:3px solid var(--tu-600);padding-left:.8em;text-align:left;
+    max-width:34ch;
   }
 
   .saludo{font-size:var(--t-2xl);line-height:1;margin:0}

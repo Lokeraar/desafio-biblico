@@ -69,6 +69,10 @@
   .pantalla-tv{
     display:flex;flex-direction:column;justify-content:space-between;
     background:var(--fondo-juego);
+    /* uvo2kh68: nada puede desbordar el marco. El alto esta fijado en 1080 px
+       y en la tele no hay scroll: lo que sobra se recorta en vez de empujar
+       el pie fuera de la pantalla. */
+    height:1080px;overflow:hidden;
     gap:clamp(.8rem,2.5vh,1.6rem);
     height:1080px;padding:clamp(1rem,3vw,2rem);
     font-size:28.8px; /* body.tv: clamp(1.2rem,1rem+.8vw,1.8rem) */
@@ -80,28 +84,79 @@
   .chico{font-size:var(--t-sm)}
   .mini{font-size:var(--t-xs)}
 
+  /* El lobby va en COLUMNA: el QR arribe, el codigo debajo y la frase debajo
+     del codigo. Antes estaban uno al lado del otro, asi que el codigo
+     competia por el ancho con el QR y ninguno de los dos dominaba. */
   .espera-caja{
-    display:flex;align-items:center;justify-content:center;gap:clamp(1rem,4vw,3rem);
-    flex-wrap:wrap;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:clamp(1rem,2.5vh,2rem);flex-wrap:nowrap;
   }
+  /* El QR a doble de su tamano anterior (era clamp(180px,42vmin,420px)): es
+     lo unico que el invitado tiene que apuntar con la camara. */
   .qr-tv-grande{
     background:#fff;padding:clamp(.6rem,2vmin,1.2rem);border-radius:18px;line-height:0;
-    box-shadow:var(--sombra);width:clamp(180px,42vmin,420px);aspect-ratio:1;
+    box-shadow:var(--sombra);
+    /* Pedia el doble (840 px). Medido: 840 desborda el marco de 1080 px
+       (1207 px de alto total); 720 tampoco (1087). 640 es el mayor que cabe
+       con el codigo y la frase debajo, y ya es 1,5 veces el anterior.
+       Valor fijo, no vmin: el marco se construye a 1920x1080 y `vmin` mide
+       la ventana, no el marco. */
+    width:640px;aspect-ratio:1;
   }
   .qr-tv-grande svg{width:100%;height:100%;display:block}
   .espera-datos{display:flex;flex-direction:column;align-items:center;gap:.4rem}
   .codigo-grande{
-    font-size:var(--t-3xl);font-weight:800;letter-spacing:.18em;line-height:1;
+    font-size:calc(var(--t-3xl) * 1.4);font-weight:800;letter-spacing:.18em;line-height:1;
     color:var(--amarillo);font-variant-numeric:tabular-nums;
   }
-  .espera-txt{margin:.5rem 0 0;font-size:var(--t-base);color:var(--tinta-suave)}
+  /* text-fitting 1+1: la frase es la instruccion principal del lobby, no una
+     nota al pie. Sube al cuerpo grande y usa el ancho disponible. */
+  .espera-txt{
+    margin:.5rem 0 0;font-size:var(--t-lg);line-height:1.35;color:var(--tinta-suave);
+    text-wrap:balance;max-width:34ch;
+  }
 
   .aviso{padding:.8em 1.1em;border-radius:var(--radio-sm);font-weight:700;font-size:var(--t-sm);margin:0}
   .aviso.info{background:rgba(0,160,176,.18);border:1px solid var(--tu-500)}
   .aviso.ok{background:rgba(31,191,117,.18);border:1px solid var(--ok)}
   .aviso.error{background:rgba(224,72,60,.18);border:1px solid var(--error)}
   .aviso.espera{background:rgba(240,163,58,.16);border:1px solid var(--espera)}
-  .aviso.neutro,.aviso.turno,.aviso.exito{background:none;border:0;padding:0;font-weight:400;font-size:inherit}
+  .aviso.neutro{
+    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);color:var(--tinta-suave);
+    font-size:var(--t-base);
+  }
+  .aviso.turno{
+    background:rgba(111,227,238,.2);border:1px solid var(--tu-100);color:#eafdff;
+    font-size:var(--t-base);box-shadow:0 0 22px rgba(111,227,238,.18);
+  }
+  .aviso.exito{background:rgba(31,191,117,.18);border:1px solid var(--ok);font-size:var(--t-base)}
+
+  /* Boton de salida del televisor. Va SIEMPRE arriba a la izquierda, en todas
+     las pantallas de la partida menos la tabla final, que ya trae su
+     «Volver al menu». Pide confirmacion: salir deja la tele sin sala y hay
+     que volver a escribir el codigo. */
+  .tv-salir{
+    display:flex;align-items:center;gap:.5rem;flex:0 0 auto;
+    padding:.5em .9em;border-radius:10px;cursor:pointer;
+    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.22);
+    color:var(--tinta);font-size:var(--t-sm);font-weight:700;font-family:inherit;
+    width:auto;
+  }
+  .tv-bar{
+    display:flex;align-items:center;justify-content:space-between;gap:1rem;
+    flex:0 0 auto;width:100%;
+  }
+  /* La confirmacion, encima de la pantalla: la tele no tiene modales propios
+     porque nadie la maneja de cerca, asi que se resuelve con una franja. */
+  .tv-confirmar{
+    display:flex;align-items:center;justify-content:center;gap:1.2rem;flex-wrap:wrap;
+    padding:.8em 1.2em;border-radius:12px;
+    background:rgba(240,163,58,.16);border:1px solid var(--espera);
+    font-size:var(--t-base);font-weight:700;flex:0 0 auto;width:100%;
+  }
+  .tv-confirmar button{
+    width:auto;flex:0 0 auto;font-size:var(--t-sm);padding:.7em 1.1em;
+  }
 
   .tv-top{
     display:flex;align-items:center;justify-content:space-between;gap:1rem;flex:0 0 auto;width:100%;
@@ -118,11 +173,17 @@
   .cuerpo-tv{
     flex:1 1 auto;display:flex;align-items:center;justify-content:center;min-height:0;text-align:center;
   }
+  /* Doble del tamano anterior (--t-2xl = 3.2rem). Medido sobre 1920x1080: el
+     versiculo ocupa 3 lineas y sobra alto en el cuerpo. */
   .cuerpo-tv .versiculo{
-    margin:0;font-size:var(--t-2xl);line-height:1.3;font-weight:800;max-width:30ch;overflow-wrap:anywhere;
+    margin:0;font-size:calc(var(--t-2xl) * 2);line-height:1.25;font-weight:800;
+    max-width:24ch;overflow-wrap:anywhere;
   }
-  .hueco{display:inline-block;min-width:3ch;border-bottom:3px solid var(--tu-400);vertical-align:baseline}
-  .hueco::before{content:"____";color:var(--tu-600);letter-spacing:.08em}
+  /* Los guiones los pone el servidor, uno por letra (versiculo_render). */
+  .hueco{
+    display:inline-block;color:var(--tu-600);
+    border-bottom:3px solid var(--tu-400);vertical-align:baseline;letter-spacing:.06em;
+  }
 
   .reloj-ronda{display:flex;align-items:center;gap:.6rem;width:100%;justify-content:center}
   .reloj-ronda .barra-tiempo{flex:1 1 auto;max-width:900px}
@@ -132,9 +193,11 @@
   .barra-tiempo.urgente > i{background:linear-gradient(90deg,var(--espera),var(--rojo))}
 
   .pie-tv{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:.5rem}
+  /* text-fitting 1+1: eran t-xss y se leian desde el fondo del salon como
+     migas. Suben al cuerpo de la tele, que es lo que el televisor ya usa. */
   .lista-aportes{
-    display:flex;flex-wrap:wrap;gap:.4rem;justify-content:center;
-    font-size:var(--t-xs);color:var(--tinta-suave);
+    display:flex;flex-wrap:wrap;gap:.6rem;justify-content:center;
+    font-size:var(--t-base);color:var(--tinta-suave);
   }
   .lista-aportes span{background:rgba(255,255,255,.06);padding:.2em .8em;border-radius:999px}
 
@@ -282,12 +345,21 @@
       <div class="tv-marco">
         <div class="tv-escala">
           <div class="pantalla-tv">
+            <div class="tv-bar">
+              <button class="tv-salir" type="button">← Salir de esta partida</button>
+              <span></span>
+            </div>
+            <div class="tv-confirmar" role="alertdialog" aria-label="Confirmar salida">
+              <span>¿Salir de esta partida? La pantalla vuelve a pedir el código.</span>
+              <button class="boton" type="button">Sí, salir</button>
+              <button class="boton boton-secundario" type="button">Seguir viendo</button>
+            </div>
             <div class="tv-top">
               <span class="ref">Juan 3:16</span>
               <span class="sala">K7M2QX</span>
             </div>
             <div class="cuerpo-tv">
-              <p class="versiculo">Porque de tal manera <span class="hueco"></span> Dios al <span class="hueco"></span>, que ha dado a su Hijo <span class="hueco"></span></p>
+              <p class="versiculo">Porque de tal manera <span class="hueco">___</span> Dios al <span class="hueco">_____</span>, que ha dado a su Hijo <span class="hueco">_________</span></p>
             </div>
             <div class="pie-tv"></div>
           </div>
@@ -306,12 +378,16 @@
       <div class="tv-marco">
         <div class="tv-escala">
           <div class="pantalla-tv">
+            <div class="tv-bar">
+              <button class="tv-salir" type="button">← Salir de esta partida</button>
+              <span></span>
+            </div>
             <div class="tv-top">
               <span class="ref">Juan 3:16</span>
               <span class="sala">K7M2QX</span>
             </div>
             <div class="cuerpo-tv">
-              <p class="versiculo">Porque de tal manera <span class="hueco"></span> Dios al <span class="hueco"></span>, que ha dado a su Hijo <span class="hueco"></span></p>
+              <p class="versiculo">Porque de tal manera <span class="hueco">___</span> Dios al <span class="hueco">_____</span>, que ha dado a su Hijo <span class="hueco">_________</span></p>
             </div>
             <div class="reloj-ronda">
               <div class="barra-tiempo" role="progressbar" aria-valuenow="14" aria-valuemin="0" aria-valuemax="30"><i style="width:47%"></i></div>
@@ -336,12 +412,16 @@
       <div class="tv-marco">
         <div class="tv-escala">
           <div class="pantalla-tv">
+            <div class="tv-bar">
+              <button class="tv-salir" type="button">← Salir de esta partida</button>
+              <span></span>
+            </div>
             <div class="tv-top">
               <span class="ref">Juan 3:16</span>
               <span class="sala">K7M2QX</span>
             </div>
             <div class="cuerpo-tv">
-              <p class="versiculo">Porque de tal manera <span class="hueco"></span> Dios al <span class="hueco"></span>, que ha dado a su Hijo <span class="hueco"></span></p>
+              <p class="versiculo">Porque de tal manera <span class="hueco">___</span> Dios al <span class="hueco">_____</span>, que ha dado a su Hijo <span class="hueco">_________</span></p>
             </div>
             <div class="pie-tv">
               <div class="aviso turno sin-css">🎤 Contestando: Beto Salas (fue el 1 en pulsar)</div>
@@ -362,12 +442,16 @@
       <div class="tv-marco">
         <div class="tv-escala">
           <div class="pantalla-tv">
+            <div class="tv-bar">
+              <button class="tv-salir" type="button">← Salir de esta partida</button>
+              <span></span>
+            </div>
             <div class="tv-top">
               <span class="ref">Juan 3:16</span>
               <span class="sala">K7M2QX</span>
             </div>
             <div class="cuerpo-tv">
-              <p class="versiculo">Porque de tal manera <span class="hueco"></span> Dios al <span class="hueco"></span>, que ha dado a su Hijo <span class="hueco"></span></p>
+              <p class="versiculo">Porque de tal manera <span class="hueco">___</span> Dios al <span class="hueco">_____</span>, que ha dado a su Hijo <span class="hueco">_________</span></p>
             </div>
             <div class="pie-tv">
               <div class="aviso error">❌ Beto Salas no acertó</div>
@@ -389,12 +473,16 @@
       <div class="tv-marco">
         <div class="tv-escala">
           <div class="pantalla-tv">
+            <div class="tv-bar">
+              <button class="tv-salir" type="button">← Salir de esta partida</button>
+              <span></span>
+            </div>
             <div class="tv-top">
               <span class="ref">Juan 3:16</span>
               <span class="sala">K7M2QX</span>
             </div>
             <div class="cuerpo-tv">
-              <p class="versiculo">Porque de tal manera <span class="hueco"></span> Dios al <span class="hueco"></span>, que ha dado a su Hijo <span class="hueco"></span></p>
+              <p class="versiculo">Porque de tal manera <span class="hueco">___</span> Dios al <span class="hueco">_____</span>, que ha dado a su Hijo <span class="hueco">_________</span></p>
             </div>
             <div class="pie-tv">
               <div class="aviso neutro sin-css">Nadie pulsó esta ronda</div>
@@ -415,6 +503,10 @@
       <div class="tv-marco">
         <div class="tv-escala">
           <div class="pantalla-tv">
+            <div class="tv-bar">
+              <button class="tv-salir" type="button">← Salir de esta partida</button>
+              <span></span>
+            </div>
             <div class="tv-top">
               <span class="ref">Juan 3:16</span>
               <span class="sala">K7M2QX</span>
@@ -452,7 +544,7 @@
               <p class="felicitacion">🎉 ¡Felicitaciones, Miriam Ortiz!</p>
               <ul class="lista-ceremonia" aria-live="polite">
                 <li class="fila-rev del-podio ganador">
-                  <div class="rev-puesto"><span class="rev-num">🥇</span></div>
+                  <div class="rev-puesto"><span class="rev-num">👑</span></div>
                   <div class="rev-datos"><span class="rev-nombre">Miriam Ortiz</span><span class="rev-sub">24.3 s · 7 aciertos</span></div>
                   <div class="rev-puntos">7<span class="rev-pts"> pts</span></div>
                 </li>
@@ -496,7 +588,7 @@
       </div>
       <div class="tv-marco">
         <div class="tv-escala">
-          <div class="pantalla-tv centro" style="justify-content:center;align-items:center;gap:2rem">
+          <div class="pantalla-tv centro" style="justify-content:center;align-items:center;gap:2rem;font-size:1.4rem">
             <h1 style="font-size:var(--t-3xl);margin:0">Desafío Bíblico</h1>
             <div class="aviso espera" style="text-align:center;max-width:60ch">
               La sala se cerró sola porque el presentador estuvo 30 minutos sin actividad.
