@@ -1,0 +1,13 @@
+{
+  "title": "Temas — Completar el versículo",
+  "brief": "Las ventanas de administración de temas tal como están hoy en el código, y las que este juego necesita. El modal de Temas filtra bien por juego, pero el formulario que se abre para un versículo es el de opción múltiple, y validarPregunta exige exactamente 4 respuestas que un versículo no tiene: hoy editar un versículo obliga a inventarlas. Sigue punto por punto la sección «9. Editor» de docs/completar-versiculo-diseno.md.",
+  "artboards": [
+    {
+      "file": "01-temas.html",
+      "title": "Temas: lo que hay hoy y lo que debería haber",
+      "tradeoff": "Siete tarjetas en una placa, con los tres modales actuales arriba y los cuatro propuestos abajo: se compara el antes y el después sin cambiar de archivo. El precio es que ningún modal se ve con el teclado abierto, que es justo cuando el formulario de versículo se aprieta en un teléfono.",
+      "width": 1440,
+      "height": 4600
+    }
+  ]
+}
