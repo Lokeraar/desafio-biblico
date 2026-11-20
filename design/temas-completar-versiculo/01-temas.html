@@ -83,8 +83,8 @@
 
   /* marco de teléfono con el modal dentro */
   .marco{
-    width:100%;max-width:390px;height:720px;background:var(--fondo);
-    border:1px solid rgba(110,227,238,.2);border-radius:10px;overflow:hidden;
+    width:100%;max-width:390px;min-height:720px;height:auto;background:var(--fondo);
+    border:1px solid rgba(110,227,238,.2);border-radius:10px;overflow:visible;
     box-shadow:0 14px 40px rgba(0,0,0,.5);position:relative;
     /* Flex + padding para que el modal se centre de verdad: con un bloque
        normal, `margin:auto` solo centra en horizontal y el modal quedaba
@@ -129,7 +129,10 @@
     /* Nada desborda: el modal se queda dentro del marco y el unico que hace
        scroll es el recuadro del texto. Antes crecia con el contenido y el pie
        con Cancelar/Guardar se iba fuera de la pantalla. */
-    max-height:calc(720px - 2rem);
+    /* Sin tope de alto: el marco crece con el modal. Antes el modal pedia
+       688 px en un marco de 682 utiles y se recortaba por arriba y por abajo,
+       que es lo que se veia como botones cortados. */
+    max-height:none;
     min-height:0;
   }
   .modal-ancho{max-width:none}
@@ -227,33 +230,29 @@
     display:grid;place-items:center;
   }
   .ayuda-ocultar:focus-visible{outline:2px solid var(--raya);outline-offset:2px}
+  /* El globo va SIEMPRE visible, en su propia linea debajo del boton. Un
+     tooltip que solo sale al pasar el raton es invisible en una placa: no hay
+     hover que hacer. Ocupa el ancho de la fila, asi que no desborda. */
   .globo{
-    position:absolute;top:calc(100% + .45rem);left:0;right:0;z-index:5;
-    padding:.7em .85em;border-radius:10px;
-    background:var(--tu-900);border:1px solid var(--tu-100);
+    display:block;flex:1 0 100%;margin-top:.1rem;
+    position:relative;
+    padding:.6em .75em;border-radius:10px;
+    background:rgba(10,46,51,.92);border:1px solid var(--tu-100);
     color:var(--tinta);font-size:.84rem;line-height:1.5;font-weight:600;
-    box-shadow:0 10px 24px rgba(0,0,0,.55);
-    /* cerrado por defecto; se abre al enfocar o pasar por la ayuda, y una
-       tarjeta lo deja abierto con .abierto para que se lea en el canvas */
-    display:none;
+    overflow-wrap:anywhere;
   }
+  /* El pico apunta al boton de arriba, no al de la ayuda: es mas ancho. */
   .globo::before{
-    content:'';position:absolute;top:-6px;right:1.5rem;
+    content:'';position:absolute;top:-6px;left:1.1rem;
     width:10px;height:10px;transform:rotate(45deg);
-    background:var(--tu-900);border-left:1px solid var(--tu-100);border-top:1px solid var(--tu-100);
+    background:rgba(10,46,51,.92);
+    border-left:1px solid var(--tu-100);border-top:1px solid var(--tu-100);
   }
-  .fila-ocultar:has(.ayuda-ocultar:hover) .globo,
-  .fila-ocultar:has(.ayuda-ocultar:focus-visible) .globo{display:block}
+
   /* Abierto de forma permanente (lo que se muestra en esta placa) va EN EL
      FLUJO, no encima: absoluto tapaba Cancelar y Guardar. Medido: con el globo
      en el flujo el modal ocupa 475 px de los 682 disponibles, asi que cabe. */
-  .globo.abierto{
-    /* `flex: 1 0 100%` lo obliga a su PROPIA linea: compartiendo la fila
-       aplastaba el boton hasta partir «Ocultar palabra» letra por letra
-       (visto en la captura). */
-    display:block;position:static;flex:1 0 100%;margin-top:.1rem;
-  }
-  .globo.abierto::before{display:none}
+
 
   .ocultar-modo{
     display:flex;align-items:center;gap:.5rem;padding:.5em .7em;border-radius:var(--radio-sm);
@@ -599,7 +598,7 @@
             <div class="fila-ocultar">
               <button class="boton boton-contorno boton-ocultar" type="button" aria-pressed="true">👁 Ocultar palabra</button>
               <button class="ayuda-ocultar" type="button" aria-label="Qué hace Ocultar palabra">?</button>
-              <span class="globo abierto">Al pulsar «Ocultar palabra» y después tocar una palabra del texto, esa palabra pasa a ser el hueco que verán el participante y el televisor durante el juego. Nadie la ve: hay que descubrirla.</span>
+              <span class="globo">Al pulsar «Ocultar palabra» y después tocar una palabra del texto, esa palabra pasa a ser el hueco que verán el participante y el televisor durante el juego. Nadie la ve: hay que descubrirla.</span>
             </div>
 
             <div class="pie-con-menu">
@@ -687,7 +686,7 @@
             <div class="fila-ocultar">
               <button class="boton boton-contorno boton-ocultar" type="button" aria-pressed="false">👁 Ocultar palabra</button>
               <button class="ayuda-ocultar" type="button" aria-label="Qué hace Ocultar palabra">?</button>
-              <span class="globo abierto">Al pulsar «Ocultar palabra» y después tocar una palabra del texto, esa palabra pasa a ser el hueco que verán el participante y el televisor durante el juego. Nadie la ve: hay que descubrirla.</span>
+              <span class="globo">Al pulsar «Ocultar palabra» y después tocar una palabra del texto, esa palabra pasa a ser el hueco que verán el participante y el televisor durante el juego. Nadie la ve: hay que descubrirla.</span>
             </div>
 
             <div class="fila" style="gap:.6rem">
@@ -763,31 +762,6 @@
   </section>
 
 </main>
-<script>
-/* El globo del boton «Ocultar palabra». En la placa queda uno abierto para que
-   se lea sin interactuar; los demas se abren al tocar el «?». Se cierra al
-   tocar fuera o con Escape, para que no se quede pegado tapando el pie. */
-document.addEventListener('click', (ev) => {
-  const ayuda = ev.target.closest('.ayuda-ocultar');
-  if (ayuda) {
-    const globo = ayuda.parentElement.querySelector('.globo');
-    if (globo) {
-      const abierto = globo.classList.contains('abierto');
-      document.querySelectorAll('.globo.abierto').forEach(g => g.classList.remove('abierto'));
-      if (!abierto) globo.classList.add('abierto');
-    }
-    return;
-  }
-  if (!ev.target.closest('.globo')) {
-    document.querySelectorAll('.globo.abierto').forEach(g => g.classList.remove('abierto'));
-  }
-});
 
-document.addEventListener('keydown', (ev) => {
-  if (ev.key === 'Escape') {
-    document.querySelectorAll('.globo.abierto').forEach(g => g.classList.remove('abierto'));
-  }
-});
-</script>
 </body>
 </html>
