@@ -1228,6 +1228,69 @@ begin
       'al cerrar se destapan también las palabras que nadie acertó');
   end;
 
+  -- -------------------------------------------------------------------
+  -- 17.12 El barrido cierra también las rondas en 'juicio'
+  -- -------------------------------------------------------------------
+  -- Defecto medido: una sala de este juego se quedaba con la ronda VIVA
+  -- después de que el barrido cerrara la sala. El barrido solo miraba los
+  -- estados viejos ('prepared','open','closed') y 'juicio' —donde la ronda
+  -- espera que el presentador sentencie— no estaba en la lista. Resultado:
+  -- sala cerrada con la ronda en 'juicio' y el turno apuntando a alguien
+  -- que ya no está.
+  declare
+    v_room2 uuid;
+    v_tok2  text;
+    v_code2 text;
+    v_r3    uuid;
+    v_p3    jsonb;
+    v_i3    uuid;
+    v_t3    text;
+  begin
+    v_p3    := public.host_create_room(v_top, 'completar-versiculo', 15);
+    v_room2 := (v_p3 ->> 'room_id')::uuid;
+    v_tok2  := v_p3 ->> 'host_token';
+    v_code2 := v_p3 ->> 'code';
+
+    v_p3 := public.player_join(v_code2, 'Ines Diecisiete');
+    v_i3 := (v_p3 ->> 'player_id')::uuid;
+    v_t3 := v_p3 ->> 'player_token';
+
+    v_pos := public.host_open_question(v_room2, v_tok2, v_q);
+    v_r3  := (v_pos ->> 'round_id')::uuid;
+    perform public.host_iniciar(v_room2, v_tok2);
+
+    -- El presentador deja de tocar nada justo con la ronda esperando
+    -- sentencia: es el hueco exacto donde el barrido no la veía.
+    perform public.player_pulsar(v_i3, v_t3, v_r3);
+    perform public.host_cerrar_pulsaciones(v_room2, v_tok2);
+
+    perform public.t_assert(
+      (select state from public.rounds where id = v_r3) = 'juicio',
+      'la ronda queda en juicio esperando la sentencia');
+
+    perform set_config('desafio.barrido', 'on', true);
+    update public.rooms
+       set last_activity_at = clock_timestamp() - interval '31 minutes'
+     where id = v_room2;
+    perform set_config('desafio.barrido', 'off', true);
+
+    perform public.barrer_salas_inactivas(30);
+
+    perform public.t_assert(
+      (select status from public.rooms where id = v_room2) = 'closed',
+      'el barrido cierra la sala inactiva');
+
+    perform public.t_assert(
+      (select state from public.rounds where id = v_r3) = 'closed',
+      'y NO deja la ronda en juicio: sin esto quedaba viva en una sala cerrada');
+
+    perform public.t_assert(
+      (select turno_answer_id from public.rounds where id = v_r3) is null,
+      'el turno pendiente se limpia: apuntaba a alguien que ya no está');
+
+    delete from public.rooms where id = v_room2;
+  end;
+
   -- 17.10 El juego viejo sigue intacto
   -- -------------------------------------------------------------------
   perform public.t_assert(
