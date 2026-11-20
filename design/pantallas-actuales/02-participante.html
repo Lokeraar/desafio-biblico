@@ -1,0 +1,592 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jugar como participante — Completar el versículo</title>
+<style>
+  :root{
+    --fondo:#0b1a1d; --fondo-2:#102a2f; --tinta:#fff; --tinta-suave:#a9c6ca; --raya:#d2ffff;
+    --tu-100:#6fe3ee; --tu-300:#2ec4d4; --tu-400:#00a0b0; --tu-500:#0090a0;
+    --tu-600:#008090; --tu-700:#007080; --tu-800:#00525e; --tu-900:#0a2e33;
+    --amarillo:#fcd116; --rojo:#cf2123; --ok:#1fbf75; --error:#e0483c; --espera:#f0a33a;
+    --radio:18px; --radio-sm:12px;
+    --sombra:0 10px 30px rgba(0,0,0,.45);
+    --t-xs:.8rem; --t-sm:.88rem; --t-base:1rem; --t-lg:1.15rem;
+    --t-xl:1.4rem; --t-2xl:1.75rem; --t-3xl:2.4rem;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--fondo); color:var(--tinta);
+    font-family:"Segoe UI",system-ui,-apple-system,sans-serif;
+    font-size:16px; line-height:1.5; -webkit-font-smoothing:antialiased;
+  }
+
+  .placa{max-width:1440px;margin:0 auto;padding:2.5rem 2rem 5rem}
+  .placa > header{border-bottom:1px solid rgba(110,227,238,.22);padding-bottom:1.1rem;margin-bottom:.5rem}
+  .placa h1{margin:0 0 .3rem;font-size:2rem;font-weight:800;letter-spacing:-.01em}
+  .placa header p{margin:0;color:var(--tinta-suave);font-size:1rem;max-width:70ch}
+  .placa header .origen{margin-top:.7rem;font-family:ui-monospace,"Courier New",monospace;font-size:.8rem;color:var(--tu-100)}
+
+  .hallazgo{
+    margin:1.6rem 0 2.2rem;padding:1rem 1.15rem;border-radius:var(--radio-sm);
+    background:rgba(240,163,58,.12);border:1px solid var(--espera);font-size:.95rem;line-height:1.55;
+  }
+  .hallazgo strong{color:var(--espera)}
+  .hallazgo ul{margin:.5rem 0 0;padding-left:1.2rem}
+  .hallazgo li{margin:.25rem 0}
+
+  /* teléfonos: fila que envuelve, cada uno a 390 px como un móvil real */
+  .tiras{display:flex;flex-wrap:wrap;gap:2.4rem 2rem;align-items:flex-start}
+  .celda{display:flex;flex-direction:column;gap:.7rem;width:390px}
+  .rotulo{display:flex;flex-wrap:wrap;align-items:baseline;gap:.45rem}
+  .rotulo h2{margin:0;font-size:1rem;font-weight:800}
+  .rotulo .estado{
+    font-family:ui-monospace,"Courier New",monospace;font-size:.72rem;font-weight:700;
+    padding:.15em .5em;border-radius:999px;background:rgba(111,227,238,.14);color:var(--tu-100);
+  }
+  .rotulo .linea{margin-left:auto;font-family:ui-monospace,"Courier New",monospace;font-size:.7rem;color:var(--tinta-suave)}
+  .nota{margin:0;font-size:.83rem;color:var(--tinta-suave);line-height:1.5}
+  .nota b{color:var(--tinta);font-weight:700}
+  .sin-css{outline:2px dashed rgba(224,72,60,.85);outline-offset:3px;border-radius:2px}
+
+  /* marco de teléfono: 390 x 720, el alto visible de un iPhone de gama media */
+  .marco{
+    width:390px;height:720px;background:var(--fondo);
+    border:1px solid rgba(110,227,238,.2);border-radius:10px;overflow:hidden;
+    box-shadow:0 14px 40px rgba(0,0,0,.5);position:relative;
+  }
+  .marco.suelto{border-radius:var(--radio)}
+
+  /* ========= estilos de styles.css ========= */
+  .pantalla{display:flex;flex-direction:column;height:100%;padding:1rem;gap:.8rem}
+  .jugador-versiculo{gap:clamp(.7rem,2vh,1.2rem);justify-content:space-between}
+  .centro{align-items:center;justify-content:center;text-align:center}
+  .columna{display:flex;flex-direction:column;gap:.75rem}
+
+  button,.boton{
+    font:inherit;font-weight:700;cursor:pointer;border:0;border-radius:var(--radio-sm);
+    padding:.85em 1.4em;color:var(--tu-900);
+    background:linear-gradient(180deg,var(--tu-300),var(--tu-500));
+    box-shadow:0 4px 0 var(--tu-700),var(--sombra);
+  }
+  button:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
+  .boton-secundario{background:transparent;color:var(--tu-100);border:2px solid var(--tu-600);box-shadow:none}
+  .boton-grande{font-size:var(--t-base);padding:1em 1.6em;width:100%}
+
+  .tenue{color:var(--tinta-suave)}
+  .mini{font-size:var(--t-xs)}
+  .sub{font-size:var(--t-sm);color:var(--tinta-suave);margin:0}
+
+  /* barra superior del jugador: nombre y píldora de puntos */
+  .barra-jugador{
+    display:flex;align-items:center;justify-content:space-between;gap:.75rem;
+    font-size:var(--t-sm);color:var(--tinta-suave);flex:0 0 auto;
+  }
+  .barra-jugador .puntos{
+    font-variant-numeric:tabular-nums;font-weight:800;color:var(--tu-100);
+    background:rgba(111,227,238,.12);padding:.15em .7em;border-radius:999px;font-size:var(--t-xs);
+  }
+
+  /* referencia del versículo: gris, mayúsculas */
+  .ref{
+    display:block;font-size:var(--t-xs);font-weight:800;color:var(--tinta-suave);
+    text-transform:uppercase;letter-spacing:.06em;flex:0 0 auto;
+  }
+
+  /* el versículo: una sola columna que envuelve sola */
+  .jugador-versiculo .versiculo{
+    flex:1 1 auto;display:block;margin-block:auto;margin-inline:0;
+    font-size:var(--t-2xl);line-height:1.3;font-weight:800;max-width:30ch;overflow-wrap:anywhere;
+  }
+  .hueco{display:inline-block;min-width:3ch;border-bottom:3px solid var(--tu-400);vertical-align:baseline}
+  .hueco::before{content:"____";color:var(--tu-600);letter-spacing:.08em}
+
+  .pie-jugador{flex:0 0 auto;display:flex;flex-direction:column;gap:.6rem}
+
+  /* tecla negra circular: se pulsa sin mirar */
+  .boton-ok{
+    width:clamp(11rem,42vw,15rem);aspect-ratio:1;border-radius:50%;margin-inline:auto;
+    border:3px solid rgba(255,255,255,.22);padding:.6em;font:inherit;
+    font-size:var(--t-lg);font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#fff;
+    background:linear-gradient(180deg,#242424 0%,#000 62%,#000 100%);
+    box-shadow:inset 0 2px 0 rgba(255,255,255,.18),0 9px 0 #000,0 16px 34px rgba(0,0,0,.65);
+    display:grid;place-items:center;
+  }
+  .boton-ok.bloqueado,.boton-ok:disabled{
+    cursor:default;opacity:.5;
+    background:linear-gradient(180deg,#1a1a1a,#0d0d0d);border-color:rgba(255,255,255,.1);
+  }
+
+  .reloj-ronda{display:flex;align-items:center;gap:.6rem;width:100%}
+  .reloj-ronda .barra-tiempo{flex:1 1 auto}
+  .reloj-ronda .reloj{flex:0 0 auto;font-variant-numeric:tabular-nums;font-weight:800;min-width:3.2ch;text-align:right}
+  .barra-tiempo{height:10px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden}
+  .barra-tiempo > i{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--tu-300),var(--raya))}
+  .barra-tiempo.urgente > i{background:linear-gradient(90deg,var(--espera),var(--rojo))}
+
+  /* avisos: solo .info/.ok/.error/.espera tienen caja */
+  .aviso{padding:.8em 1.1em;border-radius:var(--radio-sm);font-weight:700;font-size:var(--t-sm);margin:0}
+  .aviso.info{background:rgba(0,160,176,.18);border:1px solid var(--tu-500)}
+  .aviso.ok{background:rgba(31,191,117,.18);border:1px solid var(--ok)}
+  .aviso.error{background:rgba(224,72,60,.18);border:1px solid var(--error)}
+  .aviso.espera{background:rgba(240,163,58,.16);border:1px solid var(--espera)}
+  .aviso.neutro,.aviso.turno,.aviso.exito{background:none;border:0;padding:0;font-weight:400;font-size:inherit}
+
+  /* pantalla de acierto propio */
+  .grande-exito{
+    flex:1 1 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:.8rem;text-align:center;
+  }
+  .grande-exito .marca{font-size:var(--t-3xl);line-height:1}
+  .grande-exito .titulo{margin:0;font-size:var(--t-xl);font-weight:800;line-height:1.2}
+  .grande-exito .cita{
+    margin:0;font-size:var(--t-sm);color:var(--tinta-suave);font-style:italic;
+    border-left:3px solid var(--tu-600);padding-left:.8em;text-align:left;
+  }
+
+  .saludo{font-size:var(--t-2xl);line-height:1;margin:0}
+  .titulo-sala{font-size:var(--t-xl);font-weight:800;margin:0}
+
+  /* ---------- ceremonia en el teléfono (render.js:69-170) ---------- */
+  .pantalla-ceremonia{
+    height:100%;padding:.7rem;display:flex;flex-direction:column;
+    background:radial-gradient(120% 90% at 50% 0%,#1b6f4a 0%,#0f5a63 42%,#07222b 72%,#04151b 100%);
+  }
+  .marco-oro{
+    position:relative;flex:1;min-height:0;display:flex;flex-direction:column;gap:.5rem;
+    padding:.8rem;border:2px solid #d9a520;border-radius:10px;
+    background:linear-gradient(180deg,rgba(0,0,0,.2),rgba(0,0,0,.4));
+    box-shadow:0 0 26px rgba(217,165,32,.35);overflow:hidden;
+  }
+  .marco-esquinas{position:absolute;inset:0;pointer-events:none}
+  .marco-esquinas::before,.marco-esquinas::after{
+    content:'';position:absolute;width:20px;height:20px;border:2px solid #f0c040;border-radius:4px;
+  }
+  .marco-esquinas::before{top:-3px;right:-3px;border-left-color:transparent;border-bottom-color:transparent}
+  .marco-esquinas::after{bottom:-3px;left:-3px;border-right-color:transparent;border-top-color:transparent}
+  .titulo-ceremonia{
+    margin:0;text-align:center;font-size:.95rem;font-weight:800;color:#f5c93b;
+    letter-spacing:.08em;text-transform:uppercase;
+  }
+  .felicitacion{
+    margin:0;text-align:center;font-size:1rem;font-weight:800;color:#f5c93b;
+    text-shadow:0 0 20px rgba(245,201,59,.45),0 2px 10px rgba(0,0,0,.6);
+  }
+  .lista-ceremonia{
+    list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.3rem;
+    overflow-y:auto;min-height:0;
+  }
+  .fila-rev{
+    display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:.5rem;
+    padding:.4em .6em;border-radius:10px;
+    background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
+  }
+  /* La fila propia: cian. Es lo que hace que el participante se encuentre
+     sin buscar su nombre entre todos. */
+  .fila-rev.yo{border-color:var(--tu-300);background:rgba(46,196,212,.18)}
+  .fila-rev.del-podio{
+    background:linear-gradient(135deg,rgba(0,160,176,.2),rgba(255,255,255,.06));
+    border-color:rgba(245,201,59,.35);
+  }
+  .rev-puesto{display:flex;align-items:center;gap:.25rem;min-width:2.2em;justify-content:center}
+  .rev-num{font-size:1rem;line-height:1;font-weight:800;color:#f5c93b;font-variant-numeric:tabular-nums}
+  .rev-datos{display:flex;flex-direction:column;min-width:0}
+  .rev-nombre{
+    font-weight:800;font-size:.85rem;color:#fff;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .rev-sub{font-size:.68rem;color:var(--tinta-suave);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rev-puntos{
+    font-weight:800;font-size:1.05rem;color:var(--raya);text-align:right;
+    white-space:nowrap;font-variant-numeric:tabular-nums;
+  }
+  .rev-puntos .rev-pts{font-size:.6em;font-weight:700;color:var(--tinta-suave)}
+  .pista-ceremonia{margin:0;text-align:center;font-size:var(--t-xs);color:rgba(255,255,255,.6)}
+  .ceremonia-footer{display:flex;gap:.5rem;flex-wrap:wrap;flex:0 0 auto}
+  .ceremonia-footer > *{flex:1 1 0;min-width:0;font-size:var(--t-sm);padding:.7em .9em}
+  @media (prefers-reduced-motion:reduce){ *{animation:none!important;transition:none!important} }
+</style>
+</head>
+<body>
+<main class="placa">
+
+  <header>
+    <h1>Jugar como participante — Completar el versículo</h1>
+    <p>Los estados que el código pinta hoy en el teléfono del participante. Una sola pantalla que cambia de textos y de estado del botón, no varias pantallas.</p>
+    <p class="origen">src/lib/versiculo.js:313-397 · estadoBoton 277-296 · avisoParticipante 210-257 · src/app.js:1276</p>
+  </header>
+
+  <div class="hallazgo" style="background:rgba(31,191,117,.12);border-color:var(--ok)">
+    <strong style="color:var(--ok)">Corregido: el participante ya llega a la ceremonia.</strong> Este dibujo se hizo cuando el teléfono se quedaba congelado en el último versículo, porque la guarda del juego devolvía antes de mirar <code>status</code>. Hoy el fin de partida se decide primero.
+    <ul>
+      <li><b>Lo que sigue sin existir:</b> un marcador o una lista de participantes durante la partida. Solo la píldora con los puntos propios. No es un olvido del dibujo: <code>pantallaParticipante</code> no los pide.</li>
+      <li><b>El reloj de la ronda sí se ve</b> en el teléfono, con la misma barra que el presentador.</li>
+      <li>Los avisos <code>.neutro</code>, <code>.turno</code> y <code>.exito</code> ya tienen regla en <code>styles.css</code>; antes salían como texto suelto.</li>
+    </ul>
+  </div>
+
+  <div class="tiras">
+
+    <!-- 1. sala sin ronda -->
+    <section class="celda">
+      <div class="rotulo">
+        <h2>Estás en la sala</h2>
+        <span class="estado">sin ronda</span>
+        <span class="linea">versiculo.js:319-334</span>
+      </div>
+      <div class="marco">
+        <div class="pantalla jugador-versiculo centro">
+          <div class="barra-jugador" style="width:100%">
+            <span>Ana Lucía Paredes</span>
+            <span class="puntos">0 pts</span>
+          </div>
+          <div style="flex:1 1 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.6rem">
+            <p class="saludo" aria-hidden="true">🙏</p>
+            <p class="titulo-sala">Estás en la sala</p>
+            <p class="sub">Esperando que el presentador suelte la primera pregunta.</p>
+          </div>
+        </div>
+      </div>
+      <p class="nota">Sin botón: no hay nada que pulsar todavía. El nombre y los puntos ya están arriba.</p>
+    </section>
+
+    <!-- 2. prepared -->
+    <section class="celda">
+      <div class="rotulo">
+        <h2>Esperando el reloj</h2>
+        <span class="estado">prepared</span>
+        <span class="linea">versiculo.js:290</span>
+      </div>
+      <div class="marco">
+        <div class="pantalla jugador-versiculo">
+          <div class="barra-jugador">
+            <span>Ana Lucía Paredes</span>
+            <span class="puntos">0 pts</span>
+          </div>
+          <span class="ref">Juan 3:16</span>
+          <p class="versiculo">Porque de tal manera <span class="hueco"></span> Dios al <span class="hueco"></span>, que ha dado a su Hijo <span class="hueco"></span></p>
+          <div class="pie-jugador">
+            <div class="aviso neutro sin-css">El presentador está por soltar el reloj.</div>
+            <button class="boton-ok bloqueado" type="button" disabled>Esperando</button>
+          </div>
+        </div>
+      </div>
+      <p class="nota">El aviso gris va sin caja por la clase sin CSS. La tecla ya está dibujada pero apagada al 50 %: el participante ve dónde va a pulsar.</p>
+    </section>
+
+    <!-- 3. open -->
+    <section class="celda">
+      <div class="rotulo">
+        <h2>Pulsaciones abiertas — puede pulsar</h2>
+        <span class="estado">open</span>
+        <span class="linea">versiculo.js:277-296</span>
+      </div>
+      <div class="marco">
+        <div class="pantalla jugador-versiculo">
+          <div class="barra-jugador">
+            <span>Ana Lucía Paredes</span>
+            <span class="puntos">1 pt</span>
+          </div>
+          <span class="ref">Juan 3:16</span>
+          <div class="reloj-ronda">
+            <div class="barra-tiempo" role="progressbar" aria-valuenow="12" aria-valuemin="0" aria-valuemax="30"><i style="width:40%"></i></div>
+            <span class="reloj">12 s</span>
+          </div>
+          <p class="versiculo">Porque de tal manera <span class="hueco"></span> Dios al <span class="hueco"></span>, que ha dado a su Hijo <span class="hueco"></span></p>
+          <div class="pie-jugador">
+            <button class="boton-ok" type="button">Presionar</button>
+          </div>
+        </div>
+      </div>
+      <p class="nota">El único estado con la tecla viva. <b>Sin ningún aviso:</b> cuando las pulsaciones están abiertas el participante no recibe texto de apoyo, solo el reloj. Últimos segundos: la barra cambia a naranja y rojo.</p>
+    </section>
+
+    <!-- 4. pulsaste -->
+    <section class="celda">
+      <div class="rotulo">
+        <h2>Ya pulsó</h2>
+        <span class="estado">open · pulsado</span>
+        <span class="linea">versiculo.js:268, 285-286</span>
+      </div>
+      <div class="marco">
+        <div class="pantalla jugador-versiculo">
+          <div class="barra-jugador">
+            <span>Ana Lucía Paredes</span>
+            <span class="puntos">1 pt</span>
+          </div>
+          <span class="ref">Juan 3:16</span>
+          <div class="reloj-ronda">
+            <div class="barra-tiempo" role="progressbar" aria-valuenow="20" aria-valuemin="0" aria-valuemax="30"><i style="width:66%"></i></div>
+            <span class="reloj">20 s</span>
+          </div>
+          <p class="versiculo">Porque de tal manera <span class="hueco"></span> Dios al <span class="hueco"></span>, que ha dado a su Hijo <span class="hueco"></span></p>
+          <div class="pie-jugador">
+            <div class="aviso neutro sin-css">Fuiste el 2 en pulsar</div>
+            <button class="boton-ok bloqueado" type="button" disabled>Pulsaste</button>
+          </div>
+        </div>
+      </div>
+      <p class="nota">Al pulsar, la tecla se apaga y aparece el número de orden, que es lo que decide a quién le toca. El reloj sigue corriendo para los demás.</p>
+    </section>
+
+    <!-- 5. juicio me toca -->
+    <section class="celda">
+      <div class="rotulo">
+        <h2>Juicio — le toca a él</h2>
+        <span class="estado">juicio · turno</span>
+        <span class="linea">versiculo.js:222-232</span>
+      </div>
+      <div class="marco">
+        <div class="pantalla jugador-versiculo">
+          <div class="barra-jugador">
+            <span>Ana Lucía Paredes</span>
+            <span class="puntos">1 pt</span>
+          </div>
+          <span class="ref">Juan 3:16</span>
+          <p class="versiculo">Porque de tal manera <span class="hueco"></span> Dios al <span class="hueco"></span>, que ha dado a su Hijo <span class="hueco"></span></p>
+          <div class="pie-jugador">
+            <div class="aviso turno sin-css">🎤 Estás contestando</div>
+            <div class="aviso neutro sin-css">Fuiste el 1 en pulsar</div>
+            <button class="boton-ok bloqueado" type="button" disabled>Pulsaste</button>
+          </div>
+        </div>
+      </div>
+      <p class="nota">Dos avisos apilados, <b>ninguno con caja</b>. El versículo sigue tapado mientras contesta: el texto que debe completar es el mismo que ya leía.</p>
+    </section>
+
+    <!-- 6. juicio otro -->
+    <section class="celda">
+      <div class="rotulo">
+        <h2>Juicio — contesta otro</h2>
+        <span class="estado">juicio · espera</span>
+        <span class="linea">versiculo.js:233-240</span>
+      </div>
+      <div class="marco">
+        <div class="pantalla jugador-versiculo">
+          <div class="barra-jugador">
+            <span>Ana Lucía Paredes</span>
+            <span class="puntos">1 pt</span>
+          </div>
+          <span class="ref">Juan 3:16</span>
+          <p class="versiculo">Porque de tal manera <span class="hueco"></span> Dios al <span class="hueco"></span>, que ha dado a su Hijo <span class="hueco"></span></p>
+          <div class="pie-jugador">
+            <div class="aviso espera">Está contestando: Beto Salas</div>
+            <div class="aviso neutro sin-css">Fuiste el 2 en pulsar</div>
+            <button class="boton-ok bloqueado" type="button" disabled>Pulsaste</button>
+          </div>
+        </div>
+      </div>
+      <p class="nota">Aquí sí hay caja naranja porque el estado es <code>espera</code>, uno de los cuatro que existen en el CSS. Si no hubiera pulsado, la tecla diría <b>No pulsaste</b>, apagada.</p>
+    </section>
+
+    <!-- 7. acierto -->
+    <section class="celda">
+      <div class="rotulo">
+        <h2>Acierto propio — pantalla completa</h2>
+        <span class="estado">revealed · correcto</span>
+        <span class="linea">versiculo.js:353-374</span>
+      </div>
+      <div class="marco">
+        <div class="pantalla">
+          <div class="barra-jugador">
+            <span>Ana Lucía Paredes</span>
+            <span class="puntos">4 pts</span>
+          </div>
+          <div class="grande-exito">
+            <span class="marca" aria-hidden="true">✅</span>
+            <p class="titulo">¡Correcto, te la sabías!</p>
+            <p class="sub">Ganaste 3 de 3 palabras.</p>
+            <p class="cita">«Porque de tal manera amó Dios al mundo, que ha dado a su Hijo unigénito» — Juan 3:16</p>
+          </div>
+        </div>
+      </div>
+      <p class="nota">Reemplaza todo el cuerpo del teléfono: desaparecen referencia, versículo, reloj y tecla. Uno de <b>seis</b> titulares al azar: «¡Acertaste, felicidades!», «¡Correcto, te la sabías!», «¡Exacto, muy bien!», «¡La diste!», «¡Perfecto, esa era!», «¡Acertaste, qué memoria!».</p>
+    </section>
+
+    <!-- 8. cerrada sin completar -->
+    <section class="celda">
+      <div class="rotulo">
+        <h2>Ronda cerrada sin completar</h2>
+        <span class="estado">closed</span>
+        <span class="linea">versiculo.js:241-252</span>
+      </div>
+      <div class="marco">
+        <div class="pantalla jugador-versiculo">
+          <div class="barra-jugador">
+            <span>Ana Lucía Paredes</span>
+            <span class="puntos">1 pt</span>
+          </div>
+          <span class="ref">Juan 3:16</span>
+          <p class="versiculo">Porque de tal manera amó Dios al <span class="hueco"></span>, que ha dado a su Hijo <span class="hueco"></span></p>
+          <div class="pie-jugador">
+            <div class="aviso neutro sin-css">Cerraron la pregunta sin completar el versículo.</div>
+            <button class="boton-ok bloqueado" type="button" disabled>Pulsaste</button>
+          </div>
+        </div>
+      </div>
+      <p class="nota">Una palabra ganada en amarillo: «amó» ahora se lee; lo demás sigue tapado. <b>El teléfono no dice quién acertó</b> si el acierto no fue propio.</p>
+    </section>
+
+    <!-- 9. otro acertó -->
+    <section class="celda">
+      <div class="rotulo">
+        <h2>Otro acertó</h2>
+        <span class="estado">revealed</span>
+        <span class="linea">versiculo.js:241-247</span>
+      </div>
+      <div class="marco">
+        <div class="pantalla jugador-versiculo">
+          <div class="barra-jugador">
+            <span>Ana Lucía Paredes</span>
+            <span class="puntos">1 pt</span>
+          </div>
+          <span class="ref">Juan 3:16</span>
+          <p class="versiculo">Porque de tal manera amó Dios al mundo, que ha dado a su Hijo <span class="hueco"></span></p>
+          <div class="pie-jugador">
+            <div class="aviso exito sin-css">✅ Beto Salas acertó, ha ganado esta ronda</div>
+            <button class="boton-ok bloqueado" type="button" disabled>Pulsaste</button>
+          </div>
+        </div>
+      </div>
+      <p class="nota">El aviso verde se emite con <code>.exito</code>, <b>que no existe</b> en el CSS: sale como texto suelto, sin la caja verde de <code>.ok</code>. Es el aviso más importante de la ronda y es el que menos se ve.</p>
+    </section>
+
+    <!-- 10. versiculo completo -->
+    <section class="celda">
+      <div class="rotulo">
+        <h2>Versículo completo</h2>
+        <span class="estado">revealed · completo</span>
+        <span class="linea">versiculo.js:248-249</span>
+      </div>
+      <div class="marco">
+        <div class="pantalla jugador-versiculo">
+          <div class="barra-jugador">
+            <span>Ana Lucía Paredes</span>
+            <span class="puntos">1 pt</span>
+          </div>
+          <span class="ref">Juan 3:16</span>
+          <p class="versiculo">Porque de tal manera amó Dios al mundo, que ha dado a su Hijo unigénito</p>
+          <div class="pie-jugador">
+            <div class="aviso exito sin-css">✅ El versículo quedó completo</div>
+            <button class="boton-ok bloqueado" type="button" disabled>Pulsaste</button>
+          </div>
+        </div>
+      </div>
+      <p class="nota">Sin un solo hueco. Si el acierto fue suyo, no ve esto: ve la pantalla de acierto de la tarjeta 7.</p>
+    </section>
+
+    <!-- 11. annulled -->
+    <section class="celda">
+      <div class="rotulo">
+        <h2>Ronda anulada</h2>
+        <span class="estado">annulled</span>
+        <span class="linea">versiculo.js:233</span>
+      </div>
+      <div class="marco">
+        <div class="pantalla jugador-versiculo">
+          <div class="barra-jugador">
+            <span>Ana Lucía Paredes</span>
+            <span class="puntos">1 pt</span>
+          </div>
+          <span class="ref">Juan 3:16</span>
+          <p class="versiculo">Porque de tal manera <span class="hueco"></span> Dios al <span class="hueco"></span>, que ha dado a su Hijo <span class="hueco"></span></p>
+          <div class="pie-jugador">
+            <div class="aviso neutro sin-css">Esta ronda se anuló: viene otro versículo.</div>
+            <button class="boton-ok bloqueado" type="button" disabled>Pulsaste</button>
+          </div>
+        </div>
+      </div>
+      <p class="nota"><b>Estado fantasma.</b> <code>annulled</code> está permitido en la base y el teléfono sabe qué decir, pero ninguna migración lo escribe: hoy no hay forma de que aparezca.</p>
+    </section>
+
+    <!-- 12. no se pudo enviar -->
+    <section class="celda">
+      <div class="rotulo">
+        <h2>Fallo de red al pulsar</h2>
+        <span class="estado">error de envío</span>
+        <span class="linea">versiculo.js:287-288</span>
+      </div>
+      <div class="marco">
+        <div class="pantalla jugador-versiculo">
+          <div class="barra-jugador">
+            <span>Ana Lucía Paredes</span>
+            <span class="puntos">1 pt</span>
+          </div>
+          <span class="ref">Juan 3:16</span>
+          <div class="reloj-ronda">
+            <div class="barra-tiempo" role="progressbar" aria-valuenow="8" aria-valuemin="0" aria-valuemax="30"><i style="width:27%"></i></div>
+            <span class="reloj" style="color:var(--espera)">8 s</span>
+          </div>
+          <p class="versiculo">Porque de tal manera <span class="hueco"></span> Dios al <span class="hueco"></span>, que ha dado a su Hijo <span class="hueco"></span></p>
+          <div class="pie-jugador">
+            <button class="boton-ok bloqueado" type="button" disabled>No se pudo enviar</button>
+          </div>
+        </div>
+      </div>
+      <p class="nota">El teléfono lo dice pero <b>no ofrece reintentar</b>: la tecla queda apagada y el reloj sigue corriendo. Es el caso que la regla del proyecto llama dejarse bloqueado sin salida.</p>
+    </section>
+
+    <!-- 13. rechazo de la sala cerrada -->
+    <section class="celda">
+      <div class="rotulo">
+        <h2>Sala cerrada por inactividad</h2>
+        <span class="estado">expulsión</span>
+        <span class="linea">app.js:371-389</span>
+      </div>
+      <div class="marco">
+        <div class="pantalla columna centro">
+          <div class="aviso espera" style="width:100%">La sala se cerró sola porque el presentador estuvo 30 minutos sin actividad.</div>
+          <p class="sub">Vuelves al menú. Si la partida sigue, pide el código otra vez.</p>
+          <button class="boton boton-grande" type="button">← Menú</button>
+        </div>
+      </div>
+      <p class="nota">El aviso se queda fijo (0 ms, sin desvanecerse) y el reloj se detiene. El participante no ve ninguna pantalla de sala cerrada propia: lo devuelven al menú con este mensaje.</p>
+    </section>
+
+    <!-- 14. ceremonia: NUEVO, antes no llegaba -->
+    <section class="celda">
+      <div class="rotulo">
+        <h2>Ceremonia — su fila resaltada</h2>
+        <span class="estado">status ceremony</span>
+        <span class="linea">finDePartidaJugador</span>
+      </div>
+      <div class="marco">
+        <div class="pantalla-ceremonia">
+          <div class="marco-oro">
+            <span class="marco-esquinas"></span>
+            <h1 class="titulo-ceremonia">Tabla de clasificación</h1>
+            <p class="felicitacion">🎉 ¡Felicitaciones, Miriam Ortiz!</p>
+            <ul class="lista-ceremonia" aria-live="polite">
+              <li class="fila-rev del-podio">
+                <div class="rev-puesto"><span class="rev-num">🥇</span></div>
+                <div class="rev-datos"><span class="rev-nombre">Miriam Ortiz</span><span class="rev-sub">24.3 s · 7 aciertos</span></div>
+                <div class="rev-puntos">7<span class="rev-pts"> pts</span></div>
+              </li>
+              <li class="fila-rev del-podio yo">
+                <div class="rev-puesto"><span class="rev-num">🥈</span></div>
+                <div class="rev-datos"><span class="rev-nombre">Ana Lucía Paredes</span><span class="rev-sub">26.1 s · 5 aciertos</span></div>
+                <div class="rev-puntos">5<span class="rev-pts"> pts</span></div>
+              </li>
+              <li class="fila-rev del-podio">
+                <div class="rev-puesto"><span class="rev-num">🥉</span></div>
+                <div class="rev-datos"><span class="rev-nombre">Beto Salas</span><span class="rev-sub">29.4 s · 3 aciertos</span></div>
+                <div class="rev-puntos">3<span class="rev-pts"> pts</span></div>
+              </li>
+            </ul>
+            <p class="pista-ceremonia">Toca para ver el resto de la tabla</p>
+            <div class="ceremonia-footer">
+              <button class="boton" type="button">🙋 Jugar de nuevo</button>
+              <button class="boton boton-secundario" type="button">← Menú</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="nota"><b>Segunda fila en cian:</b> es la propia. El resaltado sale de <code>miId</code>, que <code>ceremoniaHTML</code> ya aceptaba desde el principio; lo que faltaba era que el teléfono llegara a esta pantalla. En un teléfono, buscar tu nombre entre veinte es trabajo: así se encuentra solo.</p>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,27 @@
+{
+  "title": "Pantallas actuales — Completar el versículo",
+  "brief": "Todas las pantallas que el código pinta hoy para el juego Completar el versículo, en las tres vistas: soy presentador, jugar como participante y televisor. Dibujado leyendo el código, no el documento de diseño. Excluye el juego de selección simple.",
+  "artboards": [
+    {
+      "file": "01-presentador.html",
+      "title": "Presentador — trece estados del panel",
+      "tradeoff": "Trece tarjetas en una sola placa con el QR real, los avisos y la tabla final: se lee el panel completo de un vistazo. El precio es que ningún estado se ve a tamaño real de pantalla, así que no sirve para medir si el panel entra sin scroll en un teléfono.",
+      "width": 1440,
+      "height": 3400
+    },
+    {
+      "file": "02-participante.html",
+      "title": "Participante — catorce momentos del teléfono",
+      "tradeoff": "Cada teléfono a 390 × 720, el alto real de un móvil de gama media: la tecla negra se juzga a su tamaño verdadero. El precio es que catorce marcos ocupan mucho ancho y hay que recorrer la placa en dos columnas.",
+      "width": 1440,
+      "height": 3400
+    },
+    {
+      "file": "03-televisor.html",
+      "title": "Televisor — nueve estados, cinco de ellos jugando",
+      "tradeoff": "Cada marco se construye a 1920 × 1080 y se muestra al 50 %, así la proporción de letras es la del televisor de verdad. El precio es que el 50 % iguala a un monitor de 960 px: en un teléfono la placa se recorre con desplazamiento horizontal.",
+      "width": 1500,
+      "height": 3000
+    }
+  ]
+}

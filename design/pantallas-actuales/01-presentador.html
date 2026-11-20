@@ -1,0 +1,750 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Presentador — soy presentador, Completar el versículo</title>
+<style>
+  :root{
+    --fondo:#0b1a1d; --fondo-2:#102a2f; --tinta:#fff; --tinta-suave:#a9c6ca; --raya:#d2ffff;
+    --tu-100:#6fe3ee; --tu-300:#2ec4d4; --tu-400:#00a0b0; --tu-500:#0090a0;
+    --tu-600:#008090; --tu-700:#007080; --tu-800:#00525e; --tu-900:#0a2e33;
+    --amarillo:#fcd116; --rojo:#cf2123; --ok:#1fbf75; --error:#e0483c; --espera:#f0a33a;
+    --radio:18px; --radio-sm:12px;
+    --sombra:0 10px 30px rgba(0,0,0,.45);
+    --t-xs:.815rem; --t-sm:.9rem; --t-base:1rem; --t-lg:1.2rem;
+    --t-xl:1.5rem; --t-2xl:2rem; --t-3xl:2.8rem;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--fondo); color:var(--tinta);
+    font-family:"Segoe UI",system-ui,-apple-system,sans-serif;
+    font-size:16px; line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ---------- la placa: índice del artboard ---------- */
+  .placa{max-width:1440px;margin:0 auto;padding:2.5rem 2rem 5rem}
+  .placa > header{border-bottom:1px solid rgba(110,227,238,.22);padding-bottom:1.1rem;margin-bottom:.5rem}
+  .placa h1{margin:0 0 .3rem;font-size:2rem;font-weight:800;letter-spacing:-.01em}
+  .placa header p{margin:0;color:var(--tinta-suave);font-size:1rem;max-width:70ch}
+  .placa header .origen{margin-top:.7rem;font-family:ui-monospace,"Courier New",monospace;font-size:.815rem;color:var(--tu-100)}
+
+  .hallazgo{
+    margin:1.6rem 0 2.2rem;padding:1rem 1.15rem;border-radius:var(--radio-sm);
+    background:rgba(240,163,58,.12);border:1px solid var(--espera);
+    font-size:.95rem;line-height:1.55;
+  }
+  .hallazgo strong{color:var(--espera)}
+  .hallazgo ul{margin:.5rem 0 0;padding-left:1.2rem}
+  .hallazgo li{margin:.25rem 0}
+
+  .rejilla{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:2.4rem 2rem;align-items:start}
+  .celda{display:flex;flex-direction:column;gap:.7rem}
+  .rotulo{display:flex;flex-wrap:wrap;align-items:baseline;gap:.5rem}
+  .rotulo h2{margin:0;font-size:1.05rem;font-weight:800}
+  .rotulo .estado{
+    font-family:ui-monospace,"Courier New",monospace;font-size:.75rem;font-weight:700;
+    padding:.15em .55em;border-radius:999px;background:rgba(111,227,238,.14);color:var(--tu-100);
+  }
+  .rotulo .linea{margin-left:auto;font-family:ui-monospace,"Courier New",monospace;font-size:.75rem;color:var(--tinta-suave)}
+  .nota{margin:0;font-size:.85rem;color:var(--tinta-suave);line-height:1.5}
+  .nota b{color:var(--tinta);font-weight:700}
+  .nota .sin-css{color:var(--error);font-weight:700}
+
+  /* ---------- marco del teléfono ---------- */
+  .marco{
+    background:var(--fondo);border:1px solid rgba(110,227,238,.18);
+    border-radius:26px;overflow:hidden;
+    box-shadow:0 14px 40px rgba(0,0,0,.5);
+  }
+  .marco.suelto{border-radius:var(--radio)}
+
+  /* ============ estilos copiados de styles.css ============ */
+  .pantalla{display:flex;flex-direction:column;min-height:0;padding:1rem;gap:.8rem}
+  .panel-host{display:flex;flex-direction:column;gap:.8rem}
+  .fila-entre{display:flex;gap:1rem;align-items:center;justify-content:space-between}
+  .columna{display:flex;flex-direction:column;gap:.75rem}
+  .envolver{flex-wrap:wrap}
+
+  button,.boton{
+    font:inherit;font-weight:700;cursor:pointer;border:0;border-radius:var(--radio-sm);
+    padding:.85em 1.4em;color:var(--tu-900);
+    background:linear-gradient(180deg,var(--tu-300),var(--tu-500));
+    box-shadow:0 4px 0 var(--tu-700),var(--sombra);
+  }
+  button:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
+  .boton-secundario{background:transparent;color:var(--tu-100);border:2px solid var(--tu-600);box-shadow:none}
+  .boton-peligro{background:linear-gradient(180deg,#e8635a,var(--rojo));color:#fff;box-shadow:0 4px 0 #7a1416,var(--sombra)}
+  .boton-grande{font-size:var(--t-base);padding:1em 1.6em;width:100%}
+
+  .tenue{color:var(--tinta-suave)}
+  .chico{font-size:var(--t-sm)}
+  .mini{font-size:var(--t-xs)}
+  .sub{font-size:var(--t-sm);color:var(--tinta-suave);margin:0}
+
+  .punto-vivo{width:.6em;height:.6em;border-radius:50%;background:var(--ok);display:inline-block;box-shadow:0 0 10px var(--ok)}
+
+  .sala-cabecera{
+    display:grid;grid-template-columns:clamp(96px,30%,340px) minmax(0,1fr);
+    align-items:center;gap:1rem;padding:.9rem;border-radius:var(--radio);
+    background:rgba(255,255,255,.05);border:1px solid rgba(110,227,238,.18);
+    max-width:460px;margin-inline:auto;width:100%;
+  }
+  .qr-caja{width:100%;aspect-ratio:1;margin:0;padding:.35rem;display:grid;place-items:center;background:#fff;border-radius:8px}
+  .qr-caja svg{width:100%;height:100%;display:block}
+  .sala-datos{display:flex;flex-direction:column;justify-content:space-evenly;gap:.15rem;min-width:0;text-align:left}
+  .codigo-sala{
+    font-family:"Courier New",monospace;font-size:var(--t-3xl);font-weight:800;
+    letter-spacing:.18em;color:var(--raya);text-shadow:0 0 24px rgba(210,255,255,.35);margin:.2em 0;
+  }
+
+  .aviso{padding:.8em 1.1em;border-radius:var(--radio-sm);font-weight:700;font-size:var(--t-sm);margin:0}
+  .aviso.info{background:rgba(0,160,176,.18);border:1px solid var(--tu-500)}
+  .aviso.ok{background:rgba(31,191,117,.18);border:1px solid var(--ok)}
+  .aviso.error{background:rgba(224,72,60,.18);border:1px solid var(--error)}
+  .aviso.espera{background:rgba(240,163,58,.16);border:1px solid var(--espera)}
+
+  /* Las tres que antes no tenían regla: ahora sí, con los colores que se
+     agregaron a styles.css. */
+  .aviso.neutro{
+    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);color:var(--tinta-suave);
+  }
+  .aviso.turno{
+    background:rgba(111,227,238,.2);border:1px solid var(--tu-100);color:#eafdff;
+    font-size:var(--t-base);box-shadow:0 0 22px rgba(111,227,238,.18);
+  }
+  .aviso.exito{background:rgba(31,191,117,.18);border:1px solid var(--ok)}
+  /* Marca discreta de «esta clase estuvo huérfana»: no cambia el dibujo. */
+  .sin-css{outline:1px dotted rgba(31,191,117,.55);outline-offset:3px}
+
+  .enunciado{font-size:var(--t-xl);font-weight:800;text-align:center;text-wrap:balance;margin:0 0 .2rem;line-height:1.35}
+  .hueco-host{color:var(--amarillo);border-bottom:2px solid var(--amarillo);padding-bottom:1px;font-weight:800}
+  .hueco{display:inline-block;min-width:3ch;border-bottom:3px solid var(--tu-400);vertical-align:baseline}
+  .hueco::before{content:"____";color:var(--tu-600);letter-spacing:.08em}
+
+  .reloj-ronda{display:flex;align-items:center;gap:.6rem;width:100%}
+  .reloj-ronda .barra-tiempo{flex:1 1 auto}
+  .reloj-ronda .reloj{flex:0 0 auto;font-variant-numeric:tabular-nums;font-weight:800;min-width:3.2ch;text-align:right}
+  .barra-tiempo{height:10px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden}
+  .barra-tiempo > i{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--tu-300),var(--raya))}
+  .barra-tiempo.urgente > i{background:linear-gradient(90deg,var(--espera),var(--rojo))}
+  .reloj{font-size:var(--t-2xl);font-weight:800;font-variant-numeric:tabular-nums;color:var(--raya)}
+
+  .lista-jugadores{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.3rem}
+  .lista-jugadores li{
+    display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:.7rem;
+    padding:.5em .8em;border-radius:10px;background:rgba(255,255,255,.04);
+  }
+  .lista-jugadores .nombre-j{font-weight:700;font-size:var(--t-sm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .lista-jugadores .pts{font-size:var(--t-xs);color:var(--tu-100);font-weight:700;font-variant-numeric:tabular-nums}
+
+  /* listaTurnosHTML: las clases que ahora tienen regla. Sin animación:
+     la fila dejó de llamarse .pulso y el parpadeo se fue. */
+  .lista{display:flex;flex-direction:column;gap:.3rem;width:100%}
+  .fila-turno{
+    display:grid;grid-template-columns:2.2ch minmax(0,1fr) auto;align-items:center;gap:.7rem;
+    padding:.5em .8em;border-radius:10px;background:rgba(255,255,255,.04);
+  }
+  .fila-turno.turno{
+    background:rgba(111,227,238,.14);box-shadow:inset 0 0 0 1px rgba(111,227,238,.45);
+  }
+  .fila-turno.hecho .quien{color:var(--tinta-suave)}
+  .fila-turno .num{
+    font-variant-numeric:tabular-nums;font-size:var(--t-xs);font-weight:700;
+    color:var(--tinta-suave);text-align:right;
+  }
+  .fila-turno .quien{
+    font-weight:700;font-size:var(--t-sm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .fila-turno .marca{font-size:var(--t-sm);font-weight:800;line-height:1;white-space:nowrap}
+  .fila-turno .marca.ok{color:var(--ok)}
+  .fila-turno .marca.mal{color:var(--error)}
+  .fila-turno .marca.par{
+    color:var(--espera);font-size:var(--t-xs);text-transform:uppercase;letter-spacing:.04em;
+  }
+  .vacio{margin:0;font-size:var(--t-xs);color:var(--tinta-suave)}
+
+  .modal-fondo{background:rgba(4,12,14,.72);padding:1.2rem;display:flex;border-radius:var(--radio)}
+  .modal{
+    width:100%;max-width:420px;margin:auto;background:linear-gradient(160deg,var(--fondo-2),var(--tu-900));
+    border:1px solid var(--tu-600);border-radius:var(--radio);padding:1.4rem;
+    box-shadow:var(--sombra);display:flex;flex-direction:column;gap:1rem;
+  }
+  .modal h2{margin:0;font-size:var(--t-lg);font-weight:800}
+  .casilla{
+    display:flex;align-items:center;gap:.75rem;padding:.8em 1em;border-radius:var(--radio-sm);
+    background:rgba(255,255,255,.05);border:2px solid transparent;font-size:var(--t-base);
+  }
+  .casilla.marcada{background:rgba(31,191,117,.14);border-color:rgba(31,191,117,.55)}
+  .tick{
+    flex:0 0 auto;width:1.6em;height:1.6em;border-radius:6px;display:grid;place-items:center;
+    font-size:.85em;font-weight:800;border:2px solid rgba(255,255,255,.32);color:transparent;
+  }
+  .casilla.marcada .tick{background:var(--ok);border-color:var(--ok);color:#04231a}
+  .palabra{flex:1 1 auto;font-weight:800;color:var(--amarillo)}
+  .quien-dijo{font-size:var(--t-xs);color:var(--tinta-suave);font-weight:600}
+
+  /* --- ceremonia: marco dorado y filas reales de render.js:69-86 ---
+  .pantalla-ceremonia{
+    background:radial-gradient(120% 90% at 50% 0%,#1b6f4a 0%,#0f5a63 42%,#07222b 72%,#04151b 100%);
+    padding:1rem;border-radius:var(--radio);
+  }
+  .marco-oro{
+    position:relative;padding:1rem;border:3px solid #d9a520;border-radius:10px;
+    background:linear-gradient(180deg,rgba(0,0,0,.2),rgba(0,0,0,.4));
+    box-shadow:0 0 0 2px rgba(0,0,0,.5) inset,0 0 26px rgba(217,165,32,.35);
+    display:flex;flex-direction:column;gap:.6rem;
+  }
+  .marco-esquinas{position:absolute;inset:0;pointer-events:none}
+  .marco-esquinas::before,.marco-esquinas::after{
+    content:'';position:absolute;width:26px;height:26px;border:3px solid #f0c040;border-radius:4px;
+  }
+  .marco-esquinas::before{top:-4px;right:-4px;border-left-color:transparent;border-bottom-color:transparent}
+  .marco-esquinas::after{bottom:-4px;left:-4px;border-right-color:transparent;border-top-color:transparent}
+
+  .titulo-ceremonia{margin:0;text-align:center;font-size:var(--t-lg);font-weight:800;color:#f5c93b;letter-spacing:.08em;text-transform:uppercase}
+  .felicitacion{
+    margin:0;text-align:center;font-size:var(--t-lg);font-weight:800;color:#f5c93b;
+    text-shadow:0 0 20px rgba(245,201,59,.45),0 2px 10px rgba(0,0,0,.6);
+  }
+  .lista-ceremonia{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.5rem;width:100%}
+
+  /* Tres columnas con un solo eje: puesto, datos y puntaje. */
+  .fila-rev{
+    display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:.8rem;
+    padding:.55em .9em;border-radius:10px;
+    background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
+  }
+  .fila-rev.yo{border-color:var(--tu-300);background:rgba(46,196,212,.18)}
+  .fila-rev.del-podio{
+    background:linear-gradient(135deg,rgba(0,160,176,.2),rgba(255,255,255,.06));
+    border-color:rgba(245,201,59,.35);
+  }
+  /* El primero se revela al final y se resalta más. Ojo: el selector real
+     del proyecto es :nth-child(3), no :nth-child(1) — ver la nota. */
+  .fila-rev.ganador{
+    background:linear-gradient(135deg,rgba(245,201,59,.26),rgba(0,160,176,.18));
+    border-color:var(--amarillo);box-shadow:0 0 34px rgba(245,201,59,.22);
+  }
+  .rev-puesto{display:flex;align-items:center;gap:.4rem;min-width:2.4em;justify-content:center}
+  .rev-figura{display:flex}
+  .rev-figura span{font-size:1.8rem;line-height:1}
+  .rev-num{font-size:1.3rem;line-height:1;font-weight:800;color:#f5c93b;font-variant-numeric:tabular-nums}
+  .rev-datos{display:flex;flex-direction:column;gap:.1rem;min-width:0}
+  .rev-nombre{font-weight:800;font-size:1rem;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rev-sub{font-size:.78rem;color:var(--tinta-suave);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rev-puntos{font-weight:800;font-size:1.3rem;color:var(--raya);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .rev-puntos .rev-pts{font-size:.6em;font-weight:700;color:var(--tinta-suave)}
+  .pista-ceremonia{margin:0;text-align:center;font-size:var(--t-xs);color:rgba(255,255,255,.6)}
+  .ceremonia-footer{display:flex;gap:.7rem;flex-wrap:wrap}
+  .ceremonia-footer > *{flex:1 1 0;min-width:0}
+  h3{margin:.4rem 0 0;font-size:var(--t-base);font-weight:800}
+
+  .botonera{display:flex;gap:.7rem;flex-wrap:wrap}
+  .botonera > *{flex:1 1 0;min-width:0}
+
+  @media (prefers-reduced-motion:reduce){ *{animation:none!important;transition:none!important} }
+</style>
+</head>
+<body>
+<main class="placa">
+
+  <header>
+    <h1>Soy presentador — Completar el versículo</h1>
+    <p>Todos los estados que el código pinta hoy en el panel del presentador. Dibujado desde <code>panelVersiculo</code> y sus piezas, no desde el documento de diseño.</p>
+    <p class="origen">src/app.js:670-828 · src/lib/versiculo.js:138-168, 484-556 · src/app.js:1162-1219</p>
+  </header>
+
+  <div class="hallazgo" style="background:rgba(31,191,117,.12);border-color:var(--ok)">
+    <strong style="color:var(--ok)">Estado de esta placa: los siete avisos huérfanos ya están cerrados.</strong> Cuando se dibujó esta placa el código emitía siete clases sin regla en <code>styles.css</code>. Hoy las reglas existen y las pruebas lo comprueban barriendo las 58 clases del módulo.
+    <ul>
+      <li><code>.aviso.neutro</code>, <code>.aviso.turno</code> y <code>.aviso.exito</code> tienen caja propia: gris para lo neutro, cian para el turno, verde para el acierto. El aviso de turno pesa más que los otros porque es lo que hay que encontrar de un vistazo.</li>
+      <li><code>.lista</code>, <code>.vacio</code> y <code>.marca.ok</code> / <code>.mal</code> / <code>.par</code> ya tienen tipografía y color.</li>
+      <li>La fila de turnos se llama <code>.fila-turno</code>. Antes se llamaba <code>.pulso</code>, igual que la utilidad de animación de <code>styles.css:477</code>, y cada fila <b>parpadeaba en bucle</b> mientras el juicio estaba abierto.</li>
+    </ul>
+    <p style="margin:.6rem 0 0">Los marcos con línea roja punteada de las tarjetas de abajo son de la versión anterior del dibujo y ya no aplican: se dejan para que se vea qué cambió.</p>
+  </div>
+
+  <div class="rejilla">
+
+    <!-- ================= 1. sin ronda ================= -->
+    <section class="celda">
+      <div class="rotulo">
+        <h2>Sin ronda — lista para empezar</h2>
+        <span class="estado">!r</span>
+        <span class="linea">app.js:732-745</span>
+      </div>
+      <div class="marco">
+        <div class="pantalla panel-host">
+          <div class="fila-entre">
+            <button class="boton boton-secundario" type="button">← Menú</button>
+            <span class="mini tenue"><span class="punto-vivo"></span> En línea</span>
+          </div>
+
+          <div class="sala-cabecera">
+            <figure class="qr-caja" aria-label="Código QR para entrar a la sala">
+              <svg viewBox="0 0 29 29" role="img" aria-label="QR de la sala">
+                <rect width="29" height="29" fill="#fff"/>
+                <g fill="#0b1a1d">
+                  <rect x="0" y="0" width="7" height="7"/><rect x="2" y="2" width="3" height="3" fill="#fff"/>
+                  <rect x="22" y="0" width="7" height="7"/><rect x="24" y="2" width="3" height="3" fill="#fff"/>
+                  <rect x="0" y="22" width="7" height="7"/><rect x="2" y="24" width="3" height="3" fill="#fff"/>
+                  <rect x="10" y="0" width="2" height="2"/><rect x="14" y="1" width="2" height="2"/><rect x="18" y="0" width="2" height="2"/>
+                  <rect x="11" y="4" width="2" height="2"/><rect x="16" y="4" width="3" height="2"/>
+                  <rect x="0" y="10" width="2" height="2"/><rect x="4" y="11" width="2" height="2"/><rect x="8" y="9" width="3" height="3"/>
+                  <rect x="13" y="9" width="2" height="2"/><rect x="17" y="10" width="2" height="3"/><rect x="21" y="9" width="3" height="2"/>
+                  <rect x="26" y="11" width="3" height="2"/>
+                  <rect x="1" y="14" width="2" height="3"/><rect x="5" y="15" width="3" height="2"/><rect x="10" y="14" width="2" height="2"/>
+                  <rect x="14" y="15" width="3" height="3"/><rect x="19" y="14" width="2" height="2"/><rect x="23" y="15" width="2" height="3"/>
+                  <rect x="27" y="14" width="2" height="2"/>
+                  <rect x="0" y="19" width="3" height="2"/><rect x="4" y="18" width="2" height="2"/><rect x="9" y="19" width="2" height="3"/>
+                  <rect x="13" y="19" width="2" height="2"/><rect x="17" y="18" width="3" height="2"/><rect x="22" y="19" width="2" height="2"/>
+                  <rect x="25" y="18" width="3" height="3"/>
+                  <rect x="10" y="24" width="2" height="2"/><rect x="14" y="23" width="3" height="2"/><rect x="19" y="24" width="2" height="3"/>
+                  <rect x="23" y="24" width="2" height="2"/><rect x="26" y="23" width="3" height="2"/>
+                  <rect x="11" y="27" width="3" height="2"/><rect x="16" y="27" width="2" height="2"/><rect x="20" y="27" width="2" height="2"/>
+                </g>
+              </svg>
+            </figure>
+            <div class="sala-datos">
+              <span class="mini tenue">Código de la sala</span>
+              <span class="codigo-sala">K7M2QX</span>
+              <span class="chico tenue">6 participantes</span>
+              <span class="mini tenue">Escanea el QR o escribe el código</span>
+            </div>
+          </div>
+
+          <div class="aviso info">Lista para empezar: 12 versículos preparados.</div>
+
+          <button class="boton boton-grande" type="button">Empezar el primer versículo</button>
+
+          <h3>Participantes</h3>
+          <ul class="lista-jugadores">
+            <li><span class="nombre-j">Ana Lucía Paredes</span><span class="pts">0 pts</span><span></span></li>
+            <li><span class="nombre-j">Beto Salas</span><span class="pts">0 pts</span><span></span></li>
+            <li><span class="nombre-j">David Cáceres</span><span class="pts">0 pts</span><span></span></li>
+            <li><span class="nombre-j">Jonás Ruiz</span><span class="pts">0 pts</span><span></span></li>
+            <li><span class="nombre-j">Miriam Ortiz</span><span class="pts">0 pts</span><span></span></li>
+            <li><span class="nombre-j">Ruth Medina</span><span class="pts">0 pts</span><span></span></li>
+          </ul>
+        </div>
+      </div>
+      <p class="nota">Todavía sin botón <b>Terminar juego</b>: aparece recién cuando hay una ronda. <code>listaTurnosHTML</code> no se dibuja en este estado.</p>
+    </section>
+
+    <!-- ================= 2. prepared ================= -->
+    <section class="celda">
+      <div class="rotulo">
+        <h2>Versículo preparado, reloj sin soltar</h2>
+        <span class="estado">prepared</span>
+        <span class="linea">app.js:753-759</span>
+      </div>
+      <div class="marco">
+        <div class="pantalla panel-host">
+          <div class="fila-entre">
+            <button class="boton boton-secundario" type="button">← Menú</button>
+            <span class="mini tenue"><span class="punto-vivo"></span> En línea</span>
+          </div>
+
+          <div class="fila-entre">
+            <span class="mini tenue">JUAN 3:16</span>
+            <span class="mini tenue">2 de 4 palabras a la vista &nbsp;<span aria-hidden="true">?</span></span>
+          </div>
+
+          <p class="enunciado">Porque de tal manera <span class="hueco-host">amó</span> Dios al <span class="hueco-host">mundo</span>, que ha dado a su Hijo <span class="hueco-host">unigénito</span></p>
+
+          <p class="vacio">Todavía nadie pulsó.</p>
+
+          <button class="boton" type="button">▶ Soltar temporizador (30 s)</button>
+          <button class="boton boton-secundario" type="button">🔄 Cambiar versículo</button>
+
+          <h3>Participantes</h3>
+          <ul class="lista-jugadores">
+            <li><span class="nombre-j">Ana Lucía Paredes</span><span class="pts">0 pts</span><span></span></li>
+            <li><span class="nombre-j">Beto Salas</span><span class="pts">0 pts</span><span></span></li>
+            <li><span class="nombre-j">Miriam Ortiz</span><span class="pts">0 pts</span><span></span></li>
+          </ul>
+          <button class="boton boton-peligro" type="button">Terminar juego</button>
+        </div>
+      </div>
+      <p class="nota">Los huecos tapados muestran la <b>palabra real en amarillo y subrayada</b>: el presentador la ve, el participante no. El QR se pliega y aparece la referencia arriba a la izquierda.</p>
+    </section>
+
+    <!-- ================= 3. open ================= -->
+    <section class="celda">
+      <div class="rotulo">
+        <h2>Pulsaciones abiertas</h2>
+        <span class="estado">open</span>
+        <span class="linea">app.js:760-766</span>
+      </div>
+      <div class="marco">
+        <div class="pantalla panel-host">
+          <div class="fila-entre">
+            <button class="boton boton-secundario" type="button">← Menú</button>
+            <span class="mini tenue"><span class="punto-vivo"></span> En línea</span>
+          </div>
+
+          <div class="fila-entre">
+            <span class="mini tenue">JUAN 3:16</span>
+            <span class="mini tenue">2 de 4 palabras a la vista &nbsp;<span aria-hidden="true">?</span></span>
+          </div>
+
+          <div class="reloj-ronda">
+            <div class="barra-tiempo" role="progressbar" aria-valuenow="18" aria-valuemin="0" aria-valuemax="30"><i style="width:60%"></i></div>
+            <span class="reloj">18 s</span>
+          </div>
+
+          <p class="enunciado">Porque de tal manera <span class="hueco-host">amó</span> Dios al <span class="hueco-host">mundo</span>, que ha dado a su Hijo <span class="hueco-host">unigénito</span></p>
+
+          <p class="vacio">Todavía nadie pulsó.</p>
+
+          <button class="boton boton-secundario" type="button">⏸ Pausar</button>
+          <button class="boton" type="button">Cerrar pulsaciones</button>
+          <button class="boton boton-secundario" type="button">🔄 Cambiar versículo</button>
+
+          <h3>Participantes</h3>
+          <ul class="lista-jugadores">
+            <li><span class="nombre-j">Ana Lucía Paredes</span><span class="pts">0 pts</span><span></span></li>
+            <li><span class="nombre-j">Beto Salas</span><span class="pts">0 pts</span><span></span></li>
+          </ul>
+          <button class="boton boton-peligro" type="button">Terminar juego</button>
+        </div>
+      </div>
+      <p class="nota">Con <b>pausa activa</b> el reloj entero desaparece —barra incluida— y el botón pasa a <b>▶ Reanudar</b>. No hay ningún aviso que diga «en pausa»: el panel queda igual que antes de soltar el reloj. Últimos segundos: la barra cambia a naranja y rojo (<code>.urgente</code>).</p>
+    </section>
+
+    <!-- ================= 4. juicio ================= -->
+    <section class="celda">
+      <div class="rotulo">
+        <h2>Juicio — le toca a Beto</h2>
+        <span class="estado">juicio</span>
+        <span class="linea">app.js:767-781</span>
+      </div>
+      <div class="marco">
+        <div class="pantalla panel-host">
+          <div class="fila-entre">
+            <button class="boton boton-secundario" type="button">← Menú</button>
+            <span class="mini tenue"><span class="punto-vivo"></span> En línea</span>
+          </div>
+
+          <div class="fila-entre">
+            <span class="mini tenue">JUAN 3:16</span>
+            <span class="mini tenue">2 de 4 palabras a la vista &nbsp;<span aria-hidden="true">?</span></span>
+          </div>
+
+          <div class="aviso turno sin-css">🎤 Le toca a Beto Salas · fue el 1 en pulsar</div>
+
+          <p class="enunciado">Porque de tal manera <span class="hueco-host">amó</span> Dios al <span class="hueco-host">mundo</span>, que ha dado a su Hijo <span class="hueco-host">unigénito</span></p>
+
+          <div class="lista">
+            <div class="fila-turno turno"><span class="num">1</span><span class="quien">Beto Salas</span><span class="marca"></span></div>
+            <div class="fila-turno"><span class="num">2</span><span class="quien">Miriam Ortiz</span><span class="marca"></span></div>
+            <div class="fila-turno"><span class="num">3</span><span class="quien">Ana Lucía Paredes</span><span class="marca"></span></div>
+          </div>
+
+          <div class="botonera">
+            <button class="boton boton-peligro" type="button">❌ Incorrecto</button>
+            <button class="boton" type="button">✅ Correcto</button>
+          </div>
+          <div class="botonera">
+            <button class="boton boton-secundario" type="button">↶ Deshacer</button>
+            <button class="boton boton-secundario" type="button">Cerrar pregunta</button>
+          </div>
+
+          <h3>Participantes</h3>
+          <ul class="lista-jugadores">
+            <li><span class="nombre-j">Ana Lucía Paredes</span><span class="pts">0 pts</span><span></span></li>
+            <li><span class="nombre-j">Beto Salas</span><span class="pts">0 pts</span><span></span></li>
+          </ul>
+          <button class="boton boton-peligro" type="button">Terminar juego</button>
+        </div>
+      </div>
+      <p class="nota">El aviso de turno ya tiene su caja cian y las filas ya no parpadean. El borde punteado verde claro marca las piezas que estuvieron sin regla y hoy la tienen: sirve para reconocerlas, no para señalar un defecto.</p>
+    </section>
+
+    <!-- ================= 5. juicio con marcas ================= -->
+    <section class="celda">
+      <div class="rotulo">
+        <h2>Juicio — dos ya sentenciados</h2>
+        <span class="estado">juicio</span>
+        <span class="linea">versiculo.js:484-517</span>
+      </div>
+      <div class="marco">
+        <div class="pantalla panel-host">
+          <div class="fila-entre">
+            <button class="boton boton-secundario" type="button">← Menú</button>
+            <span class="mini tenue"><span class="punto-vivo"></span> En línea</span>
+          </div>
+
+          <div class="fila-entre">
+            <span class="mini tenue">JUAN 3:16</span>
+            <span class="mini tenue">3 de 4 palabras a la vista &nbsp;<span aria-hidden="true">?</span></span>
+          </div>
+
+          <div class="aviso turno sin-css">🎤 Le toca a Miriam Ortiz · fue el 2 en pulsar</div>
+
+          <p class="enunciado">Porque de tal manera <span class="hueco-host">amó</span> Dios al mundo, que ha dado a su Hijo <span class="hueco-host">unigénito</span></p>
+
+          <div class="lista">
+            <div class="fila-turno hecho"><span class="num">1</span><span class="quien">Beto Salas</span><span class="marca mal sin-css">❌</span></div>
+            <div class="fila-turno"><span class="num">2</span><span class="quien">Miriam Ortiz</span><span class="marca"></span></div>
+            <div class="fila-turno hecho"><span class="num">3</span><span class="quien">Ana Lucía Paredes</span><span class="marca ok sin-css">✅</span></div>
+          </div>
+
+          <div class="botonera">
+            <button class="boton boton-peligro" type="button">❌ Incorrecto</button>
+            <button class="boton" type="button">✅ Correcto</button>
+          </div>
+          <div class="botonera">
+            <button class="boton boton-secundario" type="button">↶ Deshacer</button>
+            <button class="boton boton-secundario" type="button">Cerrar pregunta</button>
+          </div>
+
+          <h3>Participantes</h3>
+          <ul class="lista-jugadores">
+            <li><span class="nombre-j">Ana Lucía Paredes</span><span class="pts">1 pt</span><span></span></li>
+            <li><span class="nombre-j">Beto Salas</span><span class="pts">0 pts</span><span></span></li>
+            <li><span class="nombre-j">Miriam Ortiz</span><span class="pts">0 pts</span><span></span></li>
+          </ul>
+          <button class="boton boton-peligro" type="button">Terminar juego</button>
+        </div>
+      </div>
+      <p class="nota">«mundo» ya está destapado para todos y desaparece el subrayado amarillo. La tercera marca posible es <b>parcial</b>: sale en naranja, en mayúsculas pequeñas, al lado del nombre.</p>
+    </section>
+
+    <!-- ================= 6. juicio sin pulsos ================= -->
+    <section class="celda">
+      <div class="rotulo">
+        <h2>Juicio sin que nadie pulsara</h2>
+        <span class="estado">juicio</span>
+        <span class="linea">app.js:767-781</span>
+      </div>
+      <div class="marco">
+        <div class="pantalla panel-host">
+          <div class="fila-entre">
+            <button class="boton boton-secundario" type="button">← Menú</button>
+            <span class="mini tenue"><span class="punto-vivo"></span> En línea</span>
+          </div>
+          <div class="fila-entre">
+            <span class="mini tenue">JUAN 3:16</span>
+            <span class="mini tenue">2 de 4 palabras a la vista</span>
+          </div>
+
+          <div class="aviso neutro sin-css">Nadie pulsó esta ronda.</div>
+
+          <p class="enunciado">Porque de tal manera <span class="hueco-host">amó</span> Dios al <span class="hueco-host">mundo</span>, que ha dado a su Hijo <span class="hueco-host">unigénito</span></p>
+
+          <p class="vacio">Todavía nadie pulsó.</p>
+
+          <div class="botonera">
+            <button class="boton boton-secundario" type="button">↶ Deshacer</button>
+            <button class="boton boton-secundario" type="button">Cerrar pregunta</button>
+          </div>
+        </div>
+      </div>
+      <p class="nota">Sin turno no hay ❌/✅: nadie a quien juzgar. Solo queda cerrar la pregunta y pasar al siguiente versículo.</p>
+    </section>
+
+    <!-- ================= 7. closed / revealed ================= -->
+    <section class="celda">
+      <div class="rotulo">
+        <h2>Ronda cerrada o revelada</h2>
+        <span class="estado">closed · revealed</span>
+        <span class="linea">app.js:782-788</span>
+      </div>
+      <div class="marco">
+        <div class="pantalla panel-host">
+          <div class="fila-entre">
+            <button class="boton boton-secundario" type="button">← Menú</button>
+            <span class="mini tenue"><span class="punto-vivo"></span> En línea</span>
+          </div>
+          <div class="fila-entre">
+            <span class="mini tenue">JUAN 3:16</span>
+            <span class="mini tenue">3 de 4 palabras a la vista</span>
+          </div>
+
+          <p class="enunciado">Porque de tal manera <span class="hueco-host">amó</span> Dios al mundo, que ha dado a su Hijo unigénito</p>
+
+          <div class="lista">
+            <div class="fila-turno hecho"><span class="num">1</span><span class="quien">Beto Salas</span><span class="marca mal sin-css">❌</span></div>
+            <div class="fila-turno hecho"><span class="num">2</span><span class="quien">Miriam Ortiz</span><span class="marca ok sin-css">✅</span></div>
+          </div>
+
+          <div class="botonera">
+            <button class="boton boton-secundario" type="button">↶ Deshacer</button>
+            <button class="boton" type="button">Siguiente versículo →</button>
+          </div>
+
+          <h3>Participantes</h3>
+          <ul class="lista-jugadores">
+            <li><span class="nombre-j">Ana Lucía Paredes</span><span class="pts">1 pt</span><span></span></li>
+            <li><span class="nombre-j">Beto Salas</span><span class="pts">0 pts</span><span></span></li>
+            <li><span class="nombre-j">Miriam Ortiz</span><span class="pts">1 pt</span><span></span></li>
+          </ul>
+          <button class="boton boton-peligro" type="button">Terminar juego</button>
+        </div>
+      </div>
+      <p class="nota"><b>Un hueco queda tapado todavía</b> (`amó`): la ronda se cerró con una palabra sin revelar. El panel no dice si la ronda terminó por tiempo, por acierto o por cierre sin completar — ese dato solo lo ve el participante.</p>
+    </section>
+
+    <!-- ================= 8. modal correcto ================= -->
+    <section class="celda">
+      <div class="rotulo">
+        <h2>Modal «¿Cuáles acertó?»</h2>
+        <span class="estado">juicio → correcto</span>
+        <span class="linea">versiculo.js:520-556</span>
+      </div>
+      <div class="marco suelto modal-fondo">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="m1">
+          <h2 id="m1">¿Cuáles acertó Miriam Ortiz?</h2>
+          <p class="sub">Marca las palabras que dijo bien. Las que no marques quedan tapadas para el siguiente.</p>
+
+          <label class="casilla marcada">
+            <span class="tick" aria-hidden="true">✓</span>
+            <span class="palabra">amó</span>
+            <span class="quien-dijo">hueco 1 de 3</span>
+          </label>
+          <label class="casilla">
+            <span class="tick" aria-hidden="true">✓</span>
+            <span class="palabra">mundo</span>
+            <span class="quien-dijo">hueco 2 de 3</span>
+          </label>
+          <label class="casilla">
+            <span class="tick" aria-hidden="true">✓</span>
+            <span class="palabra">unigénito</span>
+            <span class="quien-dijo">hueco 3 de 3</span>
+          </label>
+
+          <div class="botonera">
+            <button class="boton boton-secundario" type="button">Cancelar</button>
+            <button class="boton" type="button">Confirmar</button>
+          </div>
+        </div>
+      </div>
+      <p class="nota">Solo lista los huecos <b>que siguen tapados</b>: ofrecer uno ya ganado sería regalar puntos por lo que dijo otra persona. Confirmar sin marcar nada responde con <code>Marca al menos una palabra, o usa ❌ Incorrecto.</code> Variante sin huecos libres: título <b>No quedan huecos por revelar</b> y texto <b>El versículo ya está completo.</b>.</p>
+    </section>
+
+    <!-- ================= 9. modal cerrar sala ================= -->
+    <section class="celda">
+      <div class="rotulo">
+        <h2>Modal «¿Cerrar la sala?» — partida en curso</h2>
+        <span class="estado">← Menú</span>
+        <span class="linea">app.js:1194-1219</span>
+      </div>
+      <div class="marco suelto modal-fondo">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="m2">
+          <h2 id="m2">¿Cerrar la sala?</h2>
+          <p class="sub">La partida está en curso. Se cierra la sala y se pierden el puntaje y la tabla final: no hay podio que mostrar. Hay 6 participantes dentro.</p>
+          <div class="botonera">
+            <button class="boton boton-secundario" type="button">Seguir aquí</button>
+            <button class="boton boton-peligro" type="button">Sí, cerrar</button>
+          </div>
+        </div>
+      </div>
+      <p class="nota">Antes de empezar el texto cambia a <b>«La partida todavía no empezó…»</b>. Es el único lugar del panel que avisa que se pierde el podio.</p>
+    </section>
+
+    <!-- ================= 10. modal terminar ================= -->
+    <section class="celda">
+      <div class="rotulo">
+        <h2>Modal «¿Terminar el juego?»</h2>
+        <span class="estado">Terminar juego</span>
+        <span class="linea">app.js:1162-1181</span>
+      </div>
+      <div class="marco suelto modal-fondo">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="m3">
+          <h2 id="m3">¿Terminar el juego?</h2>
+          <p class="sub">Se cierra la partida y se muestra la tabla de clasificación. Esta acción no se puede deshacer.</p>
+          <div class="botonera">
+            <button class="boton boton-secundario" type="button">Seguir jugando</button>
+            <button class="boton boton-peligro" type="button">Sí, terminar</button>
+          </div>
+        </div>
+      </div>
+      <p class="nota">Este sí lleva a la tabla. El de la tarjeta anterior cierra sin podio: son dos botones distintos y conviene no confundirlos en vivo.</p>
+    </section>
+
+    <!-- ================= 11. avisos ================= -->
+    <section class="celda">
+      <div class="rotulo">
+        <h2>Avisos del presentador</h2>
+        <span class="estado">ponerAviso</span>
+        <span class="linea">app.js:340-348</span>
+      </div>
+      <div class="marco">
+        <div class="pantalla">
+          <div class="aviso error">Marca al menos una palabra, o usa ❌ Incorrecto.</div>
+          <div class="aviso ok">Versículo cambiado.</div>
+          <div class="aviso espera">Sin conexión: reintentando…</div>
+          <div class="aviso info">Lista para empezar: 12 versículos preparados.</div>
+          <p class="nota" style="margin-top:.6rem">Cuatro tipos con caja. Los otros tres (<code>neutro</code>, <code>turno</code>, <code>exito</code>) se emiten sin regla y salen como texto suelto.</p>
+        </div>
+      </div>
+      <p class="nota">Los avisos se apilan arriba del panel y se van solos a los 4 s; el de error de marcado vacío no se va solo.</p>
+    </section>
+
+    <!-- ================= 12. ceremonia ================= -->
+    <section class="celda">
+      <div class="rotulo">
+        <h2>Ceremonia — tabla final</h2>
+        <span class="estado">status ceremony</span>
+        <span class="linea">app.js:845, 1244-1266</span>
+      </div>
+      <div class="marco">
+        <div class="pantalla-ceremonia">
+          <div class="marco-oro">
+            <span class="marco-esquinas"></span>
+            <h1 class="titulo-ceremonia">Tabla de clasificación</h1>
+            <p class="felicitacion">🎉 ¡Felicitaciones, Miriam Ortiz!</p>
+            <ul class="lista-ceremonia" aria-live="polite">
+              <li class="fila-rev del-podio ganador">
+                <div class="rev-puesto"><span class="rev-figura"><span>🥇</span></span><span class="rev-num">🥇</span></div>
+                <div class="rev-datos"><span class="rev-nombre">Miriam Ortiz</span><span class="rev-sub">24.3 s · 7 aciertos</span></div>
+                <div class="rev-puntos">7<span class="rev-pts"> pts</span></div>
+              </li>
+              <li class="fila-rev del-podio">
+                <div class="rev-puesto"><span class="rev-figura"><span>🥈</span></span><span class="rev-num">🥈</span></div>
+                <div class="rev-datos"><span class="rev-nombre">Ana Lucía Paredes</span><span class="rev-sub">26.1 s · 5 aciertos</span></div>
+                <div class="rev-puntos">5<span class="rev-pts"> pts</span></div>
+              </li>
+              <li class="fila-rev del-podio">
+                <div class="rev-puesto"><span class="rev-figura"><span>🥉</span></span><span class="rev-num">🥉</span></div>
+                <div class="rev-datos"><span class="rev-nombre">Beto Salas</span><span class="rev-sub">29.4 s · 3 aciertos</span></div>
+                <div class="rev-puntos">3<span class="rev-pts"> pts</span></div>
+              </li>
+            </ul>
+            <p class="pista-ceremonia">Toca para ver el resto de la tabla</p>
+            <div class="ceremonia-footer">
+              <button class="boton" type="button">🎤 Jugar de nuevo</button>
+              <button class="boton boton-secundario" type="button">← Menú</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="nota">Marcado real de <code>render.js:69-86</code>: <b>tres columnas</b> —puesto, datos y puntos—, no cuatro. La medalla aparece duplicada a propósito: el <code>&lt;span class="rev-figura"&gt;</code> trae el SVG del podio y <code>.rev-num</code> repite el emoji, porque el código usa <code>EMOJI[p.position]</code> también cuando ya dibujó la figura.</p>
+    </section>
+
+    <!-- ================= 13. sala cerrada ================= -->
+    <section class="celda">
+      <div class="rotulo">
+        <h2>Sala cerrada</h2>
+        <span class="estado">status closed</span>
+        <span class="linea">app.js:846, 1230-1241</span>
+      </div>
+      <div class="marco">
+        <div class="pantalla columna" style="justify-content:center;text-align:center;gap:1rem">
+          <h2 style="font-size:var(--t-xl);margin:0">La sala está cerrada</h2>
+          <div class="aviso espera">La sala se cerró sola porque el presentador estuvo 30 minutos sin actividad.</div>
+          <p class="sub">Los participantes ya salieron. Puedes crear otra sala cuando quieras.</p>
+          <button class="boton boton-grande" type="button">Crear otra sala</button>
+        </div>
+      </div>
+      <p class="nota">El motivo sale de <code>close_reason</code>: <b>inactividad</b> es el único que el servidor escribe solo. Sin motivo, el texto cae en <b>«La sala se cerró.»</b></p>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>
