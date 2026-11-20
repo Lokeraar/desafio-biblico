@@ -62,7 +62,16 @@
   .marco.suelto{border-radius:var(--radio)}
 
   /* ============ estilos copiados de styles.css ============ */
-  .pantalla{display:flex;flex-direction:column;min-height:0;padding:1rem;gap:.8rem}
+  /* afv51lue: el fondo de la tabla final, aplicado a todas las pantallas del
+     panel. Sale de un solo lugar (--fondo-juego) para que el de la ceremonia y
+     el del resto no se separen con el tiempo. */
+  :root {
+    --fondo-juego: radial-gradient(120% 90% at 50% 0%, #1b6f4a 0%, #0f5a63 42%, #07222b 72%, #04151b 100%);
+  }
+  .pantalla{
+    display:flex;flex-direction:column;min-height:0;padding:1rem;gap:.8rem;
+    background:var(--fondo-juego);
+  }
   .panel-host{display:flex;flex-direction:column;gap:.8rem}
   .fila-entre{display:flex;gap:1rem;align-items:center;justify-content:space-between}
   .columna{display:flex;flex-direction:column;gap:.75rem}
@@ -188,7 +197,7 @@
 
   /* --- ceremonia: marco dorado y filas reales de render.js:69-86 ---
   .pantalla-ceremonia{
-    background:radial-gradient(120% 90% at 50% 0%,#1b6f4a 0%,#0f5a63 42%,#07222b 72%,#04151b 100%);
+    background:var(--fondo-juego);
     padding:1rem;border-radius:var(--radio);
   }
   .marco-oro{
@@ -204,7 +213,13 @@
   .marco-esquinas::before{top:-4px;right:-4px;border-left-color:transparent;border-bottom-color:transparent}
   .marco-esquinas::after{bottom:-4px;left:-4px;border-right-color:transparent;border-top-color:transparent}
 
-  .titulo-ceremonia{margin:0;text-align:center;font-size:var(--t-lg);font-weight:800;color:#f5c93b;letter-spacing:.08em;text-transform:uppercase}
+  /* text-align:center solo no basta: `letter-spacing` agrega espacio DESPUES
+     del ultimo caracter, asi que el bloque queda mas ancho a la derecha y el
+     centrado visual se corre a la izquierda. El sangrado lo compensa. */
+  .titulo-ceremonia{
+    margin:0;text-align:center;font-size:var(--t-lg);font-weight:800;color:#f5c93b;
+    letter-spacing:.08em;text-indent:.08em;text-transform:uppercase;
+  }
   .felicitacion{
     margin:0;text-align:center;font-size:var(--t-lg);font-weight:800;color:#f5c93b;
     text-shadow:0 0 20px rgba(245,201,59,.45),0 2px 10px rgba(0,0,0,.6);
@@ -222,8 +237,9 @@
     background:linear-gradient(135deg,rgba(0,160,176,.2),rgba(255,255,255,.06));
     border-color:rgba(245,201,59,.35);
   }
-  /* El primero se revela al final y se resalta más. Ojo: el selector real
-     del proyecto es :nth-child(3), no :nth-child(1) — ver la nota. */
+  /* Resalta la fila que se acaba de destapar. Las filas se ordenan por
+     puesto (el 1.º arriba), así que el recién destapado es siempre la
+     primera: en el paso 1 el 3.º, en el 2 el 2.º, en el 3 el 1.º. */
   .fila-rev.ganador{
     background:linear-gradient(135deg,rgba(245,201,59,.26),rgba(0,160,176,.18));
     border-color:var(--amarillo);box-shadow:0 0 34px rgba(245,201,59,.22);
@@ -231,7 +247,6 @@
   .rev-puesto{display:flex;align-items:center;gap:.4rem;min-width:2.4em;justify-content:center}
   .rev-figura{display:flex}
   .rev-figura span{font-size:1.8rem;line-height:1}
-  .rev-num{font-size:1.3rem;line-height:1;font-weight:800;color:#f5c93b;font-variant-numeric:tabular-nums}
   .rev-datos{display:flex;flex-direction:column;gap:.1rem;min-width:0}
   .rev-nombre{font-weight:800;font-size:1rem;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .rev-sub{font-size:.78rem;color:var(--tinta-suave);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -240,6 +255,23 @@
   .pista-ceremonia{margin:0;text-align:center;font-size:var(--t-xs);color:rgba(255,255,255,.6)}
   .ceremonia-footer{display:flex;gap:.7rem;flex-wrap:wrap}
   .ceremonia-footer > *{flex:1 1 0;min-width:0}
+
+  /* Secuencia de la ceremonia: documenta los toques, no es UI. */
+  .secuencia{
+    margin-top:.2rem;padding:.9rem 1rem;border-radius:var(--radio-sm);
+    background:rgba(111,227,238,.07);border:1px solid rgba(111,227,238,.25);
+  }
+  .secuencia-titulo{margin:0 0 .5rem;font-size:.9rem;font-weight:800;color:var(--tu-100)}
+  .secuencia ol{
+    margin:0;padding-left:1.4rem;display:flex;flex-direction:column;gap:.3rem;
+    font-size:.86rem;color:var(--tinta-suave);line-height:1.5;
+  }
+  .secuencia li b{color:var(--tinta)}
+  .secuencia .resaltado{
+    color:var(--fondo);background:var(--amarillo);font-weight:800;
+    padding:.05em .4em;border-radius:4px;
+  }
+  .secuencia-pie{margin:.6rem 0 0;font-size:.82rem;color:var(--tinta-suave);line-height:1.5}
   h3{margin:.4rem 0 0;font-size:var(--t-base);font-weight:800}
 
   .botonera{display:flex;gap:.7rem;flex-wrap:wrap}
@@ -700,17 +732,17 @@
             <p class="felicitacion">🎉 ¡Felicitaciones, Miriam Ortiz!</p>
             <ul class="lista-ceremonia" aria-live="polite">
               <li class="fila-rev del-podio ganador">
-                <div class="rev-puesto"><span class="rev-figura"><span>🥇</span></span><span class="rev-num">🥇</span></div>
+                <div class="rev-puesto"><span class="rev-figura"><span>👑</span></span></div>
                 <div class="rev-datos"><span class="rev-nombre">Miriam Ortiz</span><span class="rev-sub">24.3 s · 7 aciertos</span></div>
                 <div class="rev-puntos">7<span class="rev-pts"> pts</span></div>
               </li>
               <li class="fila-rev del-podio">
-                <div class="rev-puesto"><span class="rev-figura"><span>🥈</span></span><span class="rev-num">🥈</span></div>
+                <div class="rev-puesto"><span class="rev-figura"><span>🥈</span></span></div>
                 <div class="rev-datos"><span class="rev-nombre">Ana Lucía Paredes</span><span class="rev-sub">26.1 s · 5 aciertos</span></div>
                 <div class="rev-puntos">5<span class="rev-pts"> pts</span></div>
               </li>
               <li class="fila-rev del-podio">
-                <div class="rev-puesto"><span class="rev-figura"><span>🥉</span></span><span class="rev-num">🥉</span></div>
+                <div class="rev-puesto"><span class="rev-figura"><span>🥉</span></span></div>
                 <div class="rev-datos"><span class="rev-nombre">Beto Salas</span><span class="rev-sub">29.4 s · 3 aciertos</span></div>
                 <div class="rev-puntos">3<span class="rev-pts"> pts</span></div>
               </li>
@@ -723,7 +755,18 @@
           </div>
         </div>
       </div>
-      <p class="nota">Marcado real de <code>render.js:69-86</code>: <b>tres columnas</b> —puesto, datos y puntos—, no cuatro. La medalla aparece duplicada a propósito: el <code>&lt;span class="rev-figura"&gt;</code> trae el SVG del podio y <code>.rev-num</code> repite el emoji, porque el código usa <code>EMOJI[p.position]</code> también cuando ya dibujó la figura.</p>
+      <p class="nota">Marcado real de <code>render.js:69-86</code>: <b>tres columnas</b> —puesto, datos y puntos—, no cuatro. El podio lleva un solo emoji por fila (antes se repetía en <code>.rev-num</code>, que ya no se dibuja) y el primer puesto usa corona en vez de medalla.</p>
+      <div class="secuencia">
+        <p class="secuencia-titulo">La ceremonia se destapa a toques, de abajo hacia arriba</p>
+        <ol>
+          <li><b>La tabla aparece vacía.</b> Solo el marco dorado y el título.</li>
+          <li><b>Primer toque:</b> entra el tercer lugar, <span class="resaltado">resaltado en dorado</span>.</li>
+          <li><b>Segundo toque:</b> entra el segundo lugar arriba y lo resalta; el tercero baja de puesto y deja de brillar.</li>
+          <li><b>Tercer toque:</b> entra el primero, se lleva el resaltado, y el segundo baja de puesto. Aparece la felicitación.</li>
+          <li><b>Cuarto toque:</b> entran los demás con sus puntos y su tiempo de reacción, más el confeti.</li>
+        </ol>
+        <p class="secuencia-pie">Esa es la razón de que la regla del CSS resalte <code>:nth-child(1)</code>: la fila que se acaba de destapar siempre queda arriba. Con <code>:nth-child(3)</code> el brillo caía en el bronce, y con dos jugadores no aparecía nunca.</p>
+      </div>
     </section>
 
     <!-- ================= 13. sala cerrada ================= -->

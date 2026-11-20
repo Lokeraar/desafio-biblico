@@ -1,0 +1,17 @@
+{
+  "arrangement": "free",
+  "positions": {
+    "01-presentador.html": {
+      "x": 49,
+      "y": 0
+    },
+    "02-participante.html": {
+      "x": 0,
+      "y": 3742
+    },
+    "03-televisor.html": {
+      "x": 0,
+      "y": 7267
+    }
+  }
+}

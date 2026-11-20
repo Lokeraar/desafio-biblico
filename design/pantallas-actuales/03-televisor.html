@@ -12,6 +12,7 @@
     --amarillo:#fcd116; --rojo:#cf2123; --ok:#1fbf75; --error:#e0483c; --espera:#f0a33a;
     --radio:18px; --radio-sm:12px;
     --sombra:0 10px 30px rgba(0,0,0,.45);
+    --fondo-juego:radial-gradient(120% 90% at 50% 0%, #1b6f4a 0%, #0f5a63 42%, #07222b 72%, #04151b 100%);
     /* tokens del televisor a 1920 px de ancho */
     --t-xs:.85rem; --t-sm:1rem; --t-base:1.2rem; --t-lg:1.5rem;
     --t-xl:2rem; --t-2xl:3.2rem; --t-3xl:4.6rem;
@@ -67,6 +68,7 @@
   /* ========= estilos de styles.css, a tamaño televisor ========= */
   .pantalla-tv{
     display:flex;flex-direction:column;justify-content:space-between;
+    background:var(--fondo-juego);
     gap:clamp(.8rem,2.5vh,1.6rem);
     height:1080px;padding:clamp(1rem,3vw,2rem);
     font-size:28.8px; /* body.tv: clamp(1.2rem,1rem+.8vw,1.8rem) */
@@ -143,7 +145,7 @@
      ancho y el resto queda de fondo verde. Se dibuja tal cual. */
   .pantalla-ceremonia{
     height:1080px;padding:24px;display:flex;flex-direction:column;
-    background:radial-gradient(120% 90% at 50% 0%,#1b6f4a 0%,#0f5a63 42%,#07222b 72%,#04151b 100%);
+    background:var(--fondo-juego);
   }
   .marco-oro{
     position:relative;width:min(100%,900px);margin-inline:auto;flex:1;min-height:0;
