@@ -1043,12 +1043,31 @@ body.tv .qr-tv { max-width: clamp(220px, 34vmin, 380px); }
 }
 
 /* --- confeti --- */
+/* Defecto real, visto en pantalla: el confeti tapaba los NOMBRES y los
+   PUNTAJES de la tabla. `.confeti` es `position: absolute` y sus hermanos
+   (título, felicitación, lista, pie) no estaban posicionados, así que se
+   pintaba por encima de todo el contenido aunque fuera el primer hijo del
+   DOM: un elemento posicionado va en una capa posterior a los que están en
+   el flujo normal, sin importar el orden.
+   Se resuelve posicionando el contenido y dándole una capa por encima. Es
+   explícito a propósito: jugar con z-index negativo depende de que el padre
+   forme contexto de apilamiento, y `.marco-oro` no lo forma. */
+.marco-oro > .titulo-ceremonia,
+.marco-oro > .felicitacion,
+.marco-oro > .lista-ceremonia,
+.marco-oro > .pista-ceremonia,
+.marco-oro > .ceremonia-footer {
+  position: relative;
+  z-index: 1;
+}
+
 .confeti {
   position: absolute;
   inset: 0;
   overflow: hidden;
   pointer-events: none;
   border-radius: 10px;
+  z-index: 0;
 }
 .confeti i {
   position: absolute;

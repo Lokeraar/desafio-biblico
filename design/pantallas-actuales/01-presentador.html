@@ -265,7 +265,17 @@
      la ceremonia ocupa la pantalla entera (position:fixed), asi que ahi 105vh
      es correcto, pero aqui es una tarjeta dentro de una placa y `vh` seria el
      alto de la ventana. */
-  .confeti{position:absolute;inset:0;overflow:hidden;pointer-events:none;border-radius:10px}
+  /* El confeti NO puede tapar el contenido. Es `position:absolute`, y sus
+     hermanos estan en el flujo normal, asi que se pintaba ENCIMA de los
+     nombres y los puntajes: se vio en la captura, con piezas blancas sobre
+     «Miriam Ortiz». El contenido va posicionado y con capa propia. */
+  .marco-oro > .titulo-ceremonia,
+  .marco-oro > .felicitacion,
+  .marco-oro > .lista-ceremonia,
+  .marco-oro > .pista-ceremonia,
+  .marco-oro > .ceremonia-footer { position:relative; z-index:1; }
+
+  .confeti{position:absolute;inset:0;overflow:hidden;pointer-events:none;border-radius:10px;z-index:0}
   .confeti i{
     position:absolute;top:-12px;width:7px;height:11px;border-radius:1px;opacity:.9;
     animation:caer linear infinite;
