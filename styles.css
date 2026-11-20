@@ -959,8 +959,13 @@ body.tv .qr-tv { max-width: clamp(220px, 34vmin, 380px); }
   background: linear-gradient(135deg, rgba(0, 160, 176, .2), rgba(255, 255, 255, .06));
   border-color: rgba(245, 201, 59, .35);
 }
-.fila-rev.del-podio:nth-child(3) {
-  /* el primero se revela al final: se resalta más */
+/* La fila que se acaba de destapar. Las filas se ordenan por puesto (el
+   1.º arriba), así que el recién destapado es SIEMPRE la primera visible:
+   en el paso 1 es el 3.º, en el 2 el 2.º, en el 3 el 1.º. Antes esto decía
+   `:nth-child(3)` con el comentario «el primero se revela al final», y esa
+   es la TERCERA fila del documento, no la primera de la tabla: con tres
+   jugadores el brillo caía en el bronce, y con dos no aparecía nunca. */
+.fila-rev.del-podio:nth-child(1) {
   background: linear-gradient(135deg, rgba(245, 201, 59, .26), rgba(0, 160, 176, .18));
   border-color: var(--amarillo);
   box-shadow: 0 0 34px rgba(245, 201, 59, .22);

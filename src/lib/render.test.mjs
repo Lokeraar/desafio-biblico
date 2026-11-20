@@ -1,4 +1,5 @@
 /* Prueba del render de la ceremonia: puro texto, sin navegador. */
+import { readFileSync } from 'node:fs';
 import { ceremoniaHTML, filaClasificacion, subtitulo, totalPasos } from './render.js';
 
 let ok = 0, fail = 0;
@@ -114,6 +115,62 @@ const d2 = ceremoniaHTML(t2, 2);
 t(d2.includes('Jugador 1') && d2.includes('Jugador 2'), 'paso 2: aparecen los dos');
 t(d2.includes('Felicitaciones'), 'paso 2: se felicita al ganador');
 t(!d1.includes('Felicitaciones'), 'paso 1: todavía no hay felicitación');
+
+/* ------------------------------------------------------------------ */
+console.log('\n=== La fila resaltada es la que se acaba de destapar ===');
+/*
+ * Cómo se ve la ceremonia, según lo que hace el presentador:
+ *
+ *   toque 1 → aparece el 3.º, resaltado
+ *   toque 2 → aparece el 2.º, resaltado; el 3.º deja de estarlo
+ *   toque 3 → aparece el 1.º, resaltado
+ *   toque 4 → aparecen los demás
+ *
+ * Las filas se ordenan por puesto (el 1.º arriba), así que el que se acaba
+ * de destapar SIEMPRE queda primero de la lista: es el de menor puesto de
+ * los visibles. Esa es la propiedad que hay que poder comprobar sin mirar
+ * una captura.
+ *
+ * Defecto real: el CSS resaltaba `.fila-rev.del-podio:nth-child(3)` con el
+ * comentario «el primero se revela al final». nth-child(3) es la TERCERA
+ * fila del documento, no el primero de la tabla. Con tres jugadores el
+ * brillo caía en el bronce, y con dos ni aparecía.
+ */
+const posicionesVisibles = (html) =>
+  [...html.matchAll(/class="fila-rev[^"]*"\s*\n?\s*style="--i:(\d+)"/g)].map(m => Number(m[1]));
+
+for (const n of [2, 3, 5, 8]) {
+  const tabla = tablaDe(n);
+  const total = totalPasos(tabla);
+  let okTodos = true;
+  let detalle = '';
+  for (let paso = 1; paso <= total; paso++) {
+    const ps = posicionesVisibles(ceremoniaHTML(tabla, paso));
+    if (!ps.length) { okTodos = false; detalle = `paso ${paso}: lista vacía`; break; }
+    const menorVisible = Math.min(...ps);
+    if (ps[0] !== menorVisible) {
+      okTodos = false;
+      detalle = `paso ${paso}: arriba hay un puesto mayor que ${menorVisible}`;
+      break;
+    }
+  }
+  t(okTodos, `${n} jugadores: en cada paso, arriba está el recién destapado${detalle ? ' — ' + detalle : ''}`);
+}
+
+// Y el CSS tiene que resaltar ESA fila, la primera.
+const cssCeremonia = readFileSync(new URL('../../styles.css', import.meta.url), 'utf8');
+const reglaResalte = (() => {
+  const i = cssCeremonia.indexOf('.fila-rev.del-podio:nth-child(');
+  if (i < 0) return '';
+  const abre = cssCeremonia.indexOf('{', i);
+  return cssCeremonia.slice(i, cssCeremonia.indexOf('}', abre));
+})();
+t(reglaResalte.length > 0, 'existe una regla que resalta una fila concreta');
+t(/:nth-child\(1\)/.test(reglaResalte),
+  'resalta la PRIMERA fila: es la del recién destapado');
+t(!/:nth-child\(3\)/.test(reglaResalte),
+  'NO resalta la tercera, que con tres jugadores es el bronce');
+t(/var\(--amarillo\)/.test(reglaResalte), 'y lo hace con el dorado del podio');
 
 console.log('\n===============================');
 console.log(` ${ok} correctas, ${fail} fallas`);
