@@ -123,7 +123,7 @@
   .aviso.espera{background:rgba(240,163,58,.16);border:1px solid var(--espera)}
   .aviso.neutro{
     background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);color:var(--tinta-suave);
-    font-size:var(--t-base);
+    font-size:var(--t-lg);
   }
   .aviso.turno{
     background:rgba(111,227,238,.2);border:1px solid var(--tu-100);color:#eafdff;
@@ -193,6 +193,9 @@
 
   .cuerpo-tv{
     flex:1 1 auto;display:flex;align-items:center;justify-content:center;min-height:0;text-align:center;
+    /* Aire alrededor del versiculo: antes el texto tocaba el borde del marco y
+       el fondo parecia pegado a la palabra. */
+    padding:clamp(24px,4vh,56px) clamp(32px,5vw,96px);
   }
   /* Doble del tamano anterior (--t-2xl = 3.2rem). Medido sobre 1920x1080: el
      versiculo ocupa 3 lineas y sobra alto en el cuerpo. */
