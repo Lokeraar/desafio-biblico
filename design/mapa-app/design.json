@@ -1,0 +1,13 @@
+{
+  "title": "Mapa de la app",
+  "brief": "El mapa completo de Desafío Bíblico: las seis rutas, los once modales, los tres juegos y los estados de una partida, con qué pantalla lleva a cuál. Sirve para no volver a preguntar dónde está cada cosa y para ver de un golpe qué queda inalcanzable.",
+  "artboards": [
+    {
+      "file": "01-mapa.html",
+      "title": "Mapa de pantallas y recorridos",
+      "tradeoff": "Todo en una placa: se ve el recorrido entero sin cambiar de archivo. El precio es que en un teléfono hay que desplazarse en las dos direcciones, y que un mapa siempre simplifica: dice a dónde lleva cada botón, no cómo se ve la pantalla.",
+      "width": 1360,
+      "height": 2400
+    }
+  ]
+}

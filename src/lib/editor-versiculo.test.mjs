@@ -192,6 +192,56 @@ console.log('\n=== 13. El resumen de huecos ===');
   t(lleno.lleno === true, 'con 34 marca lleno');
 }
 
+
+/* ------------------------------------------------------------------ */
+console.log('\n=== Volver a tocar una palabra tapada es DESHACER ===');
+
+/* Lo pidio el usuario: ocultar una palabra y volver a tocarla no puede dejar
+   dos pasos en la cuenta por un solo cambio. El toque de vuelta DESHACE. */
+const base = editorDesde({ textoMarcado: 'Dios es amor' });
+const uno = alternarHueco(base, 1);
+t(uno.accion === 'oculto', 'el primer toque oculta');
+t(pasosDeDeshacer(uno.estado) === 1, 'y deja un paso de deshacer');
+
+const dos = alternarHueco(uno.estado, 1);
+t(dos.accion === 'visible', 'el segundo toque en la MISMA palabra la destapa');
+t(dos.estado.ocultas.length === 0, 'y no queda ninguna tapada');
+t(pasosDeDeshacer(dos.estado) === 0,
+  'y la cuenta VUELVE A CERO: el segundo toque deshace, no suma');
+
+/* El defecto concreto: antes se empujaba al historial y quedaban dos pasos. */
+t(pasosDeDeshacer(dos.estado) !== 2,
+  'no quedan dos pasos por un solo cambio');
+
+/* Con varias palabras encadenadas, cada vuelta deshace solo la suya. */
+let e = editorDesde({ textoMarcado: 'Dios es amor' });
+e = alternarHueco(e, 0).estado;
+e = alternarHueco(e, 1).estado;
+e = alternarHueco(e, 2).estado;
+t(pasosDeDeshacer(e) === 3, 'tres palabras ocultas dejan tres pasos');
+e = alternarHueco(e, 1).estado;
+t(pasosDeDeshacer(e) === 2, 'destapar la del medio deja dos');
+t(JSON.stringify(e.ocultas) === '[0,2]', 'y quedan tapadas la primera y la tercera');
+
+/* Destapar algo que NO tapaste no gasta ni devuelve un paso: esas palabras
+   vienen tapadas del versiculo guardado. */
+const guardado = editorDesde({ textoMarcado: 'Dios {es} amor' });
+const antes = pasosDeDeshacer(guardado);
+const destapada = alternarHueco(guardado, 1);
+t(destapada.accion === 'visible', 'una palabra que venia tapada se puede destapar');
+t(pasosDeDeshacer(destapada.estado) === antes,
+  'y no cambia la cuenta: no habia paso que deshacer');
+
+/* Y deshacer sigue funcionando despues de una vuelta. */
+let d = editorDesde({ textoMarcado: 'Dios es amor' });
+d = alternarHueco(d, 2).estado;
+d = alternarHueco(d, 0).estado;
+d = alternarHueco(d, 0).estado;   // vuelta: deshace
+t(pasosDeDeshacer(d) === 1, 'tras ocultar 2 y destapar 1, queda un paso');
+const atras = deshacer(d);
+t(atras.estado.ocultas.length === 0 || atras.accion === 'nada',
+  'y deshacer sigue quitando el cambio que queda');
+
 console.log('\n===============================');
 console.log(` ${ok} correctas, ${fail} fallas`);
 console.log('===============================');

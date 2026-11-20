@@ -97,6 +97,35 @@ retrocede datos de salas vivas.
 
 ---
 
+## NUNCA pedirle al usuario que compruebe visualmente
+
+**Regla dura, declarada por Christian el 20/11/2026.** Ningún cambio visual se
+cierra pidiéndole que mire el teléfono y diga si se ve bien. Si cambias algo
+que se ve, **lo muestras tú** en el canvas: el estado de antes y el de después,
+lado a lado o uno debajo del otro, con los números medidos al lado.
+
+Importa porque ya pasó: se le pidieron ocho verificaciones visuales seguidas
+y él no puede ver las dos versiones a la vez. Comparar de memoria dos pantallas
+que ya no están en la pantalla es imposible, y el resultado fue una ronda
+tras otra de «sigue mal» y «ahora sí» sobre cosas que yo podía haber mostrado
+en un solo archivo.
+
+**Cómo se hace:**
+
+1. Guardar el CSS y el componente de antes (`git show HEAD:styles.css`) y el
+   de después en dos carpetas bajo `.shots/` o en `design/`.
+2. Una página con los dos lados y el mismo contenido, con un rótulo
+   **ANTES** y otro **DESPUÉS** que se lean sin lugar a dudas.
+3. Los números medidos al lado de cada uno: ancho, tamaño de letra, si se sale
+   de su caja. Un número convence más que una opinión.
+4. Abrirlo con `gentle_design` (o el servidor local) y **capturarlo** para
+   confirmar que se ve antes de decírselo.
+
+Lo que sí se le pide es una **decisión**, no una comprobación: dos o tres
+opciones con su vista previa, por `ask_user_question`.
+
+---
+
 ## Ajuste de texto: los versículos SIEMPRE en 2 + 1
 
 **Regla dura, declarada por Christian el 20/11/2026.** Todo texto que muestre

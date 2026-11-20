@@ -2573,7 +2573,6 @@ document.addEventListener('click', async ev => {
 
     case 'alternar-modo-ocultar': {
       app.modoOcultar = !app.modoOcultar;
-      el.setAttribute('aria-pressed', String(app.modoOcultar));
       refrescarEditor();
       break;
     }
@@ -3502,6 +3501,17 @@ function refrescarEditor() {
     const boton = cajaDeshacer.querySelector('button');
     const chico = boton?.querySelector('.chico');
     if (chico) chico.textContent = `(${pasos})`;
+  }
+
+  /* El botón «Ocultar palabra» tiene que ENSEÑAR si está armado. Sin esto
+   * cambiaba `aria-pressed` y nada más: se veía igual encendido que apagado y
+   * el presentador no sabía si sus toques iban a tapar palabras. Se toca la
+   * clase y la etiqueta, no se redibuja el modal. */
+  const botonModo = document.querySelector('[data-accion="alternar-modo-ocultar"]');
+  if (botonModo) {
+    botonModo.classList.toggle('modo-ocultar-activo', app.modoOcultar);
+    botonModo.setAttribute('aria-pressed', String(app.modoOcultar));
+    botonModo.textContent = app.modoOcultar ? '✓ Ocultar palabra' : '👁 Ocultar palabra';
   }
 
   /* El campo oculto que se envía al guardar tiene que llevar el marcado

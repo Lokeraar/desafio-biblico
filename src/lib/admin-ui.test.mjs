@@ -325,6 +325,49 @@ t(rolBotones.includes('renglones: 1'),
 t(rolBotones.includes('categoria: \'contenido\''),
   'y son contenido: techo de 16 pt');
 
+
+/* ------------------------------------------------------------------ */
+console.log('\n=== El boton «Ocultar palabra» ensena su estado ===');
+
+/* Antes se veia IGUAL encendido que apagado: cambiaba `aria-pressed` y no
+   habia ninguna regla para ese estado. El presentador no sabia si sus toques
+   iban a tapar palabras. Se eligio relleno amarillo fuerte (Christian,
+   20/11/2026). */
+const apagado = modalEditorVersiculo({ ...base, modoOcultar: false });
+const prendido = modalEditorVersiculo({ ...base, modoOcultar: true });
+
+t(!apagado.includes('modo-ocultar-activo'),
+  'apagado no lleva la clase de activo');
+t(prendido.includes('modo-ocultar-activo'),
+  'prendido SI lleva la clase de activo');
+t(apagado.includes('aria-pressed="false"') && prendido.includes('aria-pressed="true"'),
+  'y aria-pressed dice el estado, para quien use lector de pantalla');
+
+/* El estado no puede depender SOLO del color: quien no distingue amarillo de
+   turquesa tiene que poder leerlo. La etiqueta cambia. */
+t(/✓|\u2713/.test(prendido), 'lleva una palomita, que se ve sin leer');
+t(!/✓|\u2713/.test(apagado), 'y apagado no la lleva');
+/* La etiqueta NO se alarga: «Ocultar palabra: ACTIVO» partia en tres
+   renglones dentro del boton en un telefono vertical (medido). El estado lo
+   dicen el fondo, el borde y la palomita. */
+t(prendido.includes('Ocultar palabra') && apagado.includes('Ocultar palabra'),
+  'la etiqueta sigue siendo la misma en los dos estados');
+t(!prendido.includes('ACTIVO'),
+  'y no se le agrega texto: alargarla la hacia partir en tres renglones');
+
+const cssOcultar = css.match(/\.boton\.modo-ocultar-activo \{[^}]*\}/)?.[0] ?? '';
+t(cssOcultar.includes('var(--amarillo)') || cssOcultar.includes('#fcd116'),
+  'el CSS usa el amarillo de la bandera');
+t(cssOcultar.includes('color:'), 'y cambia el color de la letra para que se lea');
+/* Fondo TENIDO, no macizo: el relleno pleno pesaba demasiado contra el resto
+   de la pantalla, que es toda turquesa oscura (Christian, 20/11/2026). */
+t(/background:\s*rgba\(/.test(cssOcultar),
+  'el fondo es translucido, no un amarillo macizo');
+t(!/background:\s*var\(--amarillo\)/.test(cssOcultar),
+  'y no se rellena con el amarillo entero');
+t(/border-color:\s*var\(--amarillo\)/.test(cssOcultar),
+  'el borde amarillo es lo que marca el estado');
+
 /* ------------------------------------------------------------------ */
 console.log('\n===============================');
 console.log(`  ${ok} correctas, ${fail} fallas`);

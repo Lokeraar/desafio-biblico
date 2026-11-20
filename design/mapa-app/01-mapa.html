@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mapa de la app — Desafío Bíblico</title>
+<style>
+  :root{
+    --tu-100:#6fe3ee; --tu-300:#2ec4d4; --tu-600:#008090; --tu-800:#00525e; --tu-900:#0a2e33;
+    --fondo:#0b1a1d; --fondo-2:#102a2f; --tinta:#fff; --tinta-suave:#a9c6ca;
+    --amarillo:#fcd116; --rojo:#cf2123; --ok:#1fbf75; --espera:#f0a33a; --error:#e0483c;
+    --radio:16px; --radio-sm:10px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--fondo);color:var(--tinta);
+    font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  .placa{max-width:1320px;margin:0 auto;padding:2rem 1.25rem 4rem}
+  h1{font-size:clamp(1.5rem,1.2rem+1.4vw,2rem);margin:0 0 .35rem;
+    font-weight:800;letter-spacing:-.02em}
+  .sub{color:var(--tinta-suave);margin:0 0 1.75rem;font-size:1rem;max-width:70ch}
+  h2{font-size:clamp(1.15rem,1.05rem+0.5vw,1.35rem);margin:2.25rem 0 .9rem;
+    padding-bottom:.4rem;border-bottom:1px solid var(--tu-800);font-weight:750}
+  h3{font-size:1rem;margin:0 0 .4rem;font-weight:700;color:var(--tu-100)}
+  p{margin:.35rem 0}
+
+  /* --- piezas --- */
+  .rejilla{display:grid;gap:.9rem}
+  .r3{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+  .r2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+
+  .caja{background:linear-gradient(160deg,var(--fondo-2),var(--tu-900));
+    border:1px solid var(--tu-800);border-radius:var(--radio);padding:1rem 1.1rem}
+  .caja.ruta{border-left:4px solid var(--tu-300)}
+  .caja.modal{border-left:4px solid var(--amarillo)}
+  .caja.juego{border-left:4px solid var(--ok)}
+  .caja.pend{border-left:4px solid var(--rojo)}
+
+  code{font-family:ui-monospace,monospace;font-size:.92em;
+    background:rgba(111,227,238,.12);padding:.08em .4em;border-radius:6px;
+    color:var(--tu-100)}
+
+  ul.lista{list-style:none;margin:.5rem 0 0;padding:0;display:flex;
+    flex-direction:column;gap:.35rem}
+  ul.lista li{display:flex;gap:.5rem;align-items:baseline;font-size:.95rem;
+    color:var(--tinta-suave);min-width:0}
+  ul.lista li::before{content:"→";color:var(--tu-300);flex:0 0 auto;font-weight:700}
+  ul.lista li .destino{color:var(--tinta);font-weight:650}
+
+  .etiqueta{display:inline-block;font-size:.82rem;font-weight:800;
+    padding:.15em .55em;border-radius:999px;letter-spacing:.02em;white-space:nowrap}
+  .ok{background:rgba(31,191,117,.18);color:var(--ok);border:1px solid var(--ok)}
+  .no{background:rgba(224,72,60,.16);color:var(--error);border:1px solid var(--error)}
+  .ojo{background:rgba(240,163,58,.16);color:var(--espera);border:1px solid var(--espera)}
+
+  /* --- recorrido de una partida --- */
+  .flujo{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;margin:.6rem 0 0}
+  .paso{background:rgba(111,227,238,.1);border:1px solid var(--tu-600);
+    border-radius:999px;padding:.3em .8em;font-size:.92rem;font-weight:650;
+    white-space:nowrap}
+  .flecha{color:var(--tu-600);font-weight:800}
+
+  table{width:100%;border-collapse:collapse;font-size:.95rem;margin-top:.6rem}
+  th,td{text-align:left;padding:.5rem .55rem;border-bottom:1px solid var(--tu-800);
+    vertical-align:top}
+  th{color:var(--tu-100);font-size:.88rem;text-transform:uppercase;
+    letter-spacing:.04em;font-weight:800}
+  td code{white-space:nowrap}
+
+  .nota{margin-top:.75rem;padding:.7rem .9rem;border-radius:var(--radio-sm);
+    background:rgba(252,209,22,.08);border:1px solid rgba(252,209,22,.35);
+    font-size:.95rem;color:#f6e7b0}
+  .nota strong{color:var(--amarillo)}
+
+  @media (max-width:560px){
+    .placa{padding:1.25rem .85rem 3rem}
+    table{font-size:.9rem}
+    th,td{padding:.45rem .35rem}
+  }
+</style>
+</head>
+<body>
+<div class="placa">
+
+  <h1>Mapa de la app</h1>
+  <p class="sub">Las seis rutas, los once modales, los tres juegos y los estados de una partida.
+  Todo lo que sigue está sacado del código: <code>rutaActual()</code> y el
+  <code>switch</code> de <code>render()</code> en <code>app.js</code>.</p>
+
+  <!-- ============ RUTAS ============ -->
+  <h2>1. Las seis rutas</h2>
+  <p class="sub" style="margin-bottom:1rem">Se eligen por el hash de la dirección
+  (<code>#/host</code>, <code>#/join</code>…). Sin hash, la app abre el menú.</p>
+
+  <div class="rejilla r3">
+
+    <div class="caja ruta">
+      <h3>Menú <code>#/menu</code></h3>
+      <p style="font-size:.95rem;color:var(--tinta-suave)">La portada. Elegir juego y entrar.</p>
+      <ul class="lista">
+        <li><span class="destino">Presentar</span> → <code>#/host</code></li>
+        <li><span class="destino">Unirme</span> → <code>#/join</code></li>
+        <li><span class="destino">Televisor</span> → <code>#/tv</code></li>
+        <li><span class="destino">Configuración</span> → <code>#/config</code> (solo con nube)</li>
+        <li><span class="destino">Elegir juego</span> → misma vista, cambia la tarjeta</li>
+        <li><span class="destino">Cambiar portada</span> → abre el modal de lema y portada</li>
+      </ul>
+    </div>
+
+    <div class="caja ruta">
+      <h3>Presentador <code>#/host</code></h3>
+      <p style="font-size:.95rem;color:var(--tinta-suave)">El panel del que dirige la partida.</p>
+      <ul class="lista">
+        <li><span class="destino">Crear sala</span> → genera código</li>
+        <li><span class="destino">Admitir / Expulsar</span> → lista de espera</li>
+        <li><span class="destino">Empezar la primera pregunta</span> → pasa a jugar</li>
+        <li><span class="destino">Cerrar sala</span> → confirmación</li>
+        <li><span class="destino">Terminar juego</span> → confirmación</li>
+        <li><span class="destino">📝</span> → modal de temas</li>
+        <li><span class="destino">← Menú</span> → <code>#/menu</code></li>
+      </ul>
+    </div>
+
+    <div class="caja ruta">
+      <h3>Participante <code>#/join</code></h3>
+      <p style="font-size:.95rem;color:var(--tinta-suave)">Entrar con código. Escribe el nombre.</p>
+      <ul class="lista">
+        <li><span class="destino">Entrar</span> → crea la sesión y pasa a <code>#/play</code></li>
+        <li><span class="destino">← Menú</span> → <code>#/menu</code></li>
+      </ul>
+    </div>
+
+    <div class="caja ruta">
+      <h3>Jugando <code>#/play</code></h3>
+      <p style="font-size:.95rem;color:var(--tinta-suave)">El teléfono del jugador durante la partida.
+      Comparte vista con <code>#/join</code> pero cambia según el estado.</p>
+      <ul class="lista">
+        <li>Sin sesión → vuelve a las casillas de nombre y código</li>
+        <li>Con sesión → la pantalla del estado actual</li>
+        <li><span class="destino">Elegir</span> → tomar turno (Completar el versículo)</li>
+      </ul>
+    </div>
+
+    <div class="caja ruta">
+      <h3>Televisor <code>#/tv</code></h3>
+      <p style="font-size:.95rem;color:var(--tinta-suave)">La pantalla grande de la sala.</p>
+      <ul class="lista">
+        <li><span class="destino">Transmitir</span> → toma el rol de televisor</li>
+        <li><span class="destino">← Menú</span> → <code>#/menu</code></li>
+      </ul>
+    </div>
+
+    <div class="caja ruta">
+      <h3>Configuración <code>#/config</code></h3>
+      <p style="font-size:.95rem;color:var(--tinta-suave)">Clave maestra y conexión a Supabase.
+      El botón del menú solo aparece si hay nube configurada.</p>
+      <ul class="lista">
+        <li><span class="destino">Cambiar clave</span> → modal de clave</li>
+        <li><span class="destino">← Volver</span> → <code>#/menu</code></li>
+      </ul>
+    </div>
+
+  </div>
+
+  <!-- ============ MODALES ============ -->
+  <h2>2. Los once modales</h2>
+  <p class="sub" style="margin-bottom:1rem">Se dibujan <strong>encima</strong> de la vista, sin
+  reemplazarla: al cerrarlos no se pierde lo que había debajo.</p>
+
+  <div class="rejilla r2">
+
+    <div class="caja modal">
+      <h3>Juicio <code>juicio</code></h3>
+      <p style="font-size:.95rem;color:var(--tinta-suave)">El presentador juzga una respuesta abierta:
+      bien o mal, participante por participante.</p>
+      <p style="font-size:.95rem;margin-top:.5rem"><strong style="color:var(--tu-100)">Se abre desde:</strong>
+      el panel de <code>#/host</code> durante el juego.</p>
+    </div>
+
+    <div class="caja modal">
+      <h3>Procesando <code>procesando</code></h3>
+      <p style="font-size:.95rem;color:var(--tinta-suave)">Espera bloqueante mientras se sube una imagen.
+      Dice qué está en curso.</p>
+      <p style="font-size:.95rem;margin-top:.5rem"><strong style="color:var(--tu-100)">Se abre desde:</strong>
+      la subida de la portada.</p>
+    </div>
+
+    <div class="caja modal">
+      <h3>Clave maestra <code>clave</code></h3>
+      <p style="font-size:.95rem;color:var(--tinta-suave)">Pide la clave de 4 a 64 caracteres.
+      Con candado de 5 intentos y 10 minutos.</p>
+      <p style="font-size:.95rem;margin-top:.5rem"><strong style="color:var(--tu-100)">Se abre desde:</strong>
+      cualquier acción de administración, y desde <code>#/config</code>.</p>
+    </div>
+
+    <div class="caja modal">
+      <h3>Cambiar clave <code>cambiar</code></h3>
+      <p style="font-size:.95rem;color:var(--tinta-suave)">Clave anterior y nueva. Si todavía no hay
+      ninguna, no pide la anterior.</p>
+      <p style="font-size:.95rem;margin-top:.5rem"><strong style="color:var(--tu-100)">Se abre desde:</strong>
+      <code>#/config</code> → «Cambiar clave».</p>
+    </div>
+
+    <div class="caja modal">
+      <h3>Temas <code>temas</code></h3>
+      <p style="font-size:.95rem;color:var(--tinta-suave)">Lista de temas del juego elegido. Filtra
+      por <code>app.juegoElegido</code>.</p>
+      <p style="font-size:.95rem;margin-top:.5rem"><strong style="color:var(--tu-100)">Se abre desde:</strong>
+      el <code>📝</code> de <code>#/host</code>.</p>
+    </div>
+
+    <div class="caja modal">
+      <h3>Preguntas <code>preguntas</code></h3>
+      <p style="font-size:.95rem;color:var(--tinta-suave)">Las preguntas de un tema, con Editar y Borrar.
+      Es el de opción múltiple.</p>
+      <p style="font-size:.95rem;margin-top:.5rem"><strong style="color:var(--tu-100)">Se abre desde:</strong>
+      Temas → una fila.</p>
+    </div>
+
+    <div class="caja modal">
+      <h3>Formulario de pregunta <code>pregunta</code></h3>
+      <p style="font-size:.95rem;color:var(--tinta-suave)">Enunciado, cuatro opciones y cuál es la
+      correcta. Exige las cuatro.</p>
+      <p style="font-size:.95rem;margin-top:.5rem"><strong style="color:var(--tu-100)">Se abre desde:</strong>
+      Preguntas → «Nueva» o «Editar».</p>
+    </div>
+
+    <div class="caja modal">
+      <h3>Versículos <code>versiculos</code></h3>
+      <p style="font-size:.95rem;color:var(--tinta-suave)">Las filas del tema, con la referencia, el
+      texto con huecos y cuántas palabras están tapadas. Cada tarjeta ajusta su letra sola.</p>
+      <p style="font-size:.95rem;margin-top:.5rem"><strong style="color:var(--tu-100)">Se abre desde:</strong>
+      Temas → un tema de Completar el versículo.</p>
+    </div>
+
+    <div class="caja modal">
+      <h3>Editor de versículo <code>versiculo</code></h3>
+      <p style="font-size:.95rem;color:var(--tinta-suave)">Referencia y texto. Se tocan las palabras
+      para taparlas: hasta 34, con deshacer de 10 pasos.</p>
+      <p style="font-size:.95rem;margin-top:.5rem"><strong style="color:var(--tu-100)">Se abre desde:</strong>
+      Versículos → «Nuevo versículo» o «Editar».</p>
+    </div>
+
+    <div class="caja modal">
+      <h3>Cerrar sala <code>confirmar: sala</code></h3>
+      <p style="font-size:.95rem;color:var(--tinta-suave)">Confirmación. Va en <code>render()</code>, no
+      dentro de una vista, para que funcione en todas.</p>
+      <p style="font-size:.95rem;margin-top:.5rem"><strong style="color:var(--tu-100)">Se abre desde:</strong>
+      <code>#/host</code> → «Cerrar sala».</p>
+    </div>
+
+    <div class="caja modal">
+      <h3>Terminar juego <code>confirmar: terminar</code></h3>
+      <p style="font-size:.95rem;color:var(--tinta-suave)">Confirmación antes de cortar la partida.</p>
+      <p style="font-size:.95rem;margin-top:.5rem"><strong style="color:var(--tu-100)">Se abre desde:</strong>
+      <code>#/host</code> → «Terminar juego».</p>
+    </div>
+
+    <div class="caja modal">
+      <h3>Lema y portada</h3>
+      <p style="font-size:.95rem;color:var(--tinta-suave)">El nombre de la iglesia y la imagen de la
+      portada. Escribe en la tabla <code>branding</code>.</p>
+      <p style="font-size:.95rem;margin-top:.5rem"><strong style="color:var(--tu-100)">Se abre desde:</strong>
+      Menú → «Cambiar portada».</p>
+    </div>
+
+  </div>
+
+  <!-- ============ JUEGOS ============ -->
+  <h2>3. Los tres juegos</h2>
+
+  <div class="rejilla r3">
+    <div class="caja juego">
+      <h3>🎯 Selección simple</h3>
+      <p style="font-size:.95rem;color:var(--tinta-suave)">Una pregunta, cuatro opciones y una sola
+      correcta.</p>
+      <p style="margin-top:.6rem"><span class="etiqueta ok">listo para jugar</span></p>
+      <p style="font-size:.95rem;margin-top:.6rem">Administración: <strong>Temas → Preguntas</strong>.</p>
+    </div>
+
+    <div class="caja juego">
+      <h3>📖 Completar el versículo</h3>
+      <p style="font-size:.95rem;color:var(--tinta-suave)">Un versículo con palabras tapadas. Se pulsa
+      para tomar el turno.</p>
+      <p style="margin-top:.6rem"><span class="etiqueta ok">listo para jugar</span></p>
+      <p style="font-size:.95rem;margin-top:.6rem">Administración: <strong>Temas → Versículos</strong>.</p>
+    </div>
+
+    <div class="caja pend">
+      <h3>💬 Respuesta abierta</h3>
+      <p style="font-size:.95rem;color:var(--tinta-suave)">El presentador lee y cada quien escribe.
+      Se juzga a mano.</p>
+      <p style="margin-top:.6rem"><span class="etiqueta ojo">marcado «no listo»</span></p>
+      <p style="font-size:.95rem;margin-top:.6rem">Aparece en el menú con
+      <code>listo: false</code>: se puede elegir, pero el juego no está terminado.</p>
+    </div>
+  </div>
+
+  <!-- ============ PARTIDA ============ -->
+  <h2>4. El recorrido de una partida</h2>
+  <p class="sub" style="margin-bottom:.75rem">Los cuatro estados de <code>status</code> por los que
+  pasa una partida. Los tres dispositivos ven el mismo estado, cada uno a su manera.</p>
+
+  <div class="flujo">
+    <span class="paso">sala creada</span><span class="flecha">→</span>
+    <span class="paso">question</span><span class="flecha">→</span>
+    <span class="paso">reveal</span><span class="flecha">→</span>
+    <span class="paso">question</span><span class="flecha">→</span>
+    <span class="paso">…</span><span class="flecha">→</span>
+    <span class="paso">ceremony</span><span class="flecha">→</span>
+    <span class="paso">closed</span>
+  </div>
+
+  <table>
+    <thead>
+      <tr><th>Estado</th><th>Presentador</th><th>Participante</th><th>Televisor</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>question</code></td>
+        <td>Ve la correcta y lleva el reloj</td>
+        <td>Responde o pulsa para tomar turno</td>
+        <td>Muestra la pregunta y el reloj</td>
+      </tr>
+      <tr>
+        <td><code>reveal</code></td>
+        <td>Ve quién acertó</td>
+        <td>Ve si acertó y sus puntos</td>
+        <td>Muestra la correcta y quién acertó</td>
+      </tr>
+      <tr>
+        <td><code>ceremony</code></td>
+        <td>Avanza la ceremonia tocando</td>
+        <td>Cada uno en su lugar del podio</td>
+        <td>El podio, de a uno</td>
+      </tr>
+      <tr>
+        <td><code>closed</code></td>
+        <td>Puede cerrar o volver al menú</td>
+        <td>«Jugar de nuevo»</td>
+        <td>Fin de la partida</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ============ HALLAZGOS ============ -->
+  <h2>5. Lo que el mapa deja a la vista</h2>
+
+  <div class="caja pend">
+    <h3>Respuesta abierta no está terminada</h3>
+    <p style="font-size:.95rem;color:var(--tinta-suave)">Declarado <code>listo: false</code> en
+    <code>app.js</code>, pero la tarjeta del menú se puede elegir igual. O se termina, o se marca
+    visiblemente como «próximamente»: hoy el jugador no tiene forma de saberlo antes de elegirla.</p>
+  </div>
+
+  <div class="caja pend" style="margin-top:.9rem">
+    <h3>El formulario de pregunta exige cuatro respuestas</h3>
+    <p style="font-size:.95rem;color:var(--tinta-suave)">Es correcto para Selección simple, y era el
+    defecto del editor de versículos: se resolvió dándole su propio editor. Pero sigue habiendo un
+    solo camino de administración para dos juegos con datos distintos, y eso se nota al añadir el
+    tercero.</p>
+  </div>
+
+  <div class="caja" style="margin-top:.9rem;border-left:4px solid var(--tu-300)">
+    <h3>Un solo <code>render()</code> para todo</h3>
+    <p style="font-size:.95rem;color:var(--tinta-suave)">Las seis vistas y los once modales se dibujan
+    desde una función. Eso hace que cerrar un modal no pierda lo de abajo, y también que cualquier
+    acción que llame a <code>render()</code> reconstruya el árbol entero: de ahí salió el salto de
+    pantalla al tocar el «?» del editor, que se arregló cambiando solo los nodos que cambian.</p>
+  </div>
+
+  <p class="nota"><strong>Para seguir:</strong> este mapa describe lo que el código hace hoy. Si
+  quieres, el siguiente paso natural es dibujar las seis rutas con su aspecto real —el canvas
+  <code>pantallas-actuales</code> ya tiene presentador, participante y televisor; faltan menú,
+  entrar con código y configuración.</p>
+
+</div>
+</body>
+</html>

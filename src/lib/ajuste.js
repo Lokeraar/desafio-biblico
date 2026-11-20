@@ -602,6 +602,27 @@ export const ROLES = [
   { sel: '.lista-versiculos p', categoria: 'contenido', renglones: 2,
     porCaja: '.pregunta-fila' },
 
+  /* LOS BOTONES DEL EDITOR DE VERSÍCULO VAN EN 1 + 1.
+     Declarado por el usuario el 20/11/2026. Se ajustan por CONTENEDOR y no por
+     clase: lo que hace grupo es compartir la fila, no el nombre de la clase.
+     Antes no estaban en ninguna lista y no se ajustaban: «Ocultar palabra:
+     ACTIVO» partía en tres renglones dentro de un teléfono vertical y el
+     botón se veía deforme.
+
+     El estado de «Ocultar palabra» cambia a amarillo con el modo armado, y esa
+     etiqueta es la más larga de la fila: por eso el grupo incluye el `?` que
+     va a su lado, para que los dos se ajusten a la vez y no queden de dos
+     tamaños. */
+  { sel: '.modal [data-accion="alternar-modo-ocultar"], ' +
+         '.modal [data-accion="ayuda-ocultar"]',
+    categoria: 'contenido', renglones: 1 },
+  { sel: '.modal [data-accion="deshacer-hueco"]',
+    categoria: 'contenido', renglones: 1 },
+  /* El pie del editor: «← Menú», «Cancelar» y «Guardar». Comparten fila y
+     tienen que verse del mismo tamaño. */
+  { sel: '[data-form="versiculo"] > .fila > .boton',
+    categoria: 'contenido', renglones: 1 },
+
   /* La referencia de cada ficha, 2 + 1. En un teléfono vertical la tarjeta
      deja ~120 px al lado de «Editar» y «Borrar», y a 16 pt
      «2 Tesalonicenses 3:16» no entra en un renglón: sin capacidad propia se

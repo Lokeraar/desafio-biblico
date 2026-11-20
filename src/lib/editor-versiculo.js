@@ -166,11 +166,22 @@ export function alternarHueco(estado, indice) {
 
   if (ya >= 0) {
     ocultas.splice(ya, 1);
+    /* ESTE TOQUE ES UN DESHACER, NO UN PASO NUEVO.
+     *
+     * Volver a tocar una palabra tapada la destapa, y eso deshace el cambio
+     * que la tapó: el contador de deshacer tiene que BAJAR, no subir. Antes se
+     * empujaba al historial igual, así que ocultar y arrepentirse dejaba dos
+     * pasos en la cuenta por un solo cambio.
+     *
+     * Se quita la última aparición de ese índice del historial. Si el índice no
+     * estaba —una palabra que venía tapada del versículo guardado, sin que el
+     * presentador la tapara ahora— no se toca la cuenta: destapar algo que
+     * nunca tapaste no te devuelve un paso, porque no gastaste ninguno. */
     return {
       estado: {
         ...estado,
         ocultas: ocultas.sort((a, b) => a - b),
-        historial: empujarHistorial(estado.historial, indice)
+        historial: quitarDelHistorial(estado.historial, indice)
       },
       accion: 'visible'
     };
@@ -190,6 +201,19 @@ export function alternarHueco(estado, indice) {
 }
 
 /** El historial guarda como máximo TOPE_DESHACER índices, el más nuevo al final. */
+/**
+ * Saca del historial la última vez que se tocó ese índice.
+ *
+ * Es la otra mitad de empujar: si volver a tocar una palabra la destapa, ese
+ * toque deshace el anterior en vez de sumar uno nuevo.
+ */
+function quitarDelHistorial(historial, indice) {
+  const siguiente = [...(historial ?? [])];
+  const i = siguiente.lastIndexOf(indice);
+  if (i >= 0) siguiente.splice(i, 1);
+  return siguiente;
+}
+
 function empujarHistorial(historial, indice) {
   const siguiente = [...(historial ?? []), indice];
   return siguiente.length > TOPE_DESHACER

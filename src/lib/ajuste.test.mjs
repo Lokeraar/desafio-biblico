@@ -404,6 +404,33 @@ t(generico && !generico.sel.includes('lista-versiculos'),
 t(generico && !generico.porCaja,
   'la lista de preguntas sigue en un solo grupo: sus etiquetas se comparan');
 
+
+/* ------------------------------------------------------------------ */
+console.log('\n=== Los botones del editor de versiculo van en 1 + 1 ===');
+
+/* Antes no estaban en ninguna lista y NO se ajustaban: «Ocultar palabra:
+   ACTIVO» partia en tres renglones dentro de un telefono vertical. */
+const rolOcultar = ROLES.find(r => r.sel.includes('alternar-modo-ocultar'));
+t(rolOcultar != null, 'el boton «Ocultar palabra» esta declarado en ROLES');
+t(rolOcultar?.renglones === 1, 'y va en 1 renglon (+1 de gracia)');
+t(rolOcultar?.sel.includes('ayuda-ocultar'),
+  'el «?» de al lado va en el mismo grupo: comparten fila');
+t(rolOcultar?.categoria === 'contenido', 'y son contenido: techo de 16 pt');
+
+const rolDeshacer = ROLES.find(r => r.sel.includes('deshacer-hueco'));
+t(rolDeshacer != null && rolDeshacer.renglones === 1,
+  '«Deshacer» tambien va en 1 + 1');
+
+const rolPie = ROLES.find(r => r.sel.includes('[data-form="versiculo"]'));
+t(rolPie != null, 'el pie del editor (Menu / Cancelar / Guardar) esta declarado');
+t(rolPie?.renglones === 1, 'y tambien en 1 + 1');
+
+/* Se agrupan por contenedor, no por clase: lo que hace grupo es compartir
+   la fila. Si se declarara por clase, un boton con otra clase se quedaria
+   fuera y la fila mostraria dos tamanos. */
+t(rolOcultar?.sel.startsWith('.modal '),
+  'se declaran por contenedor (.modal), no por clase de boton');
+
 console.log('\n===============================================');
 if (fail === 0) console.log(` TODO EN VERDE: ${ok} correctas, 0 fallas`);
 else console.log(` FALLAS: ${ok} correctas, ${fail} fallas`);

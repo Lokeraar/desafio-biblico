@@ -521,10 +521,10 @@ export function modalEditorVersiculo({
         </div>
 
         <div class="fila" style="gap:.5rem">
-          <button class="boton boton-contorno"
+          <button class="boton boton-contorno${modoOcultar ? ' modo-ocultar-activo' : ''}"
                   data-accion="alternar-modo-ocultar" type="button"
                   aria-pressed="${modoOcultar}" style="flex:1">
-            👁 Ocultar palabra
+            ${modoOcultar ? '✓ Ocultar palabra' : '👁 Ocultar palabra'}
           </button>
           <button class="boton boton-secundario" type="button" style="width:auto; flex:0 0 auto"
                   data-accion="ayuda-ocultar" aria-label="Qué hace Ocultar palabra"

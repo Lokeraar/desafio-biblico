@@ -2429,6 +2429,30 @@ body.tv .opciones { grid-template-columns: 1fr; }
   cursor: pointer;
 }
 
+/* El botón «Ocultar palabra» cuando el modo está armado.
+ *
+ * Antes se veía IGUAL encendido que apagado: el botón cambiaba
+ * `aria-pressed` pero no había ninguna regla para ese estado, así que el
+ * presentador no sabía si sus toques iban a tapar palabras o no. Se eligió el
+ * relleno amarillo fuerte porque es el cambio que no se confunde ni con el sol
+ * en la pantalla. La etiqueta también cambia de texto, así que el estado se
+ * lee igual si alguien no distingue los colores. */
+.boton.modo-ocultar-activo {
+  /* Fondo TEÑIDO, no amarillo macizo: el relleno pleno pesaba demasiado al
+     lado del resto de la pantalla, que es toda turquesa oscura. Lo que avisa
+     del estado es el borde de 2 px y la letra amarilla; el fondo solo lo
+     acompaña. */
+  background: rgba(252, 209, 22, .16);
+  color: var(--amarillo);
+  border-color: var(--amarillo);
+  font-weight: 800;
+  box-shadow: inset 0 0 0 1px rgba(252, 209, 22, .45);
+}
+.boton.modo-ocultar-activo:not(:disabled):hover {
+  background: rgba(252, 209, 22, .24);
+  border-color: #ffe14a;
+}
+
 /* Una palabra que se puede tocar mientras el modo «Ocultar palabra» está
    armado. El fondo al pasar es la única pista de que es tocable: sin él, el
    presentador no sabe dónde apuntar. */
