@@ -3,17 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Temas — Completar el versículo: lo que hay y lo que debería haber</title>
+<title>Temas — Completar el versículo</title>
 <style>
   :root{
     --fondo:#0b1a1d; --fondo-2:#102a2f; --tinta:#fff; --tinta-suave:#a9c6ca; --raya:#d2ffff;
     --tu-100:#6fe3ee; --tu-300:#2ec4d4; --tu-400:#00a0b0; --tu-500:#0090a0;
     --tu-600:#008090; --tu-700:#007080; --tu-800:#00525e; --tu-900:#0a2e33;
     --amarillo:#fcd116; --rojo:#cf2123; --ok:#1fbf75; --error:#e0483c; --espera:#f0a33a;
+    --peligro:#e0483c;
     --radio:18px; --radio-sm:12px;
     --sombra:0 10px 30px rgba(0,0,0,.45);
-    --t-xs:.8rem; --t-sm:.88rem; --t-base:1rem; --t-lg:1.15rem;
-    --t-xl:1.4rem; --t-2xl:1.75rem;
+    --t-xs:.8rem; --t-sm:.88rem; --t-base:1rem; --t-lg:1.15rem; --t-xl:1.4rem;
+    --fondo-juego:radial-gradient(120% 90% at 50% 0%,#1b6f4a 0%,#0f5a63 42%,#07222b 72%,#04151b 100%);
   }
   *{box-sizing:border-box}
   html,body{margin:0}
@@ -23,80 +24,56 @@
     font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;
   }
 
-  .placa{max-width:1500px;margin:0 auto;padding:2.5rem 2rem 5rem}
-  /* En telefono el relleno baja: con 2rem por lado no queda ancho util. */
-  @media (max-width:820px){
-    .placa{padding:1.25rem .85rem 3rem}
-    .placa h1{font-size:1.5rem}
-  }
+  .placa{max-width:1560px;margin:0 auto;padding:2.5rem 2rem 5rem}
+  @media (max-width:820px){ .placa{padding:1.25rem .85rem 3rem} .placa h1{font-size:1.5rem} }
+
   .placa > header{border-bottom:1px solid rgba(110,227,238,.22);padding-bottom:1.1rem}
   .placa h1{margin:0 0 .3rem;font-size:2rem;font-weight:800;letter-spacing:-.01em}
   .placa header p{margin:0;color:var(--tinta-suave);font-size:1rem;max-width:76ch}
-  .placa header .origen{margin-top:.7rem;font-family:ui-monospace,"Courier New",monospace;font-size:.8rem;color:var(--tu-100)}
 
-  /* ---------- el veredicto ---------- */
-  .veredicto{
-    margin:1.8rem 0 2.4rem;padding:1.1rem 1.2rem;border-radius:var(--radio-sm);
-    background:rgba(224,72,60,.12);border:1px solid var(--error);
+  .aprobado{
+    margin:1.4rem 0 0;padding:1rem 1.15rem;border-radius:var(--radio-sm);
+    background:rgba(31,191,117,.1);border:1px solid var(--ok);font-size:.95rem;line-height:1.6;
   }
-  .veredicto h2{margin:0 0 .5rem;font-size:1.1rem;color:#ffb3ac}
-  .veredicto p{margin:0 0 .6rem;font-size:.95rem;line-height:1.6}
-  .veredicto p:last-child{margin-bottom:0}
-  .veredicto strong{color:#fff}
-  .veredicto code{
-    font-family:ui-monospace,"Courier New",monospace;font-size:.85em;
-    background:rgba(0,0,0,.35);padding:.1em .35em;border-radius:4px;
-  }
-  .veredicto ol{margin:.5rem 0 0;padding-left:1.3rem;font-size:.95rem;line-height:1.6}
-  .veredicto li{margin:.3rem 0}
+  .aprobado strong{color:#8ef0c0}
 
-  .hallazgo{
-    margin:1.4rem 0 2.4rem;padding:1rem 1.15rem;border-radius:var(--radio-sm);
-    background:rgba(240,163,58,.12);border:1px solid var(--espera);font-size:.95rem;line-height:1.6;
-  }
-  .hallazgo strong{color:var(--espera)}
-
-  .seccion{margin-top:3rem}
+  .seccion{margin-top:2.6rem}
   .seccion > h2{
-    margin:0 0 .3rem;font-size:1.25rem;font-weight:800;
+    margin:0 0 .3rem;font-size:1.2rem;font-weight:800;
     display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;
   }
-  .seccion > h2 .etiqueta{
-    font-family:ui-monospace,"Courier New",monospace;font-size:.72rem;font-weight:700;
-    padding:.2em .6em;border-radius:999px;letter-spacing:.02em;
-  }
-  .etiqueta.hoy{background:rgba(224,72,60,.2);color:#ffb3ac}
-  .etiqueta.ideal{background:rgba(31,191,117,.2);color:#8ef0c0}
   .seccion > p.intro{margin:0 0 1.6rem;color:var(--tinta-suave);font-size:.95rem;max-width:80ch}
 
-  .tiras{display:flex;flex-wrap:wrap;gap:2.4rem 2rem;align-items:flex-start;justify-content:center}
-  @media (max-width:820px){ .tiras{gap:1.8rem 1rem} }
-  /* `max-width` en vez de `width` fijo: en una pantalla angosta la tarjeta se
-     encoge y deja de desbordar. */
-  .celda{display:flex;flex-direction:column;gap:.7rem;width:100%;max-width:390px;min-width:0}
-  .rotulo{display:flex;flex-wrap:wrap;align-items:baseline;gap:.45rem}
+  /* Cada modal se muestra en vertical y en horizontal. */
+  .par{
+    display:grid;grid-template-columns:minmax(0,auto) minmax(0,auto);gap:1.6rem;
+    justify-content:center;align-items:start;margin-bottom:2.6rem;
+  }
+  @media (max-width:900px){ .par{grid-template-columns:auto} }
+
+  .celda{display:flex;flex-direction:column;gap:.6rem;min-width:0}
+  .rotulo{display:flex;flex-wrap:wrap;align-items:baseline;gap:.5rem}
   .rotulo h3{margin:0;font-size:1rem;font-weight:800}
-  .rotulo .linea{margin-left:auto;font-family:ui-monospace,"Courier New",monospace;font-size:.7rem;color:var(--tinta-suave)}
-  .nota{margin:0;font-size:.84rem;color:var(--tinta-suave);line-height:1.55}
+  .rotulo .orient{
+    font-size:.72rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+    padding:.15em .55em;border-radius:999px;
+    background:rgba(111,227,238,.14);color:var(--tu-100);
+  }
+  .nota{margin:0;font-size:.85rem;color:var(--tinta-suave);line-height:1.55;max-width:44ch}
   .nota b{color:var(--tinta);font-weight:700}
   .nota code{font-family:ui-monospace,"Courier New",monospace;font-size:.88em;color:var(--tu-100)}
 
-  /* marco de teléfono con el modal dentro */
+  /* El marco crece con su contenido: nunca recorta. */
   .marco{
-    width:100%;max-width:390px;min-height:720px;height:auto;background:var(--fondo);
-    border:1px solid rgba(110,227,238,.2);border-radius:10px;overflow:visible;
-    box-shadow:0 14px 40px rgba(0,0,0,.5);position:relative;
-    /* Flex + padding para que el modal se centre de verdad: con un bloque
-       normal, `margin:auto` solo centra en horizontal y el modal quedaba
-       pegado arriba con un hueco negro debajo. */
+    width:100%;max-width:390px;min-height:640px;background:var(--fondo-juego);
+    border:1px solid rgba(110,227,238,.2);border-radius:10px;
+    box-shadow:0 14px 40px rgba(0,0,0,.5);
     display:flex;align-items:center;justify-content:center;padding:1.2rem;
   }
-  /* fondo del juego, igual que en el canvas de pantallas */
-  .marco::before{
-    content:'';position:absolute;inset:0;
-    background:radial-gradient(120% 90% at 50% 0%,#1b6f4a 0%,#0f5a63 42%,#07222b 72%,#04151b 100%);
+  .marco.horizontal{max-width:720px;min-height:390px}
+  @media (max-width:820px){
+    .marco,.marco.horizontal{min-height:auto}
   }
-  .velo{position:absolute;inset:0;background:rgba(3,12,14,.78);backdrop-filter:blur(3px)}
 
   /* ================= estilos copiados de styles.css ================= */
   button,.boton{
@@ -110,193 +87,109 @@
   .boton-secundario{background:transparent;color:var(--tu-100);border:2px solid var(--tu-600);box-shadow:none}
   .boton-peligro{background:linear-gradient(180deg,#e8635a,var(--rojo));color:#fff;box-shadow:0 4px 0 #8e1719,var(--sombra)}
   .boton-oro{background:linear-gradient(180deg,#f7d95e,#d9a520);color:#2a1f00;box-shadow:0 4px 0 #8a6a0f,var(--sombra)}
-  .boton-contorno{
-    background:transparent;color:var(--tu-100);border:2px solid rgba(110,227,238,.55);box-shadow:none;
-  }
-  .boton-mini{flex:0 1 auto;min-width:0;width:auto;padding:.5em .9em;font-size:var(--t-xs)}
+  .boton-contorno{background:transparent;color:var(--tu-100);border:2px solid rgba(110,227,238,.55);box-shadow:none}
 
   .tenue{color:var(--tinta-suave)}
   .chico{font-size:var(--t-sm)}
-  .mini{font-size:var(--t-xs)}
-  .centro{text-align:center}
 
   .modal{
-    width:100%;max-width:none;margin:auto;
+    width:100%;max-width:none;
     background:linear-gradient(160deg,var(--fondo-2),var(--tu-900));
     border:1px solid var(--tu-600);border-radius:var(--radio);
     padding:1.1rem;box-shadow:var(--sombra);
-    display:flex;flex-direction:column;gap:.7rem;position:relative;
-    /* Nada desborda: el modal se queda dentro del marco y el unico que hace
-       scroll es el recuadro del texto. Antes crecia con el contenido y el pie
-       con Cancelar/Guardar se iba fuera de la pantalla. */
-    /* Sin tope de alto: el marco crece con el modal. Antes el modal pedia
-       688 px en un marco de 682 utiles y se recortaba por arriba y por abajo,
-       que es lo que se veia como botones cortados. */
-    max-height:none;
-    min-height:0;
+    display:flex;flex-direction:column;gap:.7rem;
   }
-  .modal-ancho{max-width:none}
-  /* text-fitting 1+1: la letra va al techo del proyecto (16 pt) y cada rotulo
-     tiene una linea de gracia antes de encoger. Con nombres largos como
-     «Texto completo del versículo» no hace falta recortar. */
-  .modal h2{
-    margin:0;font-size:1rem;font-weight:800;line-height:1.3;
-    text-wrap:balance;
-  }
-  h2, h3, label, p, span, strong, button { overflow-wrap:anywhere; }
-  /* Capacidad 1+1 en todo lo demas: un rotulo corto no debe pasar de dos
-     lineas, y con `break-word` una palabra larga no ensancha la caja. */
-  label, .contador-huecos, .ocultar-modo, .aviso-historial{
-    word-break:break-word;
-  }
-  .modal h2{max-height:2.6em;overflow:hidden}
+  .modal h2{margin:0;font-size:1.05rem;font-weight:800;line-height:1.3;text-align:center}
 
-  .lista-admin{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.5rem;min-width:0}
+  .lista-admin{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.5rem}
 
-  .tema-fila{
-    display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.6rem;
-    padding:.45em .7em;border-radius:var(--radio-sm);background:rgba(255,255,255,.04);min-width:0;
+  .versiculo-fila{
+    padding:.7em .85em;border-radius:var(--radio-sm);
+    background:rgba(255,255,255,.06);border:1px solid rgba(110,227,238,.16);
   }
-  .tema-fila strong{font-weight:800;font-size:var(--t-sm)}
+  .versiculo-fila .ref{font-weight:800;color:var(--tu-100);font-size:.92rem}
+  .versiculo-fila .texto{margin:.3rem 0 0;font-size:.92rem;line-height:1.6}
 
-  .pregunta-fila{
-    list-style:none;padding:.7em .85em;border-radius:var(--radio-sm);
-    background:rgba(255,255,255,.06);border:1px solid rgba(110,227,238,.16);min-width:0;
+  /* Editar y Borrar: mismo ancho los dos, medido por el texto más largo. */
+  .acciones-fila{display:flex;gap:.4rem;flex-wrap:nowrap}
+  .acciones-fila .boton{
+    width:auto;flex:0 0 auto;
+    padding:.45em .9em;font-size:.8rem;line-height:1.2;white-space:nowrap;
   }
-  .fila{display:flex;gap:.75rem;align-items:center}
-  .fila-entre{display:flex;gap:1rem;align-items:center;justify-content:space-between}
-
-  label{
-    display:block;font-size:.8125rem;font-weight:700;color:var(--tinta-suave);
-    margin-bottom:.2rem;line-height:1.4;
-  }
-  input[type=text],textarea{
-    font:inherit;width:100%;padding:.6em .8em;border-radius:var(--radio-sm);
-    border:2px solid rgba(110,227,238,.28);background:rgba(0,0,0,.28);color:var(--tinta);
-    font-size:1rem;
-  }
-  input::placeholder,textarea::placeholder{color:rgba(169,198,202,.55)}
-  .campo{min-width:0;flex:1}
-
-  .opcion-fila{display:flex;align-items:center;gap:.6rem;min-width:0;margin-bottom:.45rem}
-  input[type=radio]{
-    width:1.4rem;min-width:1.4rem;height:1.4rem;flex:0 0 auto;margin:0;
-    appearance:none;border-radius:50%;border:2px solid rgba(110,227,238,.4);
-    background:rgba(0,0,0,.28);
-  }
-  input[type=radio]:checked{
-    background:radial-gradient(circle at 50% 50%,var(--tu-100) 0 .32rem,transparent .34rem),rgba(0,0,0,.28);
-    border-color:var(--tu-100);
-  }
-
-  /* ---------- piezas del editor que debería existir ---------- */
-  /* Fila del boton de ocultar y su ayuda. El globo se ancla a la FILA y
-     ocupa su ancho, no un punto: asi nunca desborda en 307 px utiles, que es
-     lo que pasaba con un globo de ancho fijo. */
-  /* Deshacer va ARRIBA del boton de ocultar, y solo aparece cuando hay algo
-     que deshacer. Cada toque deshace UNA palabra, en orden inverso al que se
-     ocultaron: el contador dice cuantos pasos quedan. */
-  /* Pie con «Menu» a la izquierda y las dos acciones repartiendose el resto.
-     Medido sobre 307 px utiles: «← Menú» necesita 59, y los otros dos 74 y
-     110. Con tres a la par cada uno recogia 102 y «Guardar igual» no cabia. */
-  .pie-con-menu{display:flex;gap:.5rem;align-items:stretch;flex-wrap:wrap}
-  .pie-con-menu > .a-menu{
-    flex:0 0 auto;width:auto;padding:.7em .8em;font-size:.875rem;
-  }
-  .pie-con-menu > .accion{flex:1 1 0;min-width:0;padding:.7em .4em;font-size:.875rem}
 
   .deshacer{
     display:flex;align-items:center;justify-content:center;gap:.5rem;
-    padding:.6em 1em;font-size:.9375rem;font-weight:800;line-height:1.3;
+    padding:.6em 1em;font-size:.93rem;font-weight:800;line-height:1.3;
     background:rgba(255,255,255,.06);color:var(--raya);
     border:2px solid rgba(210,255,255,.4);border-radius:var(--radio-sm);
     box-shadow:none;
   }
   .deshacer .pasos{
-    font-size:.8125rem;font-weight:700;color:var(--tu-100);
+    font-size:.8rem;font-weight:700;color:var(--tu-100);
     background:rgba(111,227,238,.16);border-radius:999px;padding:.1em .55em;
   }
 
-  .fila-ocultar{display:flex;flex-wrap:wrap;align-items:stretch;gap:.5rem;position:relative}
-  /* `width:auto` es imprescindible: la regla base `button,.boton{width:100%}`
-     daba al boton un basis de 100% y el `?` no cabia a su lado: caia debajo.
-     Visto en la captura. */
-  .fila-ocultar > .boton-ocultar{flex:1 1 auto;min-width:0;width:auto}
+  .fila-ocultar{display:flex;flex-wrap:wrap;align-items:stretch;gap:.5rem}
+  .fila-ocultar > .boton-ocultar{
+    flex:1 1 auto;min-width:0;max-width:calc(100% - 3.2rem);width:auto;
+    display:flex;align-items:center;justify-content:center;gap:.4rem;
+    font-size:.95rem;font-weight:800;padding:.75em .6em;line-height:1.3;
+    white-space:normal;text-align:center;
+  }
   .ayuda-ocultar{
-    flex:0 0 auto;width:2.4rem;min-width:2.4rem;min-height:2.4rem;
-    font:inherit;font-size:.95rem;font-weight:800;cursor:pointer;
+    flex:0 0 auto;width:2.6rem;min-width:2.6rem;min-height:2.6rem;
+    font:inherit;font-size:1rem;font-weight:800;cursor:pointer;
     border-radius:var(--radio-sm);border:2px solid rgba(110,227,238,.55);
     background:transparent;color:var(--tu-100);padding:0;
     display:grid;place-items:center;
   }
-  .ayuda-ocultar:focus-visible{outline:2px solid var(--raya);outline-offset:2px}
-  /* El globo va SIEMPRE visible, en su propia linea debajo del boton. Un
-     tooltip que solo sale al pasar el raton es invisible en una placa: no hay
-     hover que hacer. Ocupa el ancho de la fila, asi que no desborda. */
+
+  /* El globo: SIEMPRE visible, en su propia línea, ancho del contenedor.
+     Ancho completo + overflow-wrap = no puede quedar cortado. */
   .globo{
     display:block;flex:1 0 100%;margin-top:.1rem;
-    position:relative;
-    padding:.6em .75em;border-radius:10px;
-    background:rgba(10,46,51,.92);border:1px solid var(--tu-100);
-    color:var(--tinta);font-size:.84rem;line-height:1.5;font-weight:600;
+    padding:.65em .8em;border-radius:10px;
+    background:rgba(10,46,51,.95);border:1px solid var(--tu-100);
+    color:var(--tinta);font-size:.85rem;line-height:1.5;font-weight:600;
+    overflow-wrap:anywhere;hyphens:auto;
+  }
+  .globo strong{color:var(--amarillo)}
+
+  .modo-aviso{
+    display:flex;align-items:center;gap:.5rem;padding:.55em .7em;border-radius:var(--radio-sm);
+    background:rgba(252,209,22,.14);border:1px solid var(--amarillo);
+    font-size:.9rem;font-weight:700;color:var(--amarillo);line-height:1.4;
+  }
+
+  .texto-versiculo{
+    font-size:1rem;line-height:1.65;font-weight:600;
+    background:rgba(0,0,0,.28);border:2px solid rgba(110,227,238,.28);
+    border-radius:var(--radio-sm);padding:.65em .8em;
     overflow-wrap:anywhere;
   }
-  /* El pico apunta al boton de arriba, no al de la ayuda: es mas ancho. */
-  .globo::before{
-    content:'';position:absolute;top:-6px;left:1.1rem;
-    width:10px;height:10px;transform:rotate(45deg);
-    background:rgba(10,46,51,.92);
-    border-left:1px solid var(--tu-100);border-top:1px solid var(--tu-100);
-  }
-
-  /* Abierto de forma permanente (lo que se muestra en esta placa) va EN EL
-     FLUJO, no encima: absoluto tapaba Cancelar y Guardar. Medido: con el globo
-     en el flujo el modal ocupa 475 px de los 682 disponibles, asi que cabe. */
-
-
-  .ocultar-modo{
-    display:flex;align-items:center;gap:.5rem;padding:.5em .7em;border-radius:var(--radio-sm);
-    background:rgba(252,209,22,.14);border:1px solid var(--amarillo);
-    font-size:.9375rem;font-weight:700;color:var(--amarillo);line-height:1.4;
-  }
-  .boton-ocultar{
-    display:flex;align-items:center;justify-content:center;gap:.4rem;
-    font-size:.9375rem;font-weight:800;padding:.7em .6em;line-height:1.3;
-    white-space:normal;text-align:center;
-  }
-  /* El texto que se escribe y se edita tiene capacidad 2 lineas mas 1 de
-     gracia: es lo unico que hace scroll dentro del modal. Medido sobre 307 px
-     utiles: 3 lineas a 16 pt entran sin cortar. */
-  .texto-versiculo{
-    font-size:1rem;line-height:1.6;font-weight:600;
-    background:rgba(0,0,0,.28);border:2px solid rgba(110,227,238,.28);
-    border-radius:var(--radio-sm);padding:.6em .75em;
-    /* Capacidad 2+1: tres lineas y nada mas. Al pasar de ahi, scroll.
-       3 x 1.6em de texto + 1.2em de relleno = 6em: con border-box el
-       max-height incluye el padding, asi que 4.8em cortaba la tercera. */
-    max-height:6em;overflow-y:auto;overscroll-behavior:contain;
-  }
   .texto-versiculo p{margin:0}
-  /* El parrafo de ayuda del estado vacio: 2 lineas mas 1. */
-  .texto-versiculo .ayuda{font-weight:400;font-size:.9375rem;line-height:1.55}
-  /* una palabra tapada: subrayada, como pide el documento */
-  .tapada{
-    color:var(--amarillo);border-bottom:2px solid var(--amarillo);
-    padding-bottom:1px;font-weight:800;cursor:pointer;
+  .tapada{color:var(--amarillo);border-bottom:2px solid var(--amarillo);padding-bottom:1px;font-weight:800}
+  .tocable{border-radius:3px;background:rgba(252,209,22,.16)}
+
+  label{display:block;font-size:.85rem;font-weight:700;color:var(--tinta-suave);margin-bottom:.2rem}
+  input[type=text]{
+    font:inherit;width:100%;padding:.6em .8em;border-radius:var(--radio-sm);
+    border:2px solid rgba(110,227,238,.28);background:rgba(0,0,0,.28);color:var(--tinta);
+    font-size:1rem;
   }
-  /* palabra tocable en modo ocultar */
-  .tocable{border-radius:3px;cursor:pointer;transition:background .12s}
-  .tocable:hover{background:rgba(252,209,22,.22)}
-  .contador-huecos{
-    display:flex;align-items:center;justify-content:space-between;gap:.6rem;
-    font-size:var(--t-xs);font-weight:700;color:var(--tinta-suave);
+
+  .aviso-espera{
+    padding:.7em .85em;border-radius:var(--radio-sm);font-size:.88rem;font-weight:700;
+    background:rgba(240,163,58,.16);border:1px solid var(--espera);line-height:1.5;
   }
-  .contador-huecos .num{color:var(--amarillo);font-weight:800}
-  .aviso-historial{
-    padding:.7em .9em;border-radius:var(--radio-sm);font-size:var(--t-sm);font-weight:700;
-    background:rgba(240,163,58,.16);border:1px solid var(--espera);
-  }
-  @media (prefers-reduced-motion:reduce){ *{transition:none!important;animation:none!important} }
+
+  .pie{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+  .pie.tres{grid-template-columns:auto 1fr 1fr}
+  .pie .boton{padding:.72em .5em;font-size:.92rem;line-height:1.2}
+  .pie .volver{padding:.72em .85em}
+
+  .contador{display:flex;justify-content:space-between;align-items:center;gap:.5rem;margin-top:.4rem}
+  .contador .num{color:var(--amarillo);font-weight:800}
 </style>
 </head>
 <body>
@@ -304,276 +197,119 @@
 
   <header>
     <h1>Temas — Completar el versículo</h1>
-    <p>Las ventanas de administración de temas tal como están hoy en el código, y las que este juego necesita. El editor de versículos <b>todavía no existe</b>: lo que sigue marca el hueco.</p>
-    <p class="origen">src/lib/admin-ui.js:229-340 · src/app.js:1998-2019, 2438-2470 · docs/completar-versiculo-diseno.md:217-240</p>
+    <p>Las ventanas de administración de temas de este juego. Un versículo no tiene respuestas: tiene palabras tapadas dentro de su propio texto.</p>
   </header>
 
-  <div class="veredicto">
-    <h2>Tu sospecha es correcta, y el defecto es peor de lo que pensabas</h2>
-    <p>El modal de <strong>Temas</strong> sí es compartido, pero <strong>filtra por juego</strong>: <code>app.js:2002</code> llama a <code>admin.temas(app.juegoElegido)</code>, así que ves los temas de Completar el versículo y no los de selección simple. Esa parte está bien.</p>
-    <p>El problema está un paso más adentro, y es de raíz:</p>
-    <ol>
-      <li><strong>El editor de versículos no existe.</strong> No hay ninguna función de administración que trate <code>texto_marcado</code>, ni botón «Ocultar», ni nada parecido.</li>
-      <li><strong>Se reutiliza el formulario de pregunta de opción múltiple.</strong> Lo que hoy abre «Nueva pregunta» en un tema del versículo es <code>modalFormPregunta</code>: cuatro respuestas y un radic para marcar la correcta.</li>
-      <li><strong>Y ese formulario no puede guardar un versículo.</strong> <code>validarPregunta</code> exige <em>exactamente 4 respuestas</em> (línea 26). Un versículo guardado en la base no tiene ninguna: <code>20261119000000_completar_versiculo.sql:1434</code> inserta <code>(game_slug, topic_id, prompt, texto_marcado, reference, source)</code>, sin opciones.</li>
-    </ol>
-    <p>Consecuencia concreta: <strong>editar un versículo existente te obliga a inventar cuatro respuestas falsas</strong>, y crear uno nuevo pasa lo mismo. El juego pierde los huecos porque se guardan en <code>texto_marcado</code> con llaves, no en las opciones.</p>
-  </div>
-
-  <div class="hallazgo">
-    <strong>La instrucción que me pediste buscar no está en memorias.</strong> Está escrita en el proyecto, en <code>docs/completar-versiculo-diseno.md</code>, sección «9. Editor», líneas 217-240. Y descrie exactamente lo que falta. Sigue todo esto:
-    <ol style="margin:.5rem 0 0;padding-left:1.3rem">
-      <li>En el panel, <b>en su propio tema</b>, separado del de selección simple.</li>
-      <li>Lista de versículos: <b>referencia, texto y cuántos huecos tiene</b>.</li>
-      <li>Formulario de <b>un versículo por vez</b>: referencia, texto completo y <b>nada más</b>.</li>
-      <li>Para marcar un hueco: se pulsa <b>Ocultar</b> y después se toca la palabra. El modo queda armado hasta volver a pulsarlo. Tocar una palabra ya marcada la desmarca.</li>
-      <li>Las palabras ocultas se ven <b>subrayadas</b> en el formulario.</li>
-      <li><b>↔ Deshacer</b>, encima del de ocultar, visible solo cuando hay algo que deshacer, y <b>deshaciendo de a una palabra</b> en orden inverso.</li>
-      <li>Al guardar se serializa con llaves, se recalculan los huecos y se reescribe la pregunta. Si el versículo <b>ya se jugó alguna vez</b>, se avisa antes de guardar.</li>
-    </ol>
+  <div class="aprobado">
+    <strong>Aprobado por Christian el 20/11/2026, con estos ajustes:</strong>
+    «1. La pantalla de móvil se desborda, hay que arreglarla, usa text-fitting en todo 1+1 y pero en la pregunta que se escribe y se va a editar o crear 2+1.
+    2. Quita el botón de borrar todo y el de deshacer ocúltalo hasta que efectivamente se use el ocultar en una palabra.
+    3. El botón de "ocultar - activar modo" debe aparecer también en las pantallas de editar pero renómbralo en todos a "ocultar palabra". Y en ambas (nueva y editar) debe tener a su lado un tooltip con la explicación (sin desbordar) de que esa opción lo que hace es que al pulsarla y después tocar en una palabra, ahí esa palabra se vuelve la oculta (el hueco) que el participante y el televisor verá en el juego y deberá descubrir.»
   </div>
 
   <!-- ============================================================ -->
   <section class="seccion">
-    <h2>Lo que hay hoy <span class="etiqueta hoy">ACTUAL</span></h2>
-    <p class="intro">Estos tres modales son los que existen. El tercero es el que se abre para un versículo, y es el que no encaja.</p>
+    <h2>Lista de versículos</h2>
+    <p class="intro">Lo primero que ve el presentador al entrar a un tema. La referencia arriba, el texto con sus huecos subrayados y cuántos huecos tiene. El botón de Editar y el de Borrar miden lo mismo: el ancho lo pone el texto más largo.</p>
 
-    <div class="tiras">
-
-      <!-- 1. Modal de temas -->
-      <section class="celda">
-        <div class="rotulo">
-          <h3>1. Lista de temas</h3>
-          <span class="linea">admin-ui.js:232</span>
-        </div>
+    <div class="par">
+      <div class="celda">
+        <div class="rotulo"><h3>Lista de versículos</h3><span class="orient">vertical</span></div>
         <div class="marco">
-          <div class="velo"></div>
           <div class="modal" role="dialog" aria-modal="true">
-            <h2>Temas</h2>
+            <h2>2 Corintios · versículos</h2>
+            <p class="chico tenue" style="margin:0;text-align:center">3 versículos en este tema.</p>
+
             <ul class="lista-admin">
-              <li class="fila-entre tema-fila">
-                <span style="min-width:0">
-                  <strong>2 Corintios</strong>
-                  <span class="chico tenue"> · 29 preguntas</span>
-                </span>
-                <span class="fila" style="gap:.35rem">
-                  <button class="boton boton-contorno boton-mini" type="button">Preguntas</button>
-                  <button class="boton boton-contorno boton-mini" type="button">Renombrar</button>
-                  <button class="boton boton-peligro boton-mini" type="button">Borrar</button>
-                </span>
+              <li class="versiculo-fila">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem;flex-wrap:wrap">
+                  <span class="ref">2 Corintios 1:1</span>
+                  <span class="acciones-fila">
+                    <button class="boton boton-contorno" type="button">Editar</button>
+                    <button class="boton boton-peligro" type="button">Borrar</button>
+                  </span>
+                </div>
+                <p class="texto">Pablo apóstol de Jesucristo por la voluntad de Dios, y el hermano <span class="tapada">Timoteo</span> a la iglesia de Dios que está en Corinto.</p>
+                <p class="chico tenue" style="margin:.3rem 0 0"><strong style="color:var(--amarillo)">1 hueco</strong> · ya se jugó</p>
               </li>
-              <li class="fila-entre tema-fila">
-                <span style="min-width:0">
-                  <strong>Romanos</strong>
-                  <span class="chico tenue"> · 12 preguntas</span>
-                </span>
-                <span class="fila" style="gap:.35rem">
-                  <button class="boton boton-contorno boton-mini" type="button">Preguntas</button>
-                  <button class="boton boton-contorno boton-mini" type="button">Renombrar</button>
-                  <button class="boton boton-peligro boton-mini" type="button">Borrar</button>
-                </span>
+
+              <li class="versiculo-fila">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem;flex-wrap:wrap">
+                  <span class="ref">2 Corintios 3:17</span>
+                  <span class="acciones-fila">
+                    <button class="boton boton-contorno" type="button">Editar</button>
+                    <button class="boton boton-peligro" type="button">Borrar</button>
+                  </span>
+                </div>
+                <p class="texto">Porque el Señor es el <span class="tapada">Espíritu</span>, y donde está el <span class="tapada">Espíritu</span> del Señor, allí hay <span class="tapada">libertad</span>.</p>
+                <p class="chico tenue" style="margin:.3rem 0 0"><strong style="color:var(--amarillo)">3 huecos</strong> · todavía no se jugó</p>
               </li>
-              <li class="fila-entre tema-fila">
-                <span style="min-width:0">
-                  <strong>Salmos</strong>
-                  <span class="chico tenue"> · 8 preguntas</span>
-                </span>
-                <span class="fila" style="gap:.35rem">
-                  <button class="boton boton-contorno boton-mini" type="button">Preguntas</button>
-                  <button class="boton boton-contorno boton-mini" type="button">Renombrar</button>
-                  <button class="boton boton-peligro boton-mini" type="button">Borrar</button>
-                </span>
+
+              <li class="versiculo-fila">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem;flex-wrap:wrap">
+                  <span class="ref">2 Corintios 6:14</span>
+                  <span class="acciones-fila">
+                    <button class="boton boton-contorno" type="button">Editar</button>
+                    <button class="boton boton-peligro" type="button">Borrar</button>
+                  </span>
+                </div>
+                <p class="texto">No os <span class="tapada">unzáis</span> con los incrédulos; porque ¿qué compañerismo tiene la <span class="tapada">justicia</span> con la <span class="tapada">iniquidad</span>?</p>
+                <p class="chico tenue" style="margin:.3rem 0 0"><strong style="color:var(--amarillo)">3 huecos</strong> · ya se jugó</p>
               </li>
             </ul>
-            <form class="fila" style="gap:.5rem;align-items:flex-end">
-              <div class="campo">
-                <label>Tema nuevo</label>
-                <input type="text" placeholder="Ej.: Romanos" value="">
-              </div>
-              <button class="boton boton-oro" type="button" style="width:auto">Crear</button>
-            </form>
-            <button class="boton boton-secundario" type="button">Cerrar</button>
-          </div>
-        </div>
-        <p class="nota"><b>Este sí sirve tal cual.</b> Filtra por juego y el tema «2 Corintios» es propio del versículo, separado del homónimo de selección simple. Nada que cambiar aquí.</p>
-      </section>
 
-      <!-- 2. Modal preguntas -->
-      <section class="celda">
-        <div class="rotulo">
-          <h3>2. Lista de preguntas del tema</h3>
-          <span class="linea">admin-ui.js:278</span>
-        </div>
-        <div class="marco">
-          <div class="velo"></div>
-          <div class="modal modal-ancho" role="dialog" aria-modal="true">
-            <h2>2 Corintios</h2>
-            <p class="chico tenue" style="margin:0">3 preguntas en este tema.</p>
-            <div style="max-height:300px;overflow-y:auto">
-              <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.6rem">
-                <li class="pregunta-fila">
-                  <div class="fila-entre" style="gap:.5rem">
-                    <span class="chico tenue">#1</span>
-                    <span class="fila" style="gap:.35rem">
-                      <button class="boton boton-contorno boton-mini" type="button">Editar</button>
-                      <button class="boton boton-peligro boton-mini" type="button">Borrar</button>
-                    </span>
-                  </div>
-                  <p style="margin:.25rem 0 0;font-size:.9rem">Pablo apóstol de Jesucristo por la voluntad de Dios, y el hermano __________ a la iglesia de Dios que está en Corinto.</p>
-                  <p class="chico tenue" style="margin:.15rem 0 0">Correcta: — · 2 Corintios 1:1</p>
-                </li>
-                <li class="pregunta-fila">
-                  <div class="fila-entre" style="gap:.5rem">
-                    <span class="chico tenue">#2</span>
-                    <span class="fila" style="gap:.35rem">
-                      <button class="boton boton-contorno boton-mini" type="button">Editar</button>
-                      <button class="boton boton-peligro boton-mini" type="button">Borrar</button>
-                    </span>
-                  </div>
-                  <p style="margin:.25rem 0 0;font-size:.9rem">Porque el Señor es el __________, y donde está el __________ del Señor, allí hay __________.</p>
-                  <p class="chico tenue" style="margin:.15rem 0 0">Correcta: — · 2 Corintios 3:17</p>
-                </li>
-                <li class="pregunta-fila">
-                  <div class="fila-entre" style="gap:.5rem">
-                    <span class="chico tenue">#3</span>
-                    <span class="fila" style="gap:.35rem">
-                      <button class="boton boton-contorno boton-mini" type="button">Editar</button>
-                      <button class="boton boton-peligro boton-mini" type="button">Borrar</button>
-                    </span>
-                  </div>
-                  <p style="margin:.25rem 0 0;font-size:.9rem">No os __________ con los incrédulos; porque ¿qué compañerismo tiene la __________ con la __________?</p>
-                  <p class="chico tenue" style="margin:.15rem 0 0">Correcta: — · 2 Corintios 6:14</p>
-                </li>
-              </ul>
-            </div>
-            <div class="fila" style="gap:.6rem">
-              <button class="boton boton-oro" type="button" style="flex:1">➕ Nueva pregunta</button>
-              <button class="boton boton-secundario" type="button" style="width:auto">Volver</button>
+            <div class="pie">
+              <button class="boton boton-oro" type="button">➕ Nuevo versículo</button>
+              <button class="boton boton-secundario" type="button">Volver</button>
             </div>
           </div>
         </div>
-        <p class="nota">La lista ya se lee bien para este juego: referencia, texto y la palabra «Correcta: —» vacía. <b>Pero mira lo que falta:</b> no dice <b>cuántos huecos</b> tiene cada versículo, que es lo primero que el documento pide ver. Y el botón dice «Nueva <b>pregunta</b>», no «versículo».</p>
-      </section>
+        <p class="nota">Sin «Correcta: —», que aquí no significa nada, y sin <b>Deshacer</b>: no hay nada que deshacer en una lista.</p>
+      </div>
 
-      <!-- 3. Formulario actual: el que no encaja -->
-      <section class="celda">
-        <div class="rotulo">
-          <h3>3. Formulario — el que se abre hoy</h3>
-          <span class="linea">admin-ui.js:335</span>
-        </div>
-        <div class="marco">
-          <div class="velo"></div>
-          <div class="modal modal-ancho" role="dialog" aria-modal="true">
-            <h2>Editar pregunta</h2>
-            <div style="background:rgba(224,72,60,.16);border:1px solid var(--error);border-radius:12px;padding:.7em .9em;font-size:.84rem;font-weight:700">
-              Este formulario es de SELECCIÓN SIMPLE: pide cuatro respuestas y una correcta. Un versículo no tiene ninguna de las dos cosas.
-            </div>
-            <div>
-              <label>Pregunta</label>
-              <textarea rows="3">Pablo apóstol de Jesucristo por la voluntad de Dios, y el hermano ____ a la iglesia de Dios que está en Corinto.</textarea>
-            </div>
-            <div>
-              <label>Respuestas — marca la correcta</label>
-              <div class="opcion-fila"><input type="radio" name="r"><input type="text" value="Timoteo"></div>
-              <div class="opcion-fila"><input type="radio" name="r"><input type="text" value="Tito"></div>
-              <div class="opcion-fila"><input type="radio" name="r"><input type="text" value="Silas"></div>
-              <div class="opcion-fila"><input type="radio" name="r"><input type="text" placeholder="Respuesta 4"></div>
-            </div>
-            <div>
-              <label>Cita bíblica (opcional)</label>
-              <input type="text" value="2 Corintios 1:1">
-            </div>
-            <div class="fila" style="gap:.6rem">
-              <button class="boton boton-secundario" type="button" style="flex:1">Cancelar</button>
-              <button class="boton boton-oro" type="button" style="flex:1">Guardar</button>
+      <div class="celda">
+        <div class="rotulo"><h3>Lista de versículos</h3><span class="orient">horizontal</span></div>
+        <div class="marco horizontal">
+          <div class="modal" role="dialog" aria-modal="true">
+            <h2>2 Corintios · versículos</h2>
+            <p class="chico tenue" style="margin:0;text-align:center">3 versículos en este tema.</p>
+
+            <ul class="lista-admin">
+              <li class="versiculo-fila">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem;flex-wrap:wrap">
+                  <span class="ref">2 Corintios 3:17</span>
+                  <span class="acciones-fila">
+                    <button class="boton boton-contorno" type="button">Editar</button>
+                    <button class="boton boton-peligro" type="button">Borrar</button>
+                  </span>
+                </div>
+                <p class="texto">Porque el Señor es el <span class="tapada">Espíritu</span>, y donde está el <span class="tapada">Espíritu</span> del Señor, allí hay <span class="tapada">libertad</span>.</p>
+                <p class="chico tenue" style="margin:.3rem 0 0"><strong style="color:var(--amarillo)">3 huecos</strong> · todavía no se jugó</p>
+              </li>
+            </ul>
+
+            <div class="pie">
+              <button class="boton boton-oro" type="button">➕ Nuevo versículo</button>
+              <button class="boton boton-secundario" type="button">Volver</button>
             </div>
           </div>
         </div>
-        <p class="nota"><b>Aquí está el problema.</b> Para guardar hay que llenar las cuatro respuestas — si no, <code>validarPregunta</code> responde «Se necesitan exactamente 4 respuestas». Y un versículo no tiene respuestas: lo que tiene es <b>palabras tapadas dentro de su propio texto</b>. Todo lo que se escribe en esos cuatro campos se guarda como datos de un juego que este tema no juega.</p>
-      </section>
-
+        <p class="nota">A lo ancho el texto respira: el versículo entra en dos renglones en vez de cuatro.</p>
+      </div>
     </div>
   </section>
 
   <!-- ============================================================ -->
   <section class="seccion">
-    <h2>Lo que este juego necesita <span class="etiqueta ideal">PROPUESTA</span></h2>
-    <p class="intro">Siguiendo la sección «9. Editor» del documento del proyecto, punto por punto. Es el mismo esqueleto de modales —mismo ancho, mismo pie, mismos botones— para que el presentador no tenga que aprender dos paneles.</p>
+    <h2>Editar un versículo que ya existe</h2>
+    <p class="intro">Se abre con sus huecos puestos, porque ya están guardados. <b>Deshacer</b> está encima del botón de ocultar: solo aparece cuando en esta edición ya se tapó alguna palabra, y deshace de a una. La explicación del botón se ve siempre, debajo, sin necesidad de tocar nada.</p>
 
-    <div class="tiras">
-
-      <!-- 4. Lista de versículos con conteo de huecos -->
-      <section class="celda">
-        <div class="rotulo">
-          <h3>4. Lista de versículos</h3>
-          <span class="linea">referencia · texto · huecos</span>
-        </div>
+    <div class="par">
+      <div class="celda">
+        <div class="rotulo"><h3>Editar versículo</h3><span class="orient">vertical</span></div>
         <div class="marco">
-          <div class="velo"></div>
-          <div class="modal modal-ancho" role="dialog" aria-modal="true">
-            <h2>2 Corintios <span class="chico tenue" style="font-weight:600">· versículos</span></h2>
-            <p class="chico tenue" style="margin:0">3 versículos en este tema.</p>
-            <div style="max-height:320px;overflow-y:auto">
-              <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.6rem">
-                <li class="pregunta-fila">
-                  <div class="fila-entre" style="gap:.5rem">
-                    <span class="chico tenue"><b style="color:var(--tu-100)">2 Corintios 1:1</b></span>
-                    <span class="fila" style="gap:.35rem">
-                      <button class="boton boton-contorno boton-mini" type="button">Editar</button>
-                      <button class="boton boton-peligro boton-mini" type="button">Borrar</button>
-                    </span>
-                  </div>
-                  <p style="margin:.3rem 0 0;font-size:.9rem;line-height:1.6">Pablo apóstol de Jesucristo por la voluntad de Dios, y el hermano <span class="tapada">Timoteo</span> a la iglesia de Dios que está en Corinto.</p>
-                  <p class="chico tenue" style="margin:.3rem 0 0"><b style="color:var(--amarillo)">1 hueco</b> · ya se jugó 3 veces</p>
-                </li>
-                <li class="pregunta-fila">
-                  <div class="fila-entre" style="gap:.5rem">
-                    <span class="chico tenue"><b style="color:var(--tu-100)">2 Corintios 3:17</b></span>
-                    <span class="fila" style="gap:.35rem">
-                      <button class="boton boton-contorno boton-mini" type="button">Editar</button>
-                      <button class="boton boton-peligro boton-mini" type="button">Borrar</button>
-                    </span>
-                  </div>
-                  <p style="margin:.3rem 0 0;font-size:.9rem;line-height:1.6">Porque el Señor es el <span class="tapada">Espíritu</span>, y donde está el <span class="tapada">Espíritu</span> del Señor, allí hay <span class="tapada">libertad</span>.</p>
-                  <p class="chico tenue" style="margin:.3rem 0 0"><b style="color:var(--amarillo)">3 huecos</b> · todavía no se jugó</p>
-                </li>
-                <li class="pregunta-fila">
-                  <div class="fila-entre" style="gap:.5rem">
-                    <span class="chico tenue"><b style="color:var(--tu-100)">2 Corintios 6:14</b></span>
-                    <span class="fila" style="gap:.35rem">
-                      <button class="boton boton-contorno boton-mini" type="button">Editar</button>
-                      <button class="boton boton-peligro boton-mini" type="button">Borrar</button>
-                    </span>
-                  </div>
-                  <p style="margin:.3rem 0 0;font-size:.9rem;line-height:1.6">No os <span class="tapada">unzáis</span> con los incrédulos; porque ¿qué compañerismo tiene la <span class="tapada">justicia</span> con la <span class="tapada">iniquidad</span>?</p>
-                  <p class="chico tenue" style="margin:.3rem 0 0"><b style="color:var(--amarillo)">3 huecos</b> · ya se jugó 1 vez</p>
-                </li>
-              </ul>
-            </div>
-            <div class="fila" style="gap:.6rem">
-              <button class="boton boton-oro" type="button" style="flex:1">➕ Nuevo versículo</button>
-              <button class="boton boton-secundario" type="button" style="width:auto">Volver</button>
-            </div>
-          </div>
-        </div>
-        <p class="nota">Cambios respecto de la tarjeta 2: <b>la referencia va arriba</b> como título de cada fila, las <b>palabras tapadas se ven subrayadas en amarillo</b>, se muestra <b>cuántos huecos</b> tiene, y un dato más que el documento pide para el aviso: <b>si ya se jugó</b>. Ya no aparece «Correcta: —», que en este juego no significa nada.</p>
-      </section>
-
-      <!-- 5. Editor: modo ocultar armado -->
-      <section class="celda">
-        <div class="rotulo">
-          <h3>5. Editor — modo Ocultar armado</h3>
-          <span class="linea">un versículo</span>
-        </div>
-        <div class="marco">
-          <div class="velo"></div>
-          <div class="modal modal-ancho" role="dialog" aria-modal="true">
+          <div class="modal" role="dialog" aria-modal="true">
             <h2>Editar versículo</h2>
-
-            <div class="ocultar-modo">
-              <span aria-hidden="true">👁</span>
-              <span>Modo ocultar activo: toca una palabra del texto</span>
-            </div>
 
             <div>
               <label>Referencia</label>
@@ -583,47 +319,107 @@
             <div>
               <label>Texto completo del versículo</label>
               <div class="texto-versiculo">
-                <p>Porque el Señor es el <span class="tapada">Espíritu</span>, y donde está el <span class="tapada">Espíritu</span> del Señor, allí hay <span class="tocable">libertad</span>.</p>
+                <p>Porque el Señor es el <span class="tapada">Espíritu</span>, y donde está el <span class="tapada">Espíritu</span> del Señor, allí hay libertad.</p>
               </div>
-              <div class="contador-huecos" style="margin-top:.45rem">
-                <span><span class="num">2</span> de 34 huecos</span>
-                <span>1 tocable</span>
+              <div class="contador">
+                <span class="chico tenue"><span class="num">2</span> de 34 huecos</span>
+                <span class="chico tenue">1 palabra tocable</span>
               </div>
             </div>
 
-            <button class="deshacer boton" type="button">
-              ↔ Deshacer <span class="pasos">2</span>
-            </button>
+            <div class="modo-aviso">
+              <span aria-hidden="true">👁</span>
+              <span>Modo ocultar activo: toca una palabra del texto</span>
+            </div>
+
+            <button class="deshacer" type="button">↔ Deshacer <span class="pasos">2</span></button>
 
             <div class="fila-ocultar">
               <button class="boton boton-contorno boton-ocultar" type="button" aria-pressed="true">👁 Ocultar palabra</button>
               <button class="ayuda-ocultar" type="button" aria-label="Qué hace Ocultar palabra">?</button>
-              <span class="globo">Al pulsar «Ocultar palabra» y después tocar una palabra del texto, esa palabra pasa a ser el hueco que verán el participante y el televisor durante el juego. Nadie la ve: hay que descubrirla.</span>
+              <p class="globo">
+                Al pulsar <strong>Ocultar palabra</strong> y después tocar una palabra del texto, esa palabra
+                pasa a ser el hueco que verán el participante y el televisor durante el juego.
+                Nadie la ve: hay que descubrirla. Vuelve a pulsar el botón para dejar de ocultar.
+              </p>
             </div>
 
-            <div class="pie-con-menu">
-              <button class="boton boton-secundario a-menu" type="button">← Menú</button>
-              <button class="boton boton-secundario accion" type="button">Cancelar</button>
-              <button class="boton boton-oro accion" type="button">Guardar</button>
+            <div class="pie tres">
+              <button class="boton boton-secundario volver" type="button">← Menú</button>
+              <button class="boton boton-secundario" type="button">Volver</button>
+              <button class="boton boton-oro" type="button">Guardar</button>
             </div>
           </div>
         </div>
-        <p class="nota">Solo <b>referencia, texto y nada más</b>, como pide el documento. El <b>modo ocultar</b> queda armado hasta que se vuelve a pulsar, y se ve en amarillo arriba para que nunca haya duda de qué hace el próximo toque. Al tocar una palabra ya marcada, <b>se desmarca</b>. El contador recuerda el tope de <b>34 huecos</b>.<br><br><b>Aquí sí aparece «↔ Deshacer»</b>, arriba del de ocultar, porque ya hay dos palabras ocultas. El contador <b>2</b> dice cuántos toques quedan: cada toque deshace <b>una</b> palabra, en orden inverso al que se ocultaron, y desaparece cuando no queda ninguna. El globo de ayuda se deja abierto en esta placa para que se lea; en el juego se abre al tocar el <b>?</b>.</p>
-      </section>
+        <p class="nota"><b>← Menú</b> cierra el editor y vuelve a Configuración. <b>Volver</b> regresa a la lista de versículos del tema. Son dos destinos distintos y por eso tienen nombres distintos.</p>
+      </div>
 
-      <!-- 6. Editor: aviso de versículo ya jugado -->
-      <section class="celda">
-        <div class="rotulo">
-          <h3>6. Aviso antes de guardar</h3>
-          <span class="linea">ya se jugó</span>
-        </div>
-        <div class="marco">
-          <div class="velo"></div>
-          <div class="modal modal-ancho" role="dialog" aria-modal="true">
+      <div class="celda">
+        <div class="rotulo"><h3>Editar versículo</h3><span class="orient">horizontal</span></div>
+        <div class="marco horizontal">
+          <div class="modal" role="dialog" aria-modal="true">
             <h2>Editar versículo</h2>
 
-            <div class="aviso-historial">
-              Este versículo ya se jugó 3 veces. Si lo cambias, las partidas pasadas quedan con un texto que ya no coincide con lo que se jugó.
+            <div>
+              <label>Referencia</label>
+              <input type="text" value="2 Corintios 3:17">
+            </div>
+
+            <div>
+              <label>Texto completo del versículo</label>
+              <div class="texto-versiculo">
+                <p>Porque el Señor es el <span class="tapada">Espíritu</span>, y donde está el <span class="tapada">Espíritu</span> del Señor, allí hay libertad.</p>
+              </div>
+              <div class="contador">
+                <span class="chico tenue"><span class="num">2</span> de 34 huecos</span>
+                <span class="chico tenue">1 palabra tocable</span>
+              </div>
+            </div>
+
+            <div class="modo-aviso">
+              <span aria-hidden="true">👁</span>
+              <span>Modo ocultar activo: toca una palabra del texto</span>
+            </div>
+
+            <button class="deshacer" type="button">↔ Deshacer <span class="pasos">2</span></button>
+
+            <div class="fila-ocultar">
+              <button class="boton boton-contorno boton-ocultar" type="button" aria-pressed="true">👁 Ocultar palabra</button>
+              <button class="ayuda-ocultar" type="button" aria-label="Qué hace Ocultar palabra">?</button>
+              <p class="globo">
+                Al pulsar <strong>Ocultar palabra</strong> y después tocar una palabra del texto, esa palabra
+                pasa a ser el hueco que verán el participante y el televisor durante el juego.
+                Nadie la ve: hay que descubrirla.
+              </p>
+            </div>
+
+            <div class="pie tres">
+              <button class="boton boton-secundario volver" type="button">← Menú</button>
+              <button class="boton boton-secundario" type="button">Volver</button>
+              <button class="boton boton-oro" type="button">Guardar</button>
+            </div>
+          </div>
+        </div>
+        <p class="nota">El mismo estado que la vertical, para poder comparar las dos orientaciones. <b>Deshacer</b> aparece con el contador de pasos y se va cuando no queda ninguno.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <section class="seccion">
+    <h2>Aviso antes de guardar un versículo que ya se jugó</h2>
+    <p class="intro">Cambiarlo altera partidas pasadas, así que se dice antes y el botón nombra la consecuencia: <b>Guardar igual</b>. Mismo comportamiento en las dos direcciones de pantalla.</p>
+
+    <div class="par">
+      <div class="celda">
+        <div class="rotulo"><h3>Versículo ya jugado</h3><span class="orient">vertical</span></div>
+        <div class="marco">
+          <div class="modal" role="dialog" aria-modal="true">
+            <h2>Editar versículo</h2>
+
+            <div class="aviso-espera">
+              Este versículo ya se jugó alguna vez. Si lo cambias, las partidas
+              pasadas quedan con un texto que ya no coincide con lo que se jugó.
             </div>
 
             <div>
@@ -636,36 +432,81 @@
               <div class="texto-versiculo">
                 <p>Pablo apóstol de Jesucristo por la voluntad de Dios, y el hermano <span class="tapada">Timoteo</span> a la iglesia de Dios que está en Corinto.</p>
               </div>
-              <div class="contador-huecos" style="margin-top:.45rem">
-                <span><span class="num">1</span> de 34 huecos</span>
+              <div class="contador">
+                <span class="chico tenue"><span class="num">1</span> de 34 huecos</span>
               </div>
             </div>
 
             <div class="fila-ocultar">
               <button class="boton boton-contorno boton-ocultar" type="button" aria-pressed="false">👁 Ocultar palabra</button>
               <button class="ayuda-ocultar" type="button" aria-label="Qué hace Ocultar palabra">?</button>
-              <span class="globo">Al pulsar «Ocultar palabra» y después tocar una palabra del texto, esa palabra pasa a ser el hueco que verán el participante y el televisor durante el juego. Nadie la ve: hay que descubrirla.</span>
+              <p class="globo">
+                Al pulsar <strong>Ocultar palabra</strong> y después tocar una palabra del texto, esa palabra
+                pasa a ser el hueco que verán el participante y el televisor durante el juego.
+                Nadie la ve: hay que descubrirla.
+              </p>
             </div>
 
-            <div class="pie-con-menu">
-              <button class="boton boton-secundario a-menu" type="button">← Menú</button>
-              <button class="boton boton-secundario accion" type="button">Cancelar</button>
-              <button class="boton boton-oro accion" type="button">Guardar igual</button>
+            <div class="pie tres">
+              <button class="boton boton-secundario volver" type="button">← Menú</button>
+              <button class="boton boton-secundario" type="button">Volver</button>
+              <button class="boton boton-oro" type="button">Guardar igual</button>
             </div>
           </div>
         </div>
-        <p class="nota">El último punto del documento: <b>si el versículo ya se jugó alguna vez, se avisa antes de guardar</b>, porque cambiarlo altera partidas pasadas. «Guardar» pasa a decir <b>«Guardar igual»</b>: nombra la consecuencia en vez de esconderla. El aviso va en naranja, el color que el proyecto ya usa para lo que necesita atención sin ser error.<br><br>El botón <b>Ocultar palabra</b> está también aquí, como en cualquier edición, y <b>«Deshacer» no se ve</b>: en esta tarjeta todavía no se ocultó ninguna palabra. Aparece en cuanto se oculta la primera.<br><br><b>«← Menú»</b> cierra el modal y vuelve a <b>Configuración</b>. Es el camino de vuelta que ninguna pantalla del proyecto puede perder (ya existe en <code>admin-ui.js:401</code>). Va solo en las dos pantallas de escribir —nueva y editar—, no en la de mirar.</p>
-      </section>
+        <p class="nota">El aviso va en naranja, el color que el proyecto ya usa para lo que necesita atención sin ser un error.</p>
+      </div>
 
-      <!-- 7. Editor: sin huecos todavía -->
-      <section class="celda">
-        <div class="rotulo">
-          <h3>7. Versículo nuevo, sin huecos</h3>
-          <span class="linea">estado vacío</span>
+      <div class="celda">
+        <div class="rotulo"><h3>Versículo ya jugado</h3><span class="orient">horizontal</span></div>
+        <div class="marco horizontal">
+          <div class="modal" role="dialog" aria-modal="true">
+            <h2>Editar versículo</h2>
+
+            <div class="aviso-espera">
+              Este versículo ya se jugó alguna vez. Si lo cambias, las partidas
+              pasadas quedan con un texto que ya no coincide con lo que se jugó.
+            </div>
+
+            <div>
+              <label>Texto completo del versículo</label>
+              <div class="texto-versiculo">
+                <p>Pablo apóstol de Jesucristo por la voluntad de Dios, y el hermano <span class="tapada">Timoteo</span> a la iglesia de Dios que está en Corinto.</p>
+              </div>
+            </div>
+
+            <div class="fila-ocultar">
+              <button class="boton boton-contorno boton-ocultar" type="button" aria-pressed="false">👁 Ocultar palabra</button>
+              <button class="ayuda-ocultar" type="button" aria-label="Qué hace Ocultar palabra">?</button>
+              <p class="globo">
+                Al pulsar <strong>Ocultar palabra</strong> y después tocar una palabra del texto, esa palabra
+                pasa a ser el hueco que verán el participante y el televisor durante el juego.
+                Nadie la ve: hay que descubrirla.
+              </p>
+            </div>
+
+            <div class="pie tres">
+              <button class="boton boton-secundario volver" type="button">← Menú</button>
+              <button class="boton boton-secundario" type="button">Volver</button>
+              <button class="boton boton-oro" type="button">Guardar igual</button>
+            </div>
+          </div>
         </div>
+        <p class="nota">A lo ancho el aviso entra en dos renglones y deja ver el texto completo sin desplazarse.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <section class="seccion">
+    <h2>Añadir un versículo nuevo</h2>
+    <p class="intro">Primero el texto, después las palabras. El botón de ocultar está debajo del texto porque no se puede tapar una palabra que todavía no está escrita. Sin <b>Deshacer</b>: con cero huecos no hay nada que deshacer.</p>
+
+    <div class="par">
+      <div class="celda">
+        <div class="rotulo"><h3>Nuevo versículo</h3><span class="orient">vertical</span></div>
         <div class="marco">
-          <div class="velo"></div>
-          <div class="modal modal-ancho" role="dialog" aria-modal="true">
+          <div class="modal" role="dialog" aria-modal="true">
             <h2>Nuevo versículo</h2>
 
             <div>
@@ -676,92 +517,59 @@
             <div>
               <label>Texto completo del versículo</label>
               <div class="texto-versiculo">
-                <p class="ayuda" style="color:rgba(169,198,202,.6);font-style:italic">Escribe el versículo completo, sin marcar nada todavía. Después usa Ocultar palabra y toca las que quieras tapar.</p>
+                <p class="tenue" style="font-weight:400;font-style:italic">Escribe el versículo completo, sin marcar nada todavía. Después usa «Ocultar palabra» y toca las que quieras tapar.</p>
               </div>
-              <div class="contador-huecos" style="margin-top:.45rem">
-                <span><span class="num">0</span> de 34 huecos</span>
+              <div class="contador">
+                <span class="chico tenue"><span class="num">0</span> de 34 huecos</span>
               </div>
             </div>
 
             <div class="fila-ocultar">
               <button class="boton boton-contorno boton-ocultar" type="button" aria-pressed="false">👁 Ocultar palabra</button>
-              <button class="ayuda-ocultar" type="button" aria-label="Qué hace Ocultar palabra">?</button>
-              <span class="globo">Al pulsar «Ocultar palabra» y después tocar una palabra del texto, esa palabra pasa a ser el hueco que verán el participante y el televisor durante el juego. Nadie la ve: hay que descubrirla.</span>
             </div>
 
-            <div class="fila" style="gap:.6rem">
-              <button class="boton boton-secundario" type="button" style="flex:1;padding:.7em .5em;font-size:.9375rem">Cancelar</button>
-              <button class="boton boton-oro" type="button" style="flex:1;padding:.7em .5em;font-size:.9375rem">Guardar</button>
+            <div class="pie">
+              <button class="boton boton-secundario" type="button">Cancelar</button>
+              <button class="boton boton-oro" type="button">Guardar</button>
             </div>
           </div>
         </div>
-        <p class="nota">El primer paso real: <b>primero el texto, después las palabras</b>. El documento lo dice en ese orden —«se pulsa Ocultar y después se toca la palabra»— y es el único que funciona: no se puede tapar una palabra que todavía no está escrita. El botón queda justo debajo del texto, al alcance del pulgar después de escribir.<br><br><b>Sin «Deshacer»</b>: con cero palabras ocultas no hay nada que deshacer, y un botón apagado solo ocupa sitio. Aparece en cuanto se oculta la primera palabra.</p>
-      </section>
+        <p class="nota">Sin <b>← Menú</b>: este editor es el último paso de un flujo que acaba de empezar, así que <b>Cancelar</b> es el único camino de vuelta que hace falta.</p>
+      </div>
 
-    </div>
-  </section>
+      <div class="celda">
+        <div class="rotulo"><h3>Nuevo versículo</h3><span class="orient">horizontal</span></div>
+        <div class="marco horizontal">
+          <div class="modal" role="dialog" aria-modal="true">
+            <h2>Nuevo versículo</h2>
 
-  <!-- ============================================================ -->
-  <section class="seccion">
-    <h2>El hueco, medido en líneas de código</h2>
-    <p class="intro">No es una impresión: es lo que falta y lo que sobra, con nombre de archivo.</p>
-    <div style="overflow-x:auto;margin-top:1rem">
-      <table style="width:100%;border-collapse:collapse;font-size:.9rem">
-        <thead>
-          <tr style="text-align:left;border-bottom:1px solid rgba(110,227,238,.3)">
-            <th style="padding:.6rem .5rem">Lo que el documento pide</th>
-            <th style="padding:.6rem .5rem">Dónde estaría</th>
-            <th style="padding:.6rem .5rem">Estado</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr style="border-bottom:1px solid rgba(255,255,255,.07)">
-            <td style="padding:.55rem .5rem">Tema propio, filtrado por juego</td>
-            <td style="padding:.55rem .5rem"><code style="font-size:.85em;color:var(--tu-100)">app.js:2002</code></td>
-            <td style="padding:.55rem .5rem;color:#8ef0c0;font-weight:700">Ya existe</td>
-          </tr>
-          <tr style="border-bottom:1px solid rgba(255,255,255,.07)">
-            <td style="padding:.55rem .5rem">Lista con referencia, texto y huecos</td>
-            <td style="padding:.55rem .5rem"><code style="font-size:.85em;color:var(--tu-100)">admin-ui.js:278</code></td>
-            <td style="padding:.55rem .5rem;color:var(--espera);font-weight:700">Parcial: falta el conteo</td>
-          </tr>
-          <tr style="border-bottom:1px solid rgba(255,255,255,.07)">
-            <td style="padding:.55rem .5rem">Formulario de un versículo, sin opciones</td>
-            <td style="padding:.55rem .5rem">no existe</td>
-            <td style="padding:.55rem .5rem;color:#ffb3ac;font-weight:700">Falta</td>
-          </tr>
-          <tr style="border-bottom:1px solid rgba(255,255,255,.07)">
-            <td style="padding:.55rem .5rem">Modo Ocultar y tocar la palabra</td>
-            <td style="padding:.55rem .5rem">no existe</td>
-            <td style="padding:.55rem .5rem;color:#ffb3ac;font-weight:700">Falta</td>
-          </tr>
-          <tr style="border-bottom:1px solid rgba(255,255,255,.07)">
-            <td style="padding:.55rem .5rem">Palabras ocultas subrayadas</td>
-            <td style="padding:.55rem .5rem"><code style="font-size:.85em;color:var(--tu-100)">styles.css</code> <code style="font-size:.85em;color:var(--tu-100)">.hueco-host</code></td>
-            <td style="padding:.55rem .5rem;color:var(--espera);font-weight:700">El estilo existe, sin editor</td>
-          </tr>
-          <tr style="border-bottom:1px solid rgba(255,255,255,.07)">
-            <td style="padding:.55rem .5rem">↔ Deshacer secuencial, arriba del de ocultar</td>
-            <td style="padding:.55rem .5rem">no existe</td>
-            <td style="padding:.55rem .5rem;color:#ffb3ac;font-weight:700">Falta</td>
-          </tr>
-          <tr style="border-bottom:1px solid rgba(255,255,255,.07)">
-            <td style="padding:.55rem .5rem">Serializar con llaves y recalcular huecos</td>
-            <td style="padding:.55rem .5rem"><code style="font-size:.85em;color:var(--tu-100)">versiculo_huecos()</code></td>
-            <td style="padding:.55rem .5rem;color:var(--espera);font-weight:700">El SQL existe, falta llamarlo</td>
-          </tr>
-          <tr>
-            <td style="padding:.55rem .5rem">Avisar si el versículo ya se jugó</td>
-            <td style="padding:.55rem .5rem"><code style="font-size:.85em;color:var(--tu-100)">admin.preguntas</code></td>
-            <td style="padding:.55rem .5rem;color:#ffb3ac;font-weight:700">Falta el dato</td>
-          </tr>
-        </tbody>
-      </table>
+            <div>
+              <label>Referencia</label>
+              <input type="text" placeholder="Ej.: 2 Corintios 5:17">
+            </div>
+
+            <div>
+              <label>Texto completo del versículo</label>
+              <div class="texto-versiculo">
+                <p class="tenue" style="font-weight:400;font-style:italic">Escribe el versículo completo, sin marcar nada todavía. Después usa «Ocultar palabra» y toca las que quieras tapar.</p>
+              </div>
+            </div>
+
+            <div class="fila-ocultar">
+              <button class="boton boton-contorno boton-ocultar" type="button" aria-pressed="false">👁 Ocultar palabra</button>
+            </div>
+
+            <div class="pie">
+              <button class="boton boton-secundario" type="button">Cancelar</button>
+              <button class="boton boton-oro" type="button">Guardar</button>
+            </div>
+          </div>
+        </div>
+        <p class="nota">El globo del botón de ocultar mide lo mismo en las dos direcciones: ocupa el ancho del modal y parte las palabras largas en vez de estirar la caja.</p>
+      </div>
     </div>
-    <p class="nota" style="margin-top:1.2rem">Dos cosas ya están hechas y no hay que reescribirlas: el <b>tema filtrado por juego</b> y la <b>función SQL que calcula los huecos</b> a partir del texto con llaves (<code>versiculo_huecos</code>, migración <code>20261119000000</code>). El editor solo tiene que producir ese texto con llaves y llamarla.</p>
   </section>
 
 </main>
-
 </body>
 </html>
