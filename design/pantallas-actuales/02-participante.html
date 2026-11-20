@@ -111,10 +111,11 @@
      veian identicas, asi que no habia pista ninguna. Ahora los guiones van
      en el HTML, uno por letra, y el ancho lo pone el contenido.
 
-     OJO, esto es del DIBUJO: el juego real escribe "____" desde
-     styles.css:1727 y no sabe cuantas letras tiene cada hueco. Para que el
-     juego lo haga de verdad, el servidor tiene que mandar la longitud de
-     cada palabra tapada. Es cambio de DATOS, no de CSS. */
+     El servidor YA lo manda: versiculo_render (migracion
+     20261119000002_juicio_parcial.sql) dibuja un guion por letra, con un
+     minimo de 3. La pista no llegaba a la pantalla porque el CSS agregaba
+     cuatro guiones encima con `.hueco::before` y versiculoHTML descartaba
+     los del servidor. Corregido: los guiones van dentro del span. */
   .hueco{
     display:inline-block;color:var(--tu-600);
     border-bottom:3px solid var(--tu-400);vertical-align:baseline;
