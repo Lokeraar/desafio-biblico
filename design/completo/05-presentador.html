@@ -27,6 +27,23 @@
   .nota.duda{border-left:4px solid #f0a33a}
   code{font-family:ui-monospace,monospace;font-size:.9em;background:rgba(111,227,238,.12);
     padding:.08em .35em;border-radius:5px;color:#6fe3ee}
+  /* EL RELOJ DEL PRESENTADOR: CENTRADO Y CON SU BARRA VISIBLE.
+     Christian: «Alinealo al centro e incluye la barra de temporizador».
+
+     La barra SI estaba en el marcado (`.barra-tiempo` dentro de
+     `.reloj-ronda`), pero medía CERO: `base-app.css:487` tiene
+     `.reloj { width: 100% }`, y dentro del `.reloj-ronda` ese 100 % se comia
+     todo el ancho, dejando a la barra `flex: 1 1 auto` sin espacio. Se veia la
+     cifra «14 s» sola, como si la barra no existiera.
+
+     En la app real el `.reloj` no tiene `width` (styles.css:360); su ancho lo
+     pone el contenido y `flex: 0 0 auto` en `styles.css:3129`. Aqui se copia
+     ese valor. */
+  .panel-host .reloj-ronda{
+    justify-content:center;max-width:22rem;margin-inline:auto;
+  }
+  .panel-host .reloj-ronda .reloj{width:auto;flex:0 0 auto;text-align:right}
+  .panel-host .reloj-ronda .barra-tiempo{flex:1 1 auto;min-width:0}
 </style>
 </head>
 <body>

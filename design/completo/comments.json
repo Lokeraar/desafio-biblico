@@ -515,9 +515,10 @@
       "excerpt": "14 s",
       "comment": "Alinealo al centro e incluye la barra de temporizador",
       "createdAt": "2026-11-21T18:27:40.671Z",
-      "status": "open",
+      "status": "resolved",
       "sentAt": "2026-11-21T18:27:41.470Z",
-      "resolvedAt": null
+      "resolvedAt": "2026-11-21T18:33:13.161Z",
+      "resolution": "Reloj del presentador centrado y con su barra visible. La barra ya estaba en el marcado pero medía 0 px: `.reloj { width: 100% }` en base-app.css se comía todo el ancho. Acotado a 22rem, centrado, y `.reloj` con width auto y flex 0 0 auto como en la app real. Ahora la barra mide ~301 px."
     }
   ]
 }
