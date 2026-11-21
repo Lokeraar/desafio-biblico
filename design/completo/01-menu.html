@@ -42,6 +42,27 @@
   code{font-family:ui-monospace,monospace;font-size:.9em;background:rgba(111,227,238,.12);
     padding:.08em .35em;border-radius:5px;color:#6fe3ee}
 
+  /* EL LAPIZ DE LA PORTADA. CSS de `styles.css:223`, copiado tal cual.
+     Va en la esquina superior derecha DE LA IMAGEN, no de la pantalla: es donde
+     esta el original y donde el dedo lo busca.
+
+     Silueta sin fondo a proposito: un cuadrado opaco taparia la imagen, que es
+     justo lo que se quiere mirar antes de cambiarla. Solo se oscurece un poco
+     por detras para que se vea sobre una foto clara. */
+  .lapiz-portada{
+    position:absolute; top:.5rem; right:.5rem;
+    width:2.4rem; height:2.4rem;
+    display:grid; place-items:center;
+    padding:0; border:0; border-radius:50%;
+    background:rgba(0,0,0,.28);
+    color:rgba(255,255,255,.92);
+    cursor:pointer; line-height:0; z-index:2;
+  }
+  .lapiz-portada svg{ width:1.25rem; height:1.25rem; fill:currentColor; display:block; }
+  .lapiz-portada:hover{ background:rgba(0,0,0,.45); }
+  .lapiz-portada:focus-visible{ outline:2px solid var(--tu-300); outline-offset:2px; }
+  .lapiz-portada:active{ transform:scale(.94); }
+
 </style>
 </head>
 <body>
@@ -66,6 +87,27 @@
         <div class="menu-lienzo">
           <div class="portada">
             <div class="arte">DESAFÍO BÍBLICO 2026 · 2 CORINTIOS</div>
+          <!-- EL LAPIZ DE LA PORTADA, EN LA ESQUINA DE LA IMAGEN.
+               Christian: «A todas las pantallas de portada primero cuando se toca
+               en el icono de editar hay que introducir la contrasena maestra para
+               posteriormente si habilitar el reemplazo de imagen».
+
+               En la app ya funciona asi: el lapiz esta en `app.js:736` y su
+               `case 'cambiar-portada'` en `app.js:2678`. El `case`
+               pide la clave ANTES de abrir el explorador, y
+               `app.js:3723` lo abre solo cuando la clave ya esta verificada. El
+               CSS es el de `styles.css:223`, copiado tal cual.
+
+               Faltaba en el artboard: nunca estuvo dibujado aqui (`git log -S
+               lapiz-portada -- design/` no devuelve nada). La app y el sitio
+               publicado si lo tienen. -->
+            <button type="button" class="lapiz-portada"
+                    aria-label="Cambiar la imagen del menú"
+                    title="Cambiar la imagen del menú">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+              </svg>
+            </button>
           </div>
           <div class="menu-cuerpo">
             <div class="menu-titulo">🏆 DESAFÍO BÍBLICO ⭐</div>
@@ -115,6 +157,18 @@
 
     <div style="flex:1 1 340px;min-width:280px">
       <div class="notas">
+        <div class="nota bien">
+          <h3>El lápiz pide la clave PRIMERO</h3>
+          <p>Christian: «cuando se toca en el icono de editar hay que introducir la contraseña
+          maestra para posteriormente sí habilitar el reemplazo de imagen».</p>
+          <p>El orden es <strong>lápiz → clave → explorador</strong>, nunca al revés:
+          <code>app.js:2678</code> guarda el tipo pendiente (<code>marcaPendiente</code>), abre el
+          modal de clave y solo al acertar <code>app.js:3723</code> llama a
+          <code>abrirSelectorDeImagen()</code>. Pedir la foto antes de autorizar dejaría a cualquiera
+          eligiendo archivos para nada.</p>
+          <p>Y la clave se recuerda en la sesión (<code>app.adminClave</code>): se pide una vez, no en
+          cada imagen.</p>
+        </div>
         <div class="nota mal">
           <h3>El error que corregí aquí</h3>
           <p>En la versión anterior de este artboard los botones estaban <strong>después</strong> de
@@ -160,6 +214,27 @@
         <div class="menu-lienzo">
           <div class="portada">
             <div class="arte">DESAFÍO BÍBLICO<br>2026<br>2 CORINTIOS</div>
+          <!-- EL LAPIZ DE LA PORTADA, EN LA ESQUINA DE LA IMAGEN.
+               Christian: «A todas las pantallas de portada primero cuando se toca
+               en el icono de editar hay que introducir la contrasena maestra para
+               posteriormente si habilitar el reemplazo de imagen».
+
+               En la app ya funciona asi: el lapiz esta en `app.js:736` y su
+               `case 'cambiar-portada'` en `app.js:2678`. El `case`
+               pide la clave ANTES de abrir el explorador, y
+               `app.js:3723` lo abre solo cuando la clave ya esta verificada. El
+               CSS es el de `styles.css:223`, copiado tal cual.
+
+               Faltaba en el artboard: nunca estuvo dibujado aqui (`git log -S
+               lapiz-portada -- design/` no devuelve nada). La app y el sitio
+               publicado si lo tienen. -->
+            <button type="button" class="lapiz-portada"
+                    aria-label="Cambiar la imagen del menú"
+                    title="Cambiar la imagen del menú">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+              </svg>
+            </button>
           </div>
           <div class="menu-cuerpo">
             <div class="menu-titulo">🏆 DESAFÍO BÍBLICO ⭐</div>
@@ -232,6 +307,27 @@
         <div class="menu-lienzo">
           <div class="portada">
             <div class="arte">DESAFÍO BÍBLICO 2026 · 2 CORINTIOS</div>
+          <!-- EL LAPIZ DE LA PORTADA, EN LA ESQUINA DE LA IMAGEN.
+               Christian: «A todas las pantallas de portada primero cuando se toca
+               en el icono de editar hay que introducir la contrasena maestra para
+               posteriormente si habilitar el reemplazo de imagen».
+
+               En la app ya funciona asi: el lapiz esta en `app.js:736` y su
+               `case 'cambiar-portada'` en `app.js:2678`. El `case`
+               pide la clave ANTES de abrir el explorador, y
+               `app.js:3723` lo abre solo cuando la clave ya esta verificada. El
+               CSS es el de `styles.css:223`, copiado tal cual.
+
+               Faltaba en el artboard: nunca estuvo dibujado aqui (`git log -S
+               lapiz-portada -- design/` no devuelve nada). La app y el sitio
+               publicado si lo tienen. -->
+            <button type="button" class="lapiz-portada"
+                    aria-label="Cambiar la imagen del menú"
+                    title="Cambiar la imagen del menú">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+              </svg>
+            </button>
           </div>
           <div class="menu-cuerpo">
             <div class="menu-titulo">🏆 DESAFÍO BÍBLICO ⭐</div>
