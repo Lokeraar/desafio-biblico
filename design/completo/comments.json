@@ -536,9 +536,10 @@
       "excerpt": "Completar el versículo",
       "comment": "Usa text-fitting, que quepa en una sola línea",
       "createdAt": "2026-11-21T18:35:05.813Z",
-      "status": "open",
+      "status": "resolved",
       "sentAt": "2026-11-21T18:35:05.848Z",
-      "resolvedAt": null
+      "resolvedAt": "2026-11-21T18:45:56.815Z",
+      "resolution": "En el acostado de la ronda: el nombre del juego cabe en una fila (812 px útiles, los tres textos piden 478) y «Pausar» bajó debajo a la izquierda del versículo, que ahora se pega arriba con flex-start; el botón cierra la columna con margin-top auto, así que las cajas no se tocan."
     },
     {
       "id": "01lotrmf",
@@ -547,8 +548,20 @@
       "excerpt": "Pausar",
       "comment": "reubícalo debajo a la izquierda del versículo. Y desplaza el versículo un poco más hacia arriba para que no se choquen sus cajas.",
       "createdAt": "2026-11-21T18:36:31.052Z",
-      "status": "open",
+      "status": "resolved",
       "sentAt": "2026-11-21T18:36:31.098Z",
+      "resolvedAt": "2026-11-21T18:45:56.815Z",
+      "resolution": "En el acostado de la ronda: el nombre del juego cabe en una fila (812 px útiles, los tres textos piden 478) y «Pausar» bajó debajo a la izquierda del versículo, que ahora se pega arriba con flex-start; el botón cierra la columna con margin-top auto, así que las cajas no se tocan."
+    },
+    {
+      "id": "2chyxicz",
+      "file": "06-ceremonia.html",
+      "selector": "body > div > div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(2) > div > div > ul > li:nth-of-type(1) > span:nth-of-type(1)",
+      "excerpt": "🥉",
+      "comment": "En este ejemplo estás colocando la medalla de bronce por encima de la de plata y Debería ser al contrario",
+      "createdAt": "2026-11-21T18:43:34.707Z",
+      "status": "open",
+      "sentAt": "2026-11-21T18:43:34.812Z",
       "resolvedAt": null
     }
   ]

@@ -104,6 +104,25 @@
      la fila crecia de mas. Apretado, el bloque cabe en el alto del QR. */
   .sala-cabecera .sala-datos{line-height:1.15;gap:.1rem}
   .sala-datos .codigo-sala{line-height:1.05;font-size:var(--t-2xl)}
+
+  /* ================= PAUSAR DEBAJO, Y EL VERSICULO ARRIBA =================
+     Christian: «reubicalo debajo a la izquierda del versiculo. Y desplaza el
+     versiculo un poco mas hacia arriba para que no se choquen sus cajas».
+
+     `.zona-enunciado` centraba el texto en vertical (`justify-content:center`).
+     Al meter la tecla debajo, centrado el bloque empujaba el texto justo
+     encima del boton y las cajas se tocaban. Ahora el texto se pega ARRIBA
+     (`flex-start`) y el boton cierra la columna abajo a la izquierda con
+     `margin-top:auto`, que se lleva todo el aire sobrante al medio: los dos
+     quedan separados por el hueco mas grande posible.
+
+     Solo aplica a la tela ACOSTADA, que es donde Christian lo pidio; la
+     vertical conserva su pie con los dos botones juntos. */
+  .tela.h .zona-enunciado{justify-content:flex-start}
+  .tela.h .pausa-abajo{
+    margin-top:auto; align-self:flex-start; width:auto;
+    flex:0 0 auto;
+  }
 </style>
 </head>
 <body>
@@ -363,6 +382,15 @@
             <div class="zona-enunciado">
               <p class="enunciado">Nuestras <span class="hueco">cartas</span> sois, escritas en
               nuestro <span class="hueco">corazón</span>, conocidas y leídas de todos los hombres.</p>
+              <!-- PAUSAR ABAJO A LA IZQUIERDA DEL VERSICULO.
+                   Christian: «reubicalo debajo a la izquierda del versiculo. Y
+                   desplaza el versiculo un poco mas hacia arriba para que no se
+                   choquen sus cajas».
+                   Estaba en la columna de controles, a la derecha. Al bajar a la
+                   izquierda, la columna de controles se queda con el turno, la
+                   lista y «Terminar juego», que es lo que se mira junto a los
+                   puntos. -->
+              <button class="boton boton-contorno pausa-abajo">Pausar</button>
             </div>
             <div class="zona-controles">
               <span class="mini tenue">Turno de Carlos Ruiz</span>
@@ -370,7 +398,6 @@
                 <li><span class="nombre-j">Ana Pérez</span><span class="chico tenue">3 pts</span></li>
                 <li><span class="nombre-j">Carlos Ruiz</span><span class="chico tenue">2 pts</span></li>
               </ul>
-              <button class="boton boton-contorno">Pausar</button>
               <button class="boton boton-peligro">Terminar juego</button>
             </div>
           </div>
