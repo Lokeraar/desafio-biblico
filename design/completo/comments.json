@@ -620,9 +620,10 @@
       "excerpt": "Modales — la app real Los nueve diálogos, sacados de src/lib/admin-ui.js y modalJuicioHTML. Todos comparten el mismo armazón: un fondo que oscurece y un .modal que se centra si cabe y arranca desde arriba si no. El armazón, una sola vez Fondo y modal. Lo demás es contenido. 390×844 · fondo y modal d",
       "comment": "A todas las pantallas hay que mejorarle el text fitting ya que algunas se desbordan, déjale únicamente un espacio de margen izquierdo un espacio de margen derecho un espacio de margen Superior y un espacio de margen inferior a cada tarjeta / contenedor/ caja / elemento / tabla / botón de las dimensiones actuales.",
       "createdAt": "2026-11-21T20:36:19.852Z",
-      "status": "open",
+      "status": "resolved",
       "sentAt": "2026-11-21T20:36:19.920Z",
-      "resolvedAt": null
+      "resolvedAt": "2026-11-21T21:46:07.121Z",
+      "resolution": "Aplicado en el archivo 07-modales.html: tokens --esp-caja (1.4rem) y --esp (.5rem) con los valores que ya tenía la app, aplicados a .modal, .pregunta-fila, .campo y .lista-admin; 23 gaps en línea normalizados a var(--esp); flex-wrap en 22 filas; min-width:0 y max-width:100% en los botones del modal. Sin verificar en pantalla: el canvas estaba caído y el detector de desbordes no llegó a ejecutarse."
     },
     {
       "id": "y365tan3",
@@ -631,9 +632,22 @@
       "excerpt": "DESAFÍO BÍBLICO 2026 · 2 CORINTIOS",
       "comment": "A todas las pantallas de portada primero cuando se toca en el icono de editar hay que introducir la contraseña maestra para posteriormente sí habilitar el reemplazo de imagen, ya eso estaba construido y por alguna razón ya no está.",
       "createdAt": "2026-11-21T20:38:45.535Z",
-      "status": "open",
+      "status": "resolved",
       "sentAt": "2026-11-21T20:38:45.608Z",
-      "resolvedAt": null
+      "resolvedAt": "2026-11-21T21:46:27.546Z",
+      "resolution": "Aplicado en el archivo 01-menu.html: el botón .lapiz-portada con el CSS de styles.css:223 en las tres portadas del artboard, y una nota que documenta el orden lápiz → clave → explorador (app.js:736, 2678 y 3723, verificados con grep). Sin verificar en pantalla."
+    },
+    {
+      "id": "kj4m8xoq",
+      "file": "08-configuraciones.html",
+      "selector": "body > div > div:nth-of-type(2) > div:nth-of-type(4) > div > div:nth-of-type(4) > p",
+      "excerpt": "Si hay varias salas abiertas, aquí falta un «cerrar salas abiertas» protegido por esta misma clave. Hoy la única forma de cerrar una sala perdida es esperar el barrido de 30 minutos.",
+      "comment": "Crea lo que dice este texto. Para cerrar sala individual (introduciendo el código) como para cerrar todas.",
+      "createdAt": "2026-11-21T20:41:40.251Z",
+      "status": "resolved",
+      "sentAt": "2026-11-21T20:41:40.279Z",
+      "resolvedAt": "2026-11-21T21:46:27.488Z",
+      "resolution": "Aplicado en el archivo 08-configuraciones.html: sección «Cerrar salas abiertas» con sus dos estados (cerrar una por su código y cerrar todas con confirmación que dice cuántas son). Solo diseño en el canvas; la construcción va en el código y está en curso."
     }
   ]
 }

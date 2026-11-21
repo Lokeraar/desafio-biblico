@@ -27,6 +27,94 @@
   .nota.duda{border-left:4px solid #f0a33a}
   code{font-family:ui-monospace,monospace;font-size:.9em;background:rgba(111,227,238,.12);
     padding:.08em .35em;border-radius:5px;color:#6fe3ee}
+
+  /* ============================================================
+     UN SOLO ESPACIADO PARA TODAS LAS CAJAS.
+
+     Christian: «dejale unicamente un espacio de margen izquierdo un espacio de
+     margen derecho un espacio de margen Superior y un espacio de margen
+     inferior a cada tarjeta / contenedor / caja / elemento / tabla / boton de
+     las dimensiones actuales».
+
+     Se declara UNA vez y se usa en todos lados. Antes convivian .25rem, .35rem,
+     .4rem, .5rem, .6rem y 1.4rem sin criterio: cada caja tenia su numero y por
+     eso el conjunto se veia desparejo aunque cada pieza por separado estuviera
+     bien.
+
+     LOS VALORES SON LOS DE HOY, no unos nuevos: el modal ya tiene 1.4rem de
+     relleno y 1rem entre sus piezas (`base-app.css:687`), y la fila de pregunta
+     .7em .85em. Cambiarlos seria rediseñar, y lo pedido es ordenar el espaciado,
+     no encogerlo. Solo se igualan entre si.
+
+     Dos valores y no uno solo, porque hay dos escalas distintas:
+       --esp-caja  el aire ALREDEDOR de cada caja, para que no se toque
+       --esp       el aire DENTRO de cada caja (relleno y separacion de piezas)
+     Los dos son multiplos del mismo paso (0.3rem), asi que el conjunto se lee
+     parejo. */
+  :root{
+    /* Relleno de las cajas grandes: 1.4rem es lo que `.modal` YA tiene
+       (`base-app.css:687`). No se inventa. */
+    --esp-caja: 1.4rem;
+    /* Separacion entre piezas hermanas: .5rem es lo que ya usa la app en las
+       filas del modal (`styles.css:2584`: `.modal .fila { gap: .5rem }`).
+       Se puso 1rem en la primera version y estaba MAL: era el gap interno del
+       modal, no el de las filas. */
+    --esp: .5rem;
+  }
+
+  /* Cada caja respira igual por los cuatro lados.
+     El `gap` interno de `.modal` NO se toca: se queda en su 1rem de siempre. */
+  .modal{padding:var(--esp-caja)}
+  .pregunta-fila{padding:calc(var(--esp) * 2)}
+  .campo{gap:calc(var(--esp) / 2)}
+  .modal > .lista-admin{gap:var(--esp)}
+
+  /* Las filas ya llevan su `gap:var(--esp)` en linea; esta regla cubre las que
+     no lo tengan. Es la misma separacion en todas: una sola, no cuatro
+     parecidas. */
+  .modal .fila,
+  .modal .fila-entre{
+    gap:var(--esp);
+  }
+
+  /* ============================================================
+     TEXT-FITTING: LOS BOTONES DEJAN DE DESBORDAR.
+
+     Christian: «hay que mejorarle el text fitting ya que algunas se desbordan».
+
+     CALCULADO en 390x844, no medido en pantalla: el canvas esta caido y no hay
+     navegador. Con el modal de 390 y su relleno de 1.2rem + 1.4rem, el ancho
+     util del contenido es 307 px, y:
+       «← Menu» + «Cancelar» + «Guardar»   = 454 px  -> desborda 147
+       «Ocultar palabra» + «?»              = 347 px  -> desborda 40
+
+     La causa NO es el relleno: es `min-width: auto`, el defecto de flex, que
+     impide que un boton encoja por debajo de su texto.
+
+     COMO LO RESUELVE LA APP, y por eso se copia igual: no encoge la letra, deja
+     que la fila se ENVUELVA y que el texto del boton PARTE.
+       - `.boton-mini`: `flex: 0 1 auto`, `min-width: 0`, `white-space: normal`,
+         `overflow-wrap: break-word` (styles.css:1527).
+       - `.modal .fila` y `.modal .fila-entre`: `flex-wrap: wrap`
+         (styles.css:2590), con el porque medido: «en el modal de preguntas
+         Editar y Borrar se solapaban en tres pares distintos».
+
+     Se descarto encoger la letra: a 16 pt, para que 454 px entraran en 307
+     habria que bajar al 68 %, y en los botones de tres piezas ni asi. Partir el
+     texto no pierde nada; bajar al suelo de 8 pt si. */
+  .modal .boton,
+  .modal .boton-contorno,
+  .modal .boton-grande{
+    flex: 0 1 auto;
+    /* `min-width: 0` es la pieza que de verdad arregla el desborde: sin ella un
+       hijo flex no puede encoger por debajo del ancho de su texto, y se sale.
+       El `flex:1` en linea de muchos botones NO estorba: pone crecer, no
+       prohíbe encoger, y no fija `min-width`. */
+    min-width: 0;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: break-word;
+  }
 </style>
 </head>
 <body>
@@ -56,7 +144,7 @@
               <label>Clave</label>
               <input type="password" placeholder="••••">
             </div>
-            <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+            <div style="display:flex;gap:var(--esp);flex-wrap:wrap">
               <button class="boton boton-contorno" style="width:auto;flex:1">Cancelar</button>
               <button class="boton-grande boton-oro" style="width:auto;flex:1">Entrar</button>
             </div>
@@ -73,9 +161,9 @@
             <h2>Temas</h2>
             <div class="lista-admin">
               <div class="pregunta-fila">
-                <div style="display:flex;justify-content:space-between;gap:.5rem;flex-wrap:wrap">
+                <div style="display:flex;justify-content:space-between;gap:var(--esp);flex-wrap:wrap">
                   <strong style="font-size:var(--t-sm)">2 Corintios</strong>
-                  <div style="display:flex;gap:.35rem">
+                  <div style="display:flex;gap:var(--esp);flex-wrap:wrap">
                     <button class="boton boton-contorno boton-mini">Preguntas</button>
                     <button class="boton boton-contorno boton-mini">Renombrar</button>
                   </div>
@@ -83,9 +171,9 @@
                 <p class="chico tenue" style="margin:.25rem 0 0">25 preguntas · 8 versículos</p>
               </div>
               <div class="pregunta-fila">
-                <div style="display:flex;justify-content:space-between;gap:.5rem;flex-wrap:wrap">
+                <div style="display:flex;justify-content:space-between;gap:var(--esp);flex-wrap:wrap">
                   <strong style="font-size:var(--t-sm)">Salmos</strong>
-                  <div style="display:flex;gap:.35rem">
+                  <div style="display:flex;gap:var(--esp);flex-wrap:wrap">
                     <button class="boton boton-contorno boton-mini">Preguntas</button>
                     <button class="boton boton-contorno boton-mini">Renombrar</button>
                   </div>
@@ -93,7 +181,7 @@
                 <p class="chico tenue" style="margin:.25rem 0 0">12 preguntas · 4 versículos</p>
               </div>
             </div>
-            <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+            <div style="display:flex;gap:var(--esp);flex-wrap:wrap">
               <button class="boton boton-contorno" style="width:auto;flex:1">Cerrar</button>
               <button class="boton-grande boton-oro" style="width:auto;flex:1">Nuevo tema</button>
             </div>
@@ -141,7 +229,7 @@
             <div class="campo"><label>Clave actual</label><input type="password" placeholder="••••"></div>
             <div class="campo"><label>Clave nueva</label><input type="password" placeholder="••••"></div>
             <div class="campo"><label>Repite la nueva</label><input type="password" placeholder="••••"></div>
-            <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+            <div style="display:flex;gap:var(--esp);flex-wrap:wrap">
               <button class="boton boton-contorno" style="width:auto;flex:1">Cancelar</button>
               <button class="boton-grande boton-oro" style="width:auto;flex:1">Cambiar</button>
             </div>
@@ -178,9 +266,9 @@
             <p class="chico tenue" style="margin:0">2 Corintios</p>
             <div class="lista-admin" style="max-height:52vh;overflow-y:auto">
               <div class="pregunta-fila">
-                <div style="display:flex;justify-content:space-between;gap:.5rem;flex-wrap:wrap">
+                <div style="display:flex;justify-content:space-between;gap:var(--esp);flex-wrap:wrap">
                   <strong style="font-size:var(--t-sm)">2 Corintios 3:2</strong>
-                  <div style="display:flex;gap:.35rem">
+                  <div style="display:flex;gap:var(--esp);flex-wrap:wrap">
                     <button class="boton boton-contorno boton-mini">Editar</button>
                     <button class="boton boton-peligro boton-mini">Borrar</button>
                   </div>
@@ -190,7 +278,7 @@
                   <span class="hueco">corazón</span>…</p>
               </div>
             </div>
-            <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+            <div style="display:flex;gap:var(--esp);flex-wrap:wrap">
               <button class="boton boton-contorno" style="width:auto;flex:1">Volver</button>
               <button class="boton-grande boton-oro" style="width:auto;flex:1">Nuevo versículo</button>
             </div>
@@ -217,11 +305,11 @@
               <textarea rows="3">Nuestras cartas sois, escritas en nuestro corazón, conocidas y leídas de todos los hombres.</textarea>
               <span class="chico tenue">2 palabras ocultas (máximo 34 por versículo)</span>
             </div>
-            <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+            <div style="display:flex;gap:var(--esp);flex-wrap:wrap">
               <button class="boton boton-contorno" style="flex:1">👁 Ocultar palabra</button>
               <button class="boton boton-contorno" style="width:auto;flex:0 0 auto">?</button>
             </div>
-            <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+            <div style="display:flex;gap:var(--esp);flex-wrap:wrap">
               <button class="boton boton-contorno" style="width:auto;flex:0 0 auto">← Menú</button>
               <button class="boton boton-contorno" style="flex:1">Cancelar</button>
               <button class="boton-grande boton-oro" style="width:auto;flex:1">Guardar</button>
@@ -243,10 +331,10 @@
               <textarea rows="3" placeholder="Escribe el versículo completo"></textarea>
               <span class="chico tenue">0 palabras ocultas (máximo 34 por versículo)</span>
             </div>
-            <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+            <div style="display:flex;gap:var(--esp);flex-wrap:wrap">
               <button class="boton boton-contorno" style="flex:1">👁 Ocultar palabra</button>
             </div>
-            <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+            <div style="display:flex;gap:var(--esp);flex-wrap:wrap">
               <button class="boton boton-contorno" style="flex:1">Cancelar</button>
               <button class="boton-grande boton-oro" style="width:auto;flex:1">Guardar</button>
             </div>
@@ -296,21 +384,21 @@
             <p class="chico tenue" style="margin:0">Carlos Ruiz</p>
             <div class="lista-admin">
               <div class="pregunta-fila">
-                <div style="display:flex;align-items:center;gap:.6rem">
+                <div style="display:flex;align-items:center;gap:var(--esp);flex-wrap:wrap">
                   <span class="boton-mini" style="border:1px solid var(--ok);border-radius:50%;
                         width:1.8rem;height:1.8rem;display:grid;place-items:center">✓</span>
                   <span style="font-size:var(--t-sm)"><span class="hueco">cartas</span></span>
                 </div>
               </div>
               <div class="pregunta-fila">
-                <div style="display:flex;align-items:center;gap:.6rem">
+                <div style="display:flex;align-items:center;gap:var(--esp);flex-wrap:wrap">
                   <span class="boton-mini" style="border:1px solid var(--ok);border-radius:50%;
                         width:1.8rem;height:1.8rem;display:grid;place-items:center">✓</span>
                   <span style="font-size:var(--t-sm)"><span class="hueco">corazón</span></span>
                 </div>
               </div>
             </div>
-            <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+            <div style="display:flex;gap:var(--esp);flex-wrap:wrap">
               <button class="boton boton-contorno" style="flex:1">Cancelar</button>
               <button class="boton-grande boton-oro" style="width:auto;flex:1">Confirmar</button>
             </div>
@@ -350,13 +438,13 @@
       <div class="tela h">
         <div class="modal-fondo" style="padding:.5rem;align-items:center">
           <div class="modal modal-ancho" style="max-width:min(760px,94vw);max-height:calc(100dvh - .5rem);
-               padding:.6rem .8rem;gap:.4rem;overflow-y:auto">
+               padding:.6rem .8rem;gap:var(--esp);overflow-y:auto">
             <h2 style="font-size:var(--t-lg);margin:0">Temas</h2>
             <div class="lista-admin" style="overflow-y:auto;min-height:0">
               <div class="pregunta-fila" style="padding:.4em .6em">
-                <div style="display:flex;justify-content:space-between;gap:.5rem;flex-wrap:wrap">
+                <div style="display:flex;justify-content:space-between;gap:var(--esp);flex-wrap:wrap">
                   <strong style="font-size:var(--t-sm)">2 Corintios</strong>
-                  <div style="display:flex;gap:.35rem">
+                  <div style="display:flex;gap:var(--esp);flex-wrap:wrap">
                     <button class="boton boton-contorno boton-mini">Preguntas</button>
                     <button class="boton boton-contorno boton-mini">Renombrar</button>
                     <button class="boton boton-peligro boton-mini">Borrar</button>
@@ -364,9 +452,9 @@
                 </div>
               </div>
               <div class="pregunta-fila" style="padding:.4em .6em">
-                <div style="display:flex;justify-content:space-between;gap:.5rem;flex-wrap:wrap">
+                <div style="display:flex;justify-content:space-between;gap:var(--esp);flex-wrap:wrap">
                   <strong style="font-size:var(--t-sm)">Salmos</strong>
-                  <div style="display:flex;gap:.35rem">
+                  <div style="display:flex;gap:var(--esp);flex-wrap:wrap">
                     <button class="boton boton-contorno boton-mini">Preguntas</button>
                     <button class="boton boton-contorno boton-mini">Renombrar</button>
                     <button class="boton boton-peligro boton-mini">Borrar</button>
@@ -374,7 +462,7 @@
                 </div>
               </div>
             </div>
-            <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+            <div style="display:flex;gap:var(--esp);flex-wrap:wrap">
               <button class="boton boton-contorno" style="width:auto;flex:1">Cerrar</button>
               <button class="boton-grande boton-oro" style="width:auto;flex:1">Nuevo tema</button>
             </div>
@@ -414,5 +502,85 @@
   </p>
 
 </div>
+<script type="module">
+  /* COMPROBAR QUE NADA SE DESBORDA, Y DEJARLO ESCRITO.
+
+     El arreglo es CSS. Este script NO arregla nada: mide y deja el resultado en
+     el DOM, para que se pueda comprobar sin abrir el navegador.
+
+     QUE SE MIDE, Y POR QUE ASI
+     Se comparan RECTANGULOS, no `scrollWidth`. Es geometrico y no depende de
+     `white-space`: vale igual si el texto parte, si encoge o si se sale.
+
+     La version anterior de este script solo miraba los elementos con
+     `white-space: nowrap`. Al cambiar el arreglo a `white-space: normal`, esa
+     condicion no se cumplia NUNCA y el detector habria informado siempre «0
+     desbordes» aunque los hubiera. Una comprobacion que no puede fallar es peor
+     que no tenerla: dice «revisado» sin haber mirado.
+
+     AVISO HONESTO: este script no se ha podido ejecutar. El canvas esta caido y
+     no hay navegador disponible, asi que NO esta verificado que detecte. Lo que
+     si esta hecho es el CSS, con las medidas calculadas a mano y su porque. */
+  const desbordes = [];
+  const REDONDEO = 1;   // subpixel
+
+  for (const caja of document.querySelectorAll('.modal, .modal *')) {
+    const r = caja.getBoundingClientRect();
+    if (!r.width || !r.height) continue;
+
+    const padre = caja.parentElement;
+    if (!padre) continue;
+
+    const rp = padre.getBoundingClientRect();
+    const estiloPadre = getComputedStyle(padre);
+    const izquierda = rp.left + parseFloat(estiloPadre.paddingLeft);
+    const derecha = rp.right - parseFloat(estiloPadre.paddingRight);
+
+    /* Se sale por la derecha o por la izquierda de la caja donde vive. */
+    const sobraDerecha = Math.round(r.right - derecha);
+    const sobraIzquierda = Math.round(izquierda - r.left);
+
+    /* Solo cuenta si el padre RECORTA (`overflow` distinto de visible): si
+       deja ver, el contenido puede asomar sin que sea un defecto. */
+    const recorta = !/visible/.test(estiloPadre.overflowX);
+
+    if (recorta && (sobraDerecha > REDONDEO || sobraIzquierda > REDONDEO)) {
+      desbordes.push({
+        el: caja.tagName.toLowerCase()
+            + (caja.className ? '.' + String(caja.className).split(' ')[0] : ''),
+        texto: (caja.textContent || '').trim().slice(0, 30),
+        sobraDerecha, sobraIzquierda
+      });
+    }
+  }
+
+  /* Y ademas: el texto de los botones, medido con Range.
+     Se informa cuanto ocupa y cuanto tiene, haya desborde o no: asi el numero
+     queda a la vista y no depende de que alguien lo crea. */
+  const rango = document.createRange();
+  const textos = [];
+  for (const b of document.querySelectorAll('.modal button')) {
+    rango.selectNodeContents(b);
+    const anchoTexto = Math.round(rango.getBoundingClientRect().width);
+    const estilo = getComputedStyle(b);
+    const relleno = parseFloat(estilo.paddingLeft) + parseFloat(estilo.paddingRight);
+    const dentro = Math.round(b.clientWidth - relleno);
+    textos.push({
+      texto: (b.textContent || '').trim().slice(0, 24),
+      anchoTexto, dentro,
+      cabe: anchoTexto <= dentro + REDONDEO
+    });
+  }
+
+  const raiz = document.documentElement;
+  raiz.dataset.desbordes = String(desbordes.length);
+  raiz.dataset.botones = String(textos.length);
+  raiz.dataset.botonesQueNoCaben = String(textos.filter(t => !t.cabe).length);
+
+  if (desbordes.length || textos.some(t => !t.cabe)) {
+    raiz.dataset.detalle = JSON.stringify({ desbordes, textos });
+    console.warn('Desbordes:', desbordes, 'Botones que no caben:', textos.filter(t => !t.cabe));
+  }
+</script>
 </body>
 </html>
