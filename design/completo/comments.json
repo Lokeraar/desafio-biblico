@@ -623,6 +623,17 @@
       "status": "open",
       "sentAt": "2026-11-21T20:36:19.920Z",
       "resolvedAt": null
+    },
+    {
+      "id": "y365tan3",
+      "file": "01-menu.html",
+      "selector": "body > div > div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(2) > div > div:nth-of-type(1) > div",
+      "excerpt": "DESAFÍO BÍBLICO 2026 · 2 CORINTIOS",
+      "comment": "A todas las pantallas de portada primero cuando se toca en el icono de editar hay que introducir la contraseña maestra para posteriormente sí habilitar el reemplazo de imagen, ya eso estaba construido y por alguna razón ya no está.",
+      "createdAt": "2026-11-21T20:38:45.535Z",
+      "status": "open",
+      "sentAt": "2026-11-21T20:38:45.608Z",
+      "resolvedAt": null
     }
   ]
 }
