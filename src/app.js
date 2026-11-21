@@ -39,7 +39,7 @@ import {
 } from './lib/versiculo.js';
 import { crearEscalador, ajustarTextos } from './lib/ajuste.js';
 import { crearLatido } from './lib/latido.js';
-import { reintentarPulso } from './lib/reintento.js';
+import { reintentarPulso, ESPERA_INICIAL, siguienteEspera } from './lib/reintento.js';
 import { aWebp, crearImagenNavegador, lienzoNavegador, prefijoData } from './lib/imagen.js';
 
 const $app = document.getElementById('app');
@@ -449,6 +449,19 @@ function ponerAviso(tipo, texto, ms = 4000) {
   app.aviso = { tipo, texto };
   render();
   if (ms) setTimeout(() => { app.aviso = null; render(); }, ms);
+}
+
+/**
+ * Quita el aviso que hay ahora.
+ *
+ * Hace falta para los avisos SIN caducidad (`ms = 0`), como «reintentando…»:
+ * si no se quitan al reconectar, el presentador se queda leyendo un error que
+ * ya no es cierto mientras su partida funciona.
+ */
+function quitarAviso() {
+  if (!app.aviso) return;
+  app.aviso = null;
+  render();
 }
 
 /**
@@ -3495,7 +3508,12 @@ addEventListener('pagehide', () => {
        * le borraba el panel al presentador en medio de una partida, con los
        * participantes dentro y sin forma de recuperarla. Solo tres errores
        * significan que la sala murió; el resto se reintenta. */
-      const reabrirHost = (restantes) => {
+      /* `intentosSeguidos` cuenta SOLO los fallos de red seguidos, y sirve para
+         rendirse tras muchos. `restantes` cuenta los reintentos rapidos. Son
+         dos relojes distintos: uno evita el bucle eterno, el otro da una
+         segunda oportunidad antes de avisar. */
+      let esperaActual = ESPERA_INICIAL;
+      const reabrirHost = (restantes, intentosSeguidos = 0) => {
         host.reabrir(guardada).then(r => {
           const decision = decidirSalaHost(r, {
             estado: app.estado?.status ?? null,
@@ -3508,10 +3526,28 @@ addEventListener('pagehide', () => {
           }
 
           if (decision === 'esperar') {
-            /* No se borra nada: la sala vive en el servidor y el token sigue
-               valiendo. Se avisa y se deja el panel como está, para que al
-               recuperar la señal el próximo refresco reconecte. */
-            ponerAviso('error', 'No hay conexión. Tu sala sigue abierta: recarga cuando vuelva la señal.');
+            /* REINTENTA, NO SOLO AVISA.
+             *
+             * Christian: «en el “Tu sala sigue abierta” debe efectivamente
+             * reintentar conectarse a la sala funcionalmente». Tenia razon:
+             * pedirle al presentador que recargue a mano es pedirle que haga
+             * el trabajo de la app, en medio de una partida y con gente
+             * mirando.
+             *
+             * No se borra nada: la sala vive en el servidor y el token sigue
+             * valiendo. Se avisa, y se vuelve a intentar con espera creciente
+             * hasta ESPERA_MAXIMA. Se rinde despues de muchos intentos
+             * seguidos, para no gastar bateria en un bucle eterno, pero deja
+             * la sala guardada: al recargar se reconecta.
+             */
+            ponerAviso('error', 'No hay conexión. Tu sala sigue abierta; reintentando…', 0);
+            const siguiente = siguienteEspera(esperaActual, 1.5);
+            esperaActual = siguiente;
+            if (intentosSeguidos < 40) {
+              setTimeout(() => reabrirHost(restantes, intentosSeguidos + 1), siguiente);
+            } else {
+              ponerAviso('error', 'Sigue sin conexión. Tu sala está guardada: recarga cuando vuelva la señal.', 0);
+            }
             return;
           }
 
@@ -3524,6 +3560,8 @@ addEventListener('pagehide', () => {
             return;
           }
 
+          /* Reconectado: el aviso de «reintentando…» ya no es cierto. */
+          quitarAviso();
           app.host = host;
           render();
         });
