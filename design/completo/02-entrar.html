@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Entrar a la partida — Diseño completo</title>
+<style>
+  :root{
+    --fondo:#0b1a1d; --fondo-2:#102a2f; --tinta:#fff; --tinta-suave:#a9c6ca;
+    --tu-100:#6fe3ee; --tu-300:#2ec4d4; --tu-600:#008090; --tu-800:#00525e; --tu-900:#0a2e33;
+    --amarillo:#fcd116; --rojo:#cf2123; --ok:#1fbf75; --espera:#f0a33a; --error:#e0483c;
+    --radio:16px; --radio-sm:10px;
+    --fondo-juego:radial-gradient(120% 90% at 50% 0%, #1b6f4a 0%, #0f5a63 42%, #07222b 72%, #04151b 100%);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--fondo);color:var(--tinta);
+    font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  .placa{max-width:1400px;margin:0 auto;padding:2rem 1.5rem 4rem}
+  .placa > header{border-bottom:1px solid rgba(110,227,238,.22);padding-bottom:1rem;margin-bottom:1.5rem}
+  h1{margin:0 0 .25rem;font-size:1.75rem;font-weight:800}
+  header p{margin:0;color:var(--tinta-suave);max-width:78ch}
+  .h2{font-size:1.15rem;font-weight:750;margin:2.2rem 0 .4rem;color:var(--tu-100)}
+  .h2 small{display:block;font-weight:400;color:var(--tinta-suave);font-size:.92rem;margin-top:.15rem}
+
+  .fila{display:flex;gap:1.6rem;align-items:flex-start;flex-wrap:wrap;margin-top:1rem}
+  .marco{flex:0 0 auto}
+  .marco .rotulo{font-size:.85rem;color:var(--tinta-suave);margin-bottom:.4rem;
+    font-family:ui-monospace,monospace}
+  .tela{position:relative;overflow:hidden;border-radius:20px;border:1px solid rgba(110,227,238,.3);
+    background:var(--fondo-juego);box-shadow:0 14px 40px rgba(0,0,0,.5);display:flex;flex-direction:column}
+  .v{width:390px;height:844px}
+  .h{width:844px;height:390px}
+  .lienzo{display:flex;flex-direction:column;min-height:0;padding:.7rem .9rem;gap:.5rem}
+  .tela.h .lienzo{flex-direction:row;align-items:stretch;gap:.9rem}
+
+  .volver{font-size:.85rem;padding:.4em .8em;border-radius:10px;align-self:flex-start;
+    border:1px solid rgba(110,227,238,.45);color:var(--tu-100);background:transparent}
+  .centro{flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;gap:.55rem;
+    min-height:0;min-width:0}
+  .tela.h .centro{gap:.35rem}
+  .t{font-size:1.35rem;font-weight:900;margin:0;text-align:center}
+  .tela.h .t{font-size:1.15rem}
+
+  .aviso{border-radius:12px;padding:.45em .8em;font-size:.85rem;line-height:1.35}
+  .aviso.info{background:rgba(111,227,238,.12);border:1px solid rgba(111,227,238,.4);color:var(--tu-100)}
+  .aviso.err{background:rgba(224,72,60,.14);border:1px solid rgba(224,72,60,.5);color:#ffc9c4}
+
+  .form{display:flex;flex-direction:column;gap:.5rem;width:100%;max-width:22rem;
+    align-self:center}
+  .tela.h .form{display:grid;grid-template-columns:1fr 1fr;align-items:end;max-width:none;
+    gap:.4rem .6rem}
+  .tela.h .form .aviso,.tela.h .form .btn{grid-column:1/-1}
+  .campo{display:flex;flex-direction:column;gap:.25rem;min-width:0}
+  .campo label{font-size:.82rem;color:var(--tu-100);font-weight:700}
+  .campo input{padding:.5em .7em;border-radius:10px;border:2px solid rgba(110,227,238,.28);
+    background:rgba(0,0,0,.28);color:var(--tinta);font:inherit;width:100%}
+  .campo input::placeholder{color:#6d8b90}
+  .campo input.vacio{color:#6d8b90}
+  .btn{padding:.6em 1em;border-radius:12px;font-weight:800;text-align:center;font-size:.95rem;
+    border:1px solid transparent}
+  .btn.oro{background:linear-gradient(180deg,#ffe066,#fcd116);color:#2a2200}
+  .ayuda{text-align:center;font-size:.75rem;color:var(--tinta-suave);max-width:30ch;align-self:center}
+
+  .notas{margin-top:1.6rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:.9rem}
+  .nota{border:1px solid var(--tu-800);border-radius:var(--radio-sm);padding:.8rem 1rem;
+    background:linear-gradient(160deg,var(--fondo-2),var(--tu-900))}
+  .nota h3{margin:0 0 .35rem;font-size:.98rem;color:var(--tu-100)}
+  .nota p{margin:.3rem 0;font-size:.92rem;color:var(--tinta-suave);line-height:1.5}
+  .nota.bien{border-left:4px solid var(--ok)}
+  .nota.mal{border-left:4px solid var(--error)}
+  .nota.duda{border-left:4px solid var(--espera)}
+  code{font-family:ui-monospace,monospace;font-size:.9em;background:rgba(111,227,238,.12);
+    padding:.08em .35em;border-radius:5px;color:var(--tu-100)}
+
+  /* el recorrido del QR */
+  .pasos{display:flex;flex-direction:column;gap:.7rem;margin-top:1rem}
+  .paso{display:flex;gap:.8rem;align-items:flex-start}
+  .paso .n{flex:0 0 auto;width:1.8rem;height:1.8rem;border-radius:50%;display:grid;place-items:center;
+    background:rgba(46,196,212,.18);border:1px solid var(--tu-300);color:var(--tu-100);
+    font-weight:800;font-size:.85rem}
+  .paso div p{margin:0;font-size:.93rem;color:var(--tinta-suave)}
+  .paso div strong{color:var(--tinta)}
+  .qr{width:86px;height:86px;background:#fff;border-radius:6px;display:grid;place-items:center;
+    font-family:ui-monospace,monospace;font-weight:800;color:#000;font-size:.65rem;
+    text-align:center;line-height:1.1;padding:.3rem}
+</style>
+</head>
+<body>
+<div class="placa">
+
+  <header>
+    <h1>Entrar a la partida</h1>
+    <p>El formulario de entrada del participante, y el recorrido del QR, que es el camino que más se
+    usa y el que menos se revisa. Verificado en el código: el QR ya deja el código escrito.</p>
+  </header>
+
+  <div class="h2">El recorrido del QR
+    <small>Lo que pasa de verdad al escanear, comprobado contra el código y no supuesto.</small>
+  </div>
+
+  <div class="fila">
+    <div style="flex:1 1 420px;min-width:300px">
+      <div class="qr" style="width:120px;height:120px;font-size:.75rem">
+        QR de la sala<br>lleva a<br>#/join?c=B73WS
+      </div>
+      <div class="pasos">
+        <div class="paso">
+          <span class="n">1</span>
+          <div><p><strong>Se abre el navegador</strong> en <code>#/join?c=B73WS</code>.</p></div>
+        </div>
+        <div class="paso">
+          <span class="n">2</span>
+          <div><p>Esa ruta <strong>ya es</strong> «Jugar como participante»: no hay pantalla
+          intermedia ni se pasa por el menú.</p></div>
+        </div>
+        <div class="paso">
+          <span class="n">3</span>
+          <div><p>El código aparece <strong>escrito en su campo</strong>, leído de la dirección por
+          <code>codigoDeUrl()</code>.</p></div>
+        </div>
+        <div class="paso">
+          <span class="n">4</span>
+          <div><p>El nombre está vacío. El participante lo escribe y pulsa <strong>Entrar</strong>.</p></div>
+        </div>
+      </div>
+      <div class="notas" style="grid-template-columns:1fr">
+        <div class="nota bien">
+          <h3>Ya hace lo que debe</h3>
+          <p>No se pide el código dos veces y no se pasa por el menú. Lo único discutible: el código
+          sigue siendo un campo <strong>editable</strong>, cuando vino de un QR y no debería
+          equivocarse.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="marco">
+      <div class="rotulo">vertical · llegó por QR</div>
+      <div class="tela v">
+        <div class="lienzo">
+          <button class="volver">← Volver</button>
+          <div class="centro">
+            <h2 class="t">Entrar a la partida</h2>
+            <div class="aviso info">Sala B73WS</div>
+            <div class="form">
+              <div class="campo">
+                <label>Código de la sala ⓘ</label>
+                <input value="B73WS">
+              </div>
+              <div class="campo">
+                <label>Tu nombre ⓘ</label>
+                <input class="vacio" placeholder="Ej.: Ana Pérez">
+              </div>
+              <button class="btn oro">Entrar</button>
+            </div>
+            <p class="ayuda">Escribe tu nombre tal como quieres que aparezca en la tabla.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="flex:1 1 320px;min-width:280px">
+      <div class="notas" style="margin-top:0">
+        <div class="nota bien">
+          <h3>El aviso «Sala B73WS» confirma</h3>
+          <p>Quien escaneó ve que entró a la sala correcta antes de escribir nada. Sin ese aviso, el
+          código escrito es lo único que lo dice, y un código equivocado se descubre al fallar.</p>
+        </div>
+        <div class="nota duda">
+          <h3>Decisión tuya</h3>
+          <p>¿El código debería quedar <strong>bloqueado</strong> cuando vino por QR, para que no se
+          pueda tocar? Hoy es editable.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="h2">Acostado — 844 × 390
+    <small>El código y el nombre en dos columnas; el botón debajo, a todo el ancho, para que siga
+    siendo el blanco grande que era.</small>
+  </div>
+
+  <div class="fila">
+    <div class="marco">
+      <div class="rotulo">acostado · llegó por QR</div>
+      <div class="tela h">
+        <div class="lienzo">
+          <div style="display:flex;flex-direction:column;gap:.4rem;flex:0 0 auto">
+            <button class="volver">← Volver</button>
+          </div>
+          <div class="centro" style="flex:1 1 auto">
+            <h2 class="t">Entrar a la partida</h2>
+            <div class="aviso info" style="text-align:center">Sala B73WS</div>
+            <div class="form">
+              <div class="campo">
+                <label>Código de la sala ⓘ</label>
+                <input value="B73WS">
+              </div>
+              <div class="campo">
+                <label>Tu nombre ⓘ</label>
+                <input class="vacio" placeholder="Ej.: Ana Pérez">
+              </div>
+              <button class="btn oro">Entrar</button>
+            </div>
+            <p class="ayuda" style="max-width:44ch">Escribe tu nombre tal como quieres que aparezca
+            en la tabla.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="flex:1 1 340px;min-width:280px">
+      <div class="notas" style="margin-top:0">
+        <div class="nota bien">
+          <h3>Sin scroll</h3>
+          <p>Medido: 191 px de desborde antes; 0 ahora. Los campos en dos columnas y el apriete de
+          título, aviso y botón bastan.</p>
+        </div>
+        <div class="nota mal">
+          <h3>Lo que no se oculta</h3>
+          <p>El texto de ayuda se queda, solo más pequeño. Esconderlo bajaba el número de desborde a
+          cero sin resolver nada: se perdía información para cuadrar una medida.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="h2">Errores de esta pantalla
+    <small>Los que de verdad llegan aquí. El estado vacío no aplica: el formulario siempre tiene
+    los mismos dos campos.</small>
+  </div>
+
+  <div class="fila">
+    <div class="marco">
+      <div class="rotulo">error · sala inexistente</div>
+      <div class="tela v">
+        <div class="lienzo">
+          <button class="volver">← Volver</button>
+          <div class="centro">
+            <h2 class="t">Entrar a la partida</h2>
+            <div class="form">
+              <div class="campo">
+                <label>Código de la sala ⓘ</label>
+                <input value="ZZZZZ">
+              </div>
+              <div class="campo">
+                <label>Tu nombre ⓘ</label>
+                <input value="Ana Pérez">
+              </div>
+              <div class="aviso err">Esa sala no existe. Revisa el código con el presentador.</div>
+              <button class="btn oro">Entrar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="marco">
+      <div class="rotulo">error · partida ya empezada</div>
+      <div class="tela v">
+        <div class="lienzo">
+          <button class="volver">← Volver</button>
+          <div class="centro">
+            <h2 class="t">Entrar a la partida</h2>
+            <div class="form">
+              <div class="campo">
+                <label>Código de la sala ⓘ</label>
+                <input value="B73WS">
+              </div>
+              <div class="campo">
+                <label>Tu nombre ⓘ</label>
+                <input value="Ana Pérez">
+              </div>
+              <div class="aviso err">La partida ya comenzó. Espera a que abran otra sala.</div>
+              <button class="btn oro">Entrar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="marco">
+      <div class="rotulo">error · nombre repetido</div>
+      <div class="tela v">
+        <div class="lienzo">
+          <button class="volver">← Volver</button>
+          <div class="centro">
+            <h2 class="t">Entrar a la partida</h2>
+            <div class="form">
+              <div class="campo">
+                <label>Código de la sala ⓘ</label>
+                <input value="B73WS">
+              </div>
+              <div class="campo">
+                <label>Tu nombre ⓘ</label>
+                <input value="Ana Pérez">
+              </div>
+              <div class="aviso err">Ya hay una Ana Pérez en esta sala. Escribe otra forma de tu
+              nombre.</div>
+              <button class="btn oro">Entrar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="flex:1 1 300px;min-width:260px">
+      <div class="notas" style="margin-top:0">
+        <div class="nota bien">
+          <h3>El error no borra lo escrito</h3>
+          <p>El nombre se queda en su campo y el código también. Volver a escribir dos datos por un
+          error de tipeo es lo que hace que la gente se rinda.</p>
+        </div>
+        <div class="nota bien">
+          <h3>El mensaje dice qué hacer</h3>
+          <p>«Revisa el código con el presentador», no «error 404». La traducción de códigos vive en
+          un solo sitio, no repartida por las pantallas.</p>
+        </div>
+        <div class="nota duda">
+          <h3>Decisión tuya</h3>
+          <p>«La partida ya comenzó» ofrece esperar a otra sala, pero no hay forma de ser avisado
+          cuando abran una. ¿Se ofrece «Te aviso» o se deja así?</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,12 +1,40 @@
 {
   "title": "Diseño completo de Desafío Bíblico",
-  "brief": "El sistema entero, no una lista de pantallas: qué existe, qué se permite, qué se prohíbe y qué pasa en cada estado. Cada pantalla se dibuja en vertical y acostada, con los seis estados donde el jugador los va a ver de verdad. El tablero de sistema va primero porque es el que decide: sin él, cada pantalla sería una opinión distinta.",
+  "brief": "El sistema entero, no una lista de pantallas: qué existe, qué se permite, qué se prohíbe y qué pasa en cada estado. Cada pantalla se dibuja en vertical y acostada, con los estados donde el jugador los va a ver de verdad. El tablero de sistema va primero porque es el que decide: sin él, cada pantalla sería una opinión distinta.",
   "artboards": [
     {
       "file": "00-sistema.html",
       "title": "Sistema: navegación, componentes, estados y semántica",
       "tradeoff": "Todo el sistema en una placa: se lee el recorrido entero sin cambiar de archivo y las reglas quedan al lado de lo que gobiernan. El precio es que hay que desplazarse en las dos direcciones, y que una placa de sistema no muestra cómo se ve una pantalla llena de datos.",
       "width": 1360,
+      "height": 2600
+    },
+    {
+      "file": "01-menu.html",
+      "title": "Menú: vertical, acostado, vacío y error",
+      "tradeoff": "Muestra el menú en las dos orientaciones y con los dos estados que de verdad tiene. El precio es que las pantallas se dibujan con datos de ejemplo, así que un nombre de juego más largo que «Completar el versículo» se vería distinto.",
+      "width": 1400,
+      "height": 2400
+    },
+    {
+      "file": "02-entrar.html",
+      "title": "Entrar a la partida: vertical, acostado y sus errores",
+      "tradeoff": "Incluye el recorrido del QR, que es el camino que más se usa y el que menos se revisa. El precio es que no puede mostrar cómo se comporta el teclado del teléfono al abrirse, que es justo cuando el formulario se aprieta.",
+      "width": 1400,
+      "height": 2200
+    },
+    {
+      "file": "03-sala-espera.html",
+      "title": "Sala de espera: vertical, acostado y vacío",
+      "tradeoff": "Muestra lo que ve el participante mientras el presentador prepara, con los seis estados donde aplican. El precio es que la sala de espera real cambia sola cada pocos segundos, y una placa quieta no puede enseñar ese movimiento.",
+      "width": 1400,
+      "height": 2000
+    },
+    {
+      "file": "04-ronda.html",
+      "title": "La ronda: participante y televisor, en las dos orientaciones",
+      "tradeoff": "Las dos pantallas de la ronda juntas, porque se miran a la vez: el participante en el teléfono y el televisor en la pared. El precio es que son muchas placas y hay que desplazarse; y el reloj, que corre, aquí está quieto.",
+      "width": 1400,
       "height": 2600
     }
   ]
