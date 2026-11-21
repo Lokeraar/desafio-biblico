@@ -4,7 +4,9 @@ Concurso de preguntas bíblicas. PWA sin dependencias: HTML, CSS y JavaScript
 sueltos, módulos ES, sin compilación y sin `package.json`.
 
 - **Publicado:** https://lokeraar.github.io/desafio-biblico/
-- **Código:** `/storage/emulated/0/Download/Proyectos/Desafío-Bíblico`
+- **Código:** `/data/data/com.termux/files/home/Projects/Desafío-Bíblico`
+  (se movió el 2026-11-21 desde `/storage/emulated/0/Download/Proyectos/`
+  porque sdcardfs dejó objetos de git y un archivo del ODD a 0 bytes)
 - **Backend:** Supabase, proyecto `xodghdateldeobuumhyd`
 - **Detalle técnico y lecciones:** `NOTES.md`
 
@@ -34,7 +36,7 @@ Si el `push` falla y solo hay que reintentar el envío, la ruta tiene que ir
 **literal** (el guardia de entrega lee el texto del comando):
 
 ```bash
-git -C /storage/emulated/0/Download/Proyectos/Desafío-Bíblico push origin main
+git -C /data/data/com.termux/files/home/Projects/Desafío-Bíblico push origin main
 ```
 
 ---
@@ -42,7 +44,7 @@ git -C /storage/emulated/0/Download/Proyectos/Desafío-Bíblico push origin main
 ## Antes de dar algo por terminado
 
 ```bash
-bash scripts/probar.sh          # todo: 536 de JavaScript + 158 de SQL
+bash scripts/probar.sh          # todo: 1070 de JavaScript + SQL
 bash scripts/probar.sh --js     # solo JavaScript (no necesita Postgres)
 bash scripts/probar.sh --sql    # solo SQL
 ```
