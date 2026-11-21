@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Modales — la app real</title>
+<link rel="stylesheet" href="base-app.css">
+<style>
+  html,body{margin:0}
+  .placa{max-width:1400px;margin:0 auto;padding:2rem 1.5rem 4rem;background:#0b1a1d;
+    color:#fff;font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  .placa > header{border-bottom:1px solid rgba(110,227,238,.22);padding-bottom:1rem;margin-bottom:1.5rem}
+  h1{margin:0 0 .25rem;font-size:1.75rem;font-weight:800}
+  header p{margin:0;color:#a9c6ca;max-width:80ch}
+  .h2{font-size:1.15rem;font-weight:750;margin:2.2rem 0 .4rem;color:#6fe3ee}
+  .h2 small{display:block;font-weight:400;color:#a9c6ca;font-size:.92rem;margin-top:.15rem}
+  .fila{display:flex;gap:1.4rem;align-items:flex-start;flex-wrap:wrap;margin-top:1rem}
+  .marco{flex:0 0 auto}
+  .rotulo{font-size:.85rem;color:#a9c6ca;margin-bottom:.4rem;font-family:ui-monospace,monospace}
+  .notas{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:.9rem}
+  .nota{border:1px solid #00525e;border-radius:10px;padding:.8rem 1rem;
+    background:linear-gradient(160deg,#102a2f,#0a2e33)}
+  .nota h3{margin:0 0 .35rem;font-size:.98rem;color:#6fe3ee}
+  .nota p{margin:.3rem 0;font-size:.92rem;color:#a9c6ca;line-height:1.5}
+  .nota.bien{border-left:4px solid #1fbf75}
+  .nota.mal{border-left:4px solid #e0483c}
+  .nota.duda{border-left:4px solid #f0a33a}
+  code{font-family:ui-monospace,monospace;font-size:.9em;background:rgba(111,227,238,.12);
+    padding:.08em .35em;border-radius:5px;color:#6fe3ee}
+</style>
+</head>
+<body>
+<div class="placa">
+
+  <header>
+    <h1>Modales — la app real</h1>
+    <p>Los nueve diálogos, sacados de <code>src/lib/admin-ui.js</code> y
+    <code>modalJuicioHTML</code>. Todos comparten el mismo armazón: un fondo que oscurece y un
+    <code>.modal</code> que se centra si cabe y arranca desde arriba si no.</p>
+  </header>
+
+  <div class="h2">El armazón, una sola vez
+    <small>Fondo y modal. Lo demás es contenido.</small>
+  </div>
+
+  <div class="fila">
+    <div class="marco">
+      <div class="rotulo">390×844 · fondo y modal de clave</div>
+      <div class="tela v">
+        <div class="modal-fondo">
+          <div class="modal">
+            <h2>Clave maestra</h2>
+            <p class="tenue" style="margin:0;font-size:var(--t-sm)">
+              Escribe la clave que protege los temas y las preguntas.</p>
+            <div class="campo">
+              <label>Clave</label>
+              <input type="password" placeholder="••••">
+            </div>
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+              <button class="boton boton-contorno" style="width:auto;flex:1">Cancelar</button>
+              <button class="boton-grande boton-oro" style="width:auto;flex:1">Entrar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="marco">
+      <div class="rotulo">390×844 · modal ancho (temas)</div>
+      <div class="tela v">
+        <div class="modal-fondo">
+          <div class="modal modal-ancho">
+            <h2>Temas</h2>
+            <div class="lista-admin">
+              <div class="pregunta-fila">
+                <div style="display:flex;justify-content:space-between;gap:.5rem;flex-wrap:wrap">
+                  <strong style="font-size:var(--t-sm)">2 Corintios</strong>
+                  <div style="display:flex;gap:.35rem">
+                    <button class="boton boton-contorno boton-mini">Preguntas</button>
+                    <button class="boton boton-contorno boton-mini">Renombrar</button>
+                  </div>
+                </div>
+                <p class="chico tenue" style="margin:.25rem 0 0">25 preguntas · 8 versículos</p>
+              </div>
+              <div class="pregunta-fila">
+                <div style="display:flex;justify-content:space-between;gap:.5rem;flex-wrap:wrap">
+                  <strong style="font-size:var(--t-sm)">Salmos</strong>
+                  <div style="display:flex;gap:.35rem">
+                    <button class="boton boton-contorno boton-mini">Preguntas</button>
+                    <button class="boton boton-contorno boton-mini">Renombrar</button>
+                  </div>
+                </div>
+                <p class="chico tenue" style="margin:.25rem 0 0">12 preguntas · 4 versículos</p>
+              </div>
+            </div>
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+              <button class="boton boton-contorno" style="width:auto;flex:1">Cerrar</button>
+              <button class="boton-grande boton-oro" style="width:auto;flex:1">Nuevo tema</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="flex:1 1 320px;min-width:280px">
+      <div class="notas">
+        <div class="nota bien">
+          <h3>Se centra si cabe, y si no, arranca arriba</h3>
+          <p><code>.modal-fondo</code> con <code>align-items: flex-start</code> y el
+          <code>margin: auto</code> del hijo. Con el centrado de grid y el contenido más alto que la
+          pantalla, el modal se desbordaba por arriba y por abajo y <strong>no había forma de llegar a
+          «Guardar»</strong>: el borde superior quedaba fuera, sin scroll.</p>
+        </div>
+        <div class="nota bien">
+          <h3>420 px, y 560 el ancho</h3>
+          <p><code>.modal</code> 420 px; <code>.modal-ancho</code> 560. Los que llevan lista de
+          administración usan el ancho.</p>
+        </div>
+        <div class="nota mal">
+          <h3>Los botones no se encogen hasta pisarse</h3>
+          <p>Con <code>flex: 0 0 auto</code> el ancho es intocable y, cuando no cabe, el botón se sale
+          y <strong>pisa al vecino</strong>. Ya pasó en el modal de temas: «Preguntas» y «Renombrar»
+          encimados. Ahora <code>flex: 0 1 auto</code> con <code>min-width: 0</code>, y las filas
+          envuelven.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="h2">Los modales de administración
+    <small>Clave, cambiar clave, procesando y las tres listas.</small>
+  </div>
+
+  <div class="fila">
+    <div class="marco">
+      <div class="rotulo">cambiar clave</div>
+      <div class="tela v">
+        <div class="modal-fondo">
+          <div class="modal">
+            <h2>Cambiar la clave maestra</h2>
+            <div class="campo"><label>Clave actual</label><input type="password" placeholder="••••"></div>
+            <div class="campo"><label>Clave nueva</label><input type="password" placeholder="••••"></div>
+            <div class="campo"><label>Repite la nueva</label><input type="password" placeholder="••••"></div>
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+              <button class="boton boton-contorno" style="width:auto;flex:1">Cancelar</button>
+              <button class="boton-grande boton-oro" style="width:auto;flex:1">Cambiar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="marco">
+      <div class="rotulo">procesando</div>
+      <div class="tela v">
+        <div class="modal-fondo">
+          <div class="modal" style="max-width:320px">
+            <h2>Preparando la imagen…</h2>
+            <div class="orbe-espera" style="align-self:center">
+              <div style="width:64px;height:64px;border-radius:50%;
+                   background:radial-gradient(circle at 40% 35%, rgba(191,234,242,.85), rgba(191,234,242,.12) 70%);
+                   border:1px solid rgba(191,234,242,.35)"></div>
+              <span class="orbe-txt">Un momento</span>
+            </div>
+            <p class="mini tenue" style="margin:0;text-align:center">
+              Se está recortando y comprimiendo la portada.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="marco">
+      <div class="rotulo">versículos de un tema</div>
+      <div class="tela v">
+        <div class="modal-fondo">
+          <div class="modal modal-ancho">
+            <h2>Versículos</h2>
+            <p class="chico tenue" style="margin:0">2 Corintios</p>
+            <div class="lista-admin" style="max-height:52vh;overflow-y:auto">
+              <div class="pregunta-fila">
+                <div style="display:flex;justify-content:space-between;gap:.5rem;flex-wrap:wrap">
+                  <strong style="font-size:var(--t-sm)">2 Corintios 3:2</strong>
+                  <div style="display:flex;gap:.35rem">
+                    <button class="boton boton-contorno boton-mini">Editar</button>
+                    <button class="boton boton-peligro boton-mini">Borrar</button>
+                  </div>
+                </div>
+                <p class="chico tenue" style="margin:.25rem 0 0">
+                  Nuestras <span class="hueco">cartas</span> sois, escritas en nuestro
+                  <span class="hueco">corazón</span>…</p>
+              </div>
+            </div>
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+              <button class="boton boton-contorno" style="width:auto;flex:1">Volver</button>
+              <button class="boton-grande boton-oro" style="width:auto;flex:1">Nuevo versículo</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="h2">El editor de versículo
+    <small>El más alto: versículo, contador, vista previa, deshacer y el modo ocultar.</small>
+  </div>
+
+  <div class="fila">
+    <div class="marco">
+      <div class="rotulo">390×844 · editor</div>
+      <div class="tela v">
+        <div class="modal-fondo">
+          <div class="modal modal-ancho">
+            <h2>Editar versículo</h2>
+            <div class="campo"><label>Referencia</label><input value="2 Corintios 3:2"></div>
+            <div class="campo">
+              <label>Texto completo del versículo</label>
+              <textarea rows="3">Nuestras cartas sois, escritas en nuestro corazón, conocidas y leídas de todos los hombres.</textarea>
+              <span class="chico tenue">2 palabras ocultas (máximo 34 por versículo)</span>
+            </div>
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+              <button class="boton boton-contorno" style="flex:1">👁 Ocultar palabra</button>
+              <button class="boton boton-contorno" style="width:auto;flex:0 0 auto">?</button>
+            </div>
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+              <button class="boton boton-contorno" style="width:auto;flex:0 0 auto">← Menú</button>
+              <button class="boton boton-contorno" style="flex:1">Cancelar</button>
+              <button class="boton-grande boton-oro" style="width:auto;flex:1">Guardar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="marco">
+      <div class="rotulo">390×844 · nuevo versículo</div>
+      <div class="tela v">
+        <div class="modal-fondo">
+          <div class="modal modal-ancho">
+            <h2>Nuevo versículo</h2>
+            <div class="campo"><label>Referencia</label><input placeholder="Ej.: 2 Corintios 5:17"></div>
+            <div class="campo">
+              <label>Texto completo del versículo</label>
+              <textarea rows="3" placeholder="Escribe el versículo completo"></textarea>
+              <span class="chico tenue">0 palabras ocultas (máximo 34 por versículo)</span>
+            </div>
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+              <button class="boton boton-contorno" style="flex:1">👁 Ocultar palabra</button>
+            </div>
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+              <button class="boton boton-contorno" style="flex:1">Cancelar</button>
+              <button class="boton-grande boton-oro" style="width:auto;flex:1">Guardar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="flex:1 1 320px;min-width:280px">
+      <div class="notas">
+        <div class="nota bien">
+          <h3>«← Menú» solo al editar</h3>
+          <p>En «Nuevo versículo» no aparece: no hay nada de donde volver. Un botón que lleva al mismo
+          sitio que «Cancelar» es un botón de más.</p>
+        </div>
+        <div class="nota bien">
+          <h3>El «?» solo cuando hace falta</h3>
+          <p>El globo de ayuda explica qué hace el modo ocultar. En «Nuevo» el botón está pero sin
+          globo: quien ya lo usó no necesita la explicación dos veces.</p>
+        </div>
+        <div class="nota bien">
+          <h3>El contador dice el tope</h3>
+          <p>«2 palabras ocultas (máximo 34 por versículo)». El tope se dice antes de llegar, no
+          cuando ya bloqueó.</p>
+        </div>
+        <div class="nota mal">
+          <h3>Acostado, «Guardar» siempre a la vista</h3>
+          <p>El editor pide 247 px de scroll interno. No es un defecto —tiene vista previa y el texto
+          crece— pero <strong>«Guardar» no puede quedar debajo</strong>: el formulario de acciones va
+          pegado al fondo, verificado en y=310→378 de una ventana de 390.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="h2">El juicio
+    <small>El presentador decide, viendo las palabras y quién las dijo.</small>
+  </div>
+
+  <div class="fila">
+    <div class="marco">
+      <div class="rotulo">390×844 · juicio</div>
+      <div class="tela v">
+        <div class="modal-fondo">
+          <div class="modal modal-ancho">
+            <h2>¿Está bien la respuesta?</h2>
+            <p class="chico tenue" style="margin:0">Carlos Ruiz</p>
+            <div class="lista-admin">
+              <div class="pregunta-fila">
+                <div style="display:flex;align-items:center;gap:.6rem">
+                  <span class="boton-mini" style="border:1px solid var(--ok);border-radius:50%;
+                        width:1.8rem;height:1.8rem;display:grid;place-items:center">✓</span>
+                  <span style="font-size:var(--t-sm)"><span class="hueco">cartas</span></span>
+                </div>
+              </div>
+              <div class="pregunta-fila">
+                <div style="display:flex;align-items:center;gap:.6rem">
+                  <span class="boton-mini" style="border:1px solid var(--ok);border-radius:50%;
+                        width:1.8rem;height:1.8rem;display:grid;place-items:center">✓</span>
+                  <span style="font-size:var(--t-sm)"><span class="hueco">corazón</span></span>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+              <button class="boton boton-contorno" style="flex:1">Cancelar</button>
+              <button class="boton-grande boton-oro" style="width:auto;flex:1">Confirmar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="flex:1 1 340px;min-width:280px">
+      <div class="notas">
+        <div class="nota bien">
+          <h3>El juicio no muestra la referencia</h3>
+          <p>Comprobado: <code>modalJuicioHTML</code> lista las palabras y quién las dijo, sin la
+          referencia bíblica. Si hiciera falta, se añade; hoy no está.</p>
+        </div>
+        <div class="nota bien">
+          <h3>Se marca palabra por palabra</h3>
+          <p>Cada palabra con su casilla. El presentador puede dar por buena una y no la otra, en vez
+          de decidir todo el versículo de golpe.</p>
+        </div>
+        <div class="nota duda">
+          <h3>Decision abierta</h3>
+          <p>¿Qué pasa si marca unas sí y otras no? ¿Cuenta como acierto parcial o como fallo? Hoy el
+          juicio es por pulsación, no por palabra: falta definirlo.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="h2">Acostado — el caso que más se rompía
+    <small>En 844×390 varios modales piden más alto del que hay. La salida es scroll dentro, no recorte.</small>
+  </div>
+
+  <div class="fila">
+    <div class="marco">
+      <div class="rotulo">844×390 · temas, con scroll dentro</div>
+      <div class="tela h">
+        <div class="modal-fondo" style="padding:.5rem;align-items:center">
+          <div class="modal modal-ancho" style="max-width:min(760px,94vw);max-height:calc(100dvh - .5rem);
+               padding:.6rem .8rem;gap:.4rem;overflow-y:auto">
+            <h2 style="font-size:var(--t-lg);margin:0">Temas</h2>
+            <div class="lista-admin" style="overflow-y:auto;min-height:0">
+              <div class="pregunta-fila" style="padding:.4em .6em">
+                <div style="display:flex;justify-content:space-between;gap:.5rem;flex-wrap:wrap">
+                  <strong style="font-size:var(--t-sm)">2 Corintios</strong>
+                  <div style="display:flex;gap:.35rem">
+                    <button class="boton boton-contorno boton-mini">Preguntas</button>
+                    <button class="boton boton-contorno boton-mini">Renombrar</button>
+                    <button class="boton boton-peligro boton-mini">Borrar</button>
+                  </div>
+                </div>
+              </div>
+              <div class="pregunta-fila" style="padding:.4em .6em">
+                <div style="display:flex;justify-content:space-between;gap:.5rem;flex-wrap:wrap">
+                  <strong style="font-size:var(--t-sm)">Salmos</strong>
+                  <div style="display:flex;gap:.35rem">
+                    <button class="boton boton-contorno boton-mini">Preguntas</button>
+                    <button class="boton boton-contorno boton-mini">Renombrar</button>
+                    <button class="boton boton-peligro boton-mini">Borrar</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+              <button class="boton boton-contorno" style="width:auto;flex:1">Cerrar</button>
+              <button class="boton-grande boton-oro" style="width:auto;flex:1">Nuevo tema</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="flex:1 1 340px;min-width:280px">
+      <div class="notas">
+        <div class="nota bien">
+          <h3>Medido, no supuesto</h3>
+          <p>En 844×390 el formulario de pregunta pedía <strong>503 px</strong> fuera de la ventana y
+          el editor <strong>352</strong>. Ahora el modal se ensancha a <code>min(760px, 94vw)</code> y
+          los formularios ponen sus campos en dos y tres columnas.</p>
+        </div>
+        <div class="nota mal">
+          <h3>El defecto que encontré aquí</h3>
+          <p>La lista de temas era un <code>&lt;ul&gt;</code> <strong>sin scroll propio</strong>. Al
+          quitarle el tope de alto, su contenido se derramaba fuera de la caja y
+          <strong>tapaba «Cerrar»</strong>: caja de 153 px con 338 de contenido, con solo tres temas.
+          En producción, «Borrar» y «Cerrar» habrían compartido el mismo píxel.</p>
+        </div>
+        <div class="nota bien">
+          <h3>La regla</h3>
+          <p>Lo que crece con los datos se desplaza <strong>dentro de su caja</strong>. Lo fijo y corto
+          cabe. Y ningún cero de scroll se consigue escondiendo contenido.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p style="margin-top:2rem;color:#a9c6ca;font-size:.9rem">
+    Los nueve modales: clave · cambiar clave · procesando · temas · preguntas · formulario de pregunta
+    · versículos · editor de versículo · juicio. Estructura de <code>admin-ui.js</code> y
+    <code>versiculo.js</code>; medidas de <code>base-app.css</code>.
+  </p>
+
+</div>
+</body>
+</html>

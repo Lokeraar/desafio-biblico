@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Configuraciones — la app real</title>
+<link rel="stylesheet" href="base-app.css">
+<style>
+  html,body{margin:0}
+  .placa{max-width:1400px;margin:0 auto;padding:2rem 1.5rem 4rem;background:#0b1a1d;
+    color:#fff;font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  .placa > header{border-bottom:1px solid rgba(110,227,238,.22);padding-bottom:1rem;margin-bottom:1.5rem}
+  h1{margin:0 0 .25rem;font-size:1.75rem;font-weight:800}
+  header p{margin:0;color:#a9c6ca;max-width:80ch}
+  .h2{font-size:1.15rem;font-weight:750;margin:2.2rem 0 .4rem;color:#6fe3ee}
+  .h2 small{display:block;font-weight:400;color:#a9c6ca;font-size:.92rem;margin-top:.15rem}
+  .fila{display:flex;gap:1.6rem;align-items:flex-start;flex-wrap:wrap;margin-top:1rem}
+  .marco{flex:0 0 auto}
+  .rotulo{font-size:.85rem;color:#a9c6ca;margin-bottom:.4rem;font-family:ui-monospace,monospace}
+  .notas{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:.9rem}
+  .nota{border:1px solid #00525e;border-radius:10px;padding:.8rem 1rem;
+    background:linear-gradient(160deg,#102a2f,#0a2e33)}
+  .nota h3{margin:0 0 .35rem;font-size:.98rem;color:#6fe3ee}
+  .nota p{margin:.3rem 0;font-size:.92rem;color:#a9c6ca;line-height:1.5}
+  .nota.bien{border-left:4px solid #1fbf75}
+  .nota.mal{border-left:4px solid #e0483c}
+  .nota.duda{border-left:4px solid #f0a33a}
+  code{font-family:ui-monospace,monospace;font-size:.9em;background:rgba(111,227,238,.12);
+    padding:.08em .35em;border-radius:5px;color:#6fe3ee}
+  .tarjeta-config{
+    padding:1.1rem; border-radius:var(--radio);
+    background:rgba(255,255,255,.05);
+    border:1px solid rgba(110,227,238,.18);
+    text-align:left;
+  }
+</style>
+</head>
+<body>
+<div class="placa">
+
+  <header>
+    <h1>Configuraciones — la app real</h1>
+    <p>Sacado de <code>vistaConfig</code> en <code>src/lib/admin-ui.js</code>. Una sola tarjeta: la
+    clave maestra. Es la puerta que protege los temas y las preguntas.</p>
+  </header>
+
+  <div class="h2">Los dos estados
+    <small>Sin clave configurada y con clave puesta. Cambia el texto y el botón.</small>
+  </div>
+
+  <div class="fila">
+    <div class="marco">
+      <div class="rotulo">390×844 · sin clave</div>
+      <div class="tela v">
+        <div style="display:flex;flex-direction:column;height:100%;padding:16px">
+          <div class="fila-entre" style="flex:0 0 auto">
+            <button class="boton-salir">← Volver</button>
+          </div>
+          <div class="app-centro">
+            <h1 style="margin:0;font-size:var(--t-2xl);font-weight:800;text-align:center">
+              ⚙️ Configuraciones</h1>
+            <p class="tenue" style="margin:0;text-align:center">
+              La clave maestra protege los temas y las preguntas del juego.
+              Solo el presentador la conoce.</p>
+            <div class="tarjeta-config">
+              <h2 style="font-size:var(--t-lg);margin:0 0 .3rem">Clave maestra</h2>
+              <p class="chico tenue" style="margin:0 0 .9rem">
+                Todavía no hay clave. Establécela antes de usar el panel del presentador.</p>
+              <button class="boton-grande boton-oro">Establecer la clave maestra</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="marco">
+      <div class="rotulo">390×844 · con clave puesta</div>
+      <div class="tela v">
+        <div style="display:flex;flex-direction:column;height:100%;padding:16px">
+          <div class="fila-entre" style="flex:0 0 auto">
+            <button class="boton-salir">← Volver</button>
+          </div>
+          <div class="app-centro">
+            <h1 style="margin:0;font-size:var(--t-2xl);font-weight:800;text-align:center">
+              ⚙️ Configuraciones</h1>
+            <p class="tenue" style="margin:0;text-align:center">
+              La clave maestra protege los temas y las preguntas del juego.
+              Solo el presentador la conoce.</p>
+            <div class="tarjeta-config">
+              <h2 style="font-size:var(--t-lg);margin:0 0 .3rem">Clave maestra</h2>
+              <p class="chico tenue" style="margin:0 0 .9rem">
+                La clave está configurada. Puedes cambiarla cuando quieras.</p>
+              <button class="boton-grande boton-oro">Cambiar la clave maestra</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="marco">
+      <div class="rotulo">844×390 · acostada</div>
+      <div class="tela h">
+        <div style="display:flex;flex-direction:column;height:100%;padding:10px 16px">
+          <div class="fila-entre" style="flex:0 0 auto">
+            <button class="boton-salir">← Volver</button>
+          </div>
+          <div class="app-centro" style="gap:.5rem">
+            <h1 style="margin:0;font-size:var(--t-lg);font-weight:800;text-align:center">
+              ⚙️ Configuraciones</h1>
+            <p class="tenue" style="margin:0;text-align:center;font-size:var(--t-sm)">
+              La clave maestra protege los temas y las preguntas del juego.</p>
+            <div class="tarjeta-config">
+              <h2 style="font-size:var(--t-lg);margin:0 0 .2rem">Clave maestra</h2>
+              <p class="chico tenue" style="margin:0 0 .6rem">
+                La clave está configurada. Puedes cambiarla cuando quieras.</p>
+              <button class="boton-grande boton-oro">Cambiar la clave maestra</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="flex:1 1 300px;min-width:260px">
+      <div class="notas">
+        <div class="nota bien">
+          <h3>El texto dice qué hacer</h3>
+          <p>Sin clave: «Establécela <strong>antes</strong> de usar el panel del presentador». Con
+          clave: «Puedes cambiarla cuando quieras». La misma tarjeta, distinto estado.</p>
+        </div>
+        <div class="nota bien">
+          <h3>Una sola cosa que configurar</h3>
+          <p>Solo la clave maestra. El lema y la portada se cambian desde el menú, en el lápiz de la
+          portada: están donde se ven, no en una pantalla aparte.</p>
+        </div>
+        <div class="nota mal">
+          <h3>Acostado, el gap estaba en línea</h3>
+          <p>El <code>gap: 1.2rem</code> de este <code>main</code> venía escrito en el marcado, y un
+          estilo en línea gana sobre cualquier clase: por eso medía 431 px en una ventana de 390 y los
+          ajustes por orientación no le hacían nada. Ahora vive en <code>.config-entrada</code>.</p>
+        </div>
+        <div class="nota duda">
+          <h3>Pendiente de revisar</h3>
+          <p>Si hay varias salas abiertas, aquí falta un «cerrar salas abiertas» protegido por esta
+          misma clave. Hoy la única forma de cerrar una sala perdida es esperar el barrido de 30
+          minutos.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p style="margin-top:2rem;color:#a9c6ca;font-size:.9rem">
+    Con esta placa, el canvas cubre las <strong>seis rutas</strong> de la app, la
+    <strong>ceremonia</strong> y los <strong>nueve modales</strong>. Queda fuera solo lo que Christian
+    aplazó.
+  </p>
+
+</div>
+</body>
+</html>

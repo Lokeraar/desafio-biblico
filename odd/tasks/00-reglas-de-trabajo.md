@@ -26,4 +26,13 @@ entra a mitad de otro convierte dos cambios limpios en dos cambios a medias.
 
 ## Cola actual
 
-Sin pedidos en cola.
+### C1 — Menú: no se puede deslizar desde cualquier parte
+Reportado por Christian el 2026-11-21 mientras se cerraba el canvas.
+Síntoma: «en menú no puedo deslizar desde cualquier parte, solo si deslizo
+pisando inicialmente la portada, no debería ser así sino en general».
+
+Estado: NO resuelto. Ya se quitó `overflow-y: auto` y
+`overscroll-behavior: contain` de `.menu-cuerpo`, y la medición dio
+`paginaScrollea=true` (1457 px de contenido en 844 de ventana). Aun así vuelve
+a pasar, así que queda otro contenedor con scroll propio o un `touch-action`
+en el camino. Hay que medirlo en el dispositivo, no suponerlo.

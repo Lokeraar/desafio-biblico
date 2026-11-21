@@ -50,6 +50,20 @@
       "tradeoff": "La ceremonia en sus dos orientaciones y en el televisor, con el revelado por turnos y el primero destacado. El precio es que el confeti no se puede dibujar aquí: es una animación, y lo que importa es dejar claro que no debe tapar las filas.",
       "width": 1400,
       "height": 3200
+    },
+    {
+      "file": "07-modales.html",
+      "title": "Modales: los nueve diálogos",
+      "tradeoff": "Los nueve modales con su armazón común, en vertical y acostado. El precio es que un modal es un estado transitorio: verlo quieto en una placa no muestra cómo se abre, se cierra ni qué pasa con el teclado del teléfono encima.",
+      "width": 1400,
+      "height": 4600
+    },
+    {
+      "file": "08-configuraciones.html",
+      "title": "Configuraciones: la clave maestra",
+      "tradeoff": "Los dos estados de la única cosa que se configura, en las dos orientaciones. El precio es que es la pantalla más simple de la app y no necesita más: lo que se ve es todo lo que hay.",
+      "width": 1400,
+      "height": 1800
     }
   ]
 }
