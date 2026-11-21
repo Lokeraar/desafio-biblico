@@ -67,6 +67,35 @@ body {
   background-attachment: fixed;
 }
 
+/* ---------- pantallas de juego: caben sin scroll ---------- */
+/*
+ * `.pantalla` usa `min-height: 100dvh`, que significa «al menos toda la
+ * pantalla, y más si hace falta». Con contenido alto eso produce scroll, que
+ * es justo lo que no debe pasar en el teléfono del participante ni en el
+ * televisor: la partida se juega mirando una pantalla, no desplazándola.
+ *
+ * Estas dos llevan ALTO EXACTO y `overflow: hidden`. El ajuste de texto se
+ * encarga de que el contenido quepa: `techoDeLaCaja` mide el alto real de cada
+ * caja y baja la letra hasta que entra. Sin esto, el ajuste calculaba contra
+ * una caja que podía crecer, así que nunca tenía motivo para encoger.
+ *
+ * Los hijos llevan `min-height: 0` porque un ítem flex no encoge por debajo de
+ * su contenido por omisión: sin esa línea, el texto empuja y desborda igual.
+ */
+.pantalla.jugador-versiculo,
+.pantalla.pantalla-tv {
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+  /* `dvh` sigue al teclado y a la barra del navegador; `vh` no. */
+  min-height: 0;
+}
+
+.pantalla.jugador-versiculo > *,
+.pantalla.pantalla-tv > * {
+  min-height: 0;
+}
+
 /* ---------- tipografía ---------- */
 h1, h2, h3 { margin: 0 0 .5em; line-height: 1.1; font-weight: 800; }
 h1 { font-size: var(--t-2xl); letter-spacing: -.02em; }
