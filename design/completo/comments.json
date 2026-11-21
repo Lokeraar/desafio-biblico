@@ -608,9 +608,10 @@
       "excerpt": "🏆 Clasificación 🎉 ¡Felicitaciones, Ana Pérez! 🥇 Ana Pérez 5 pts 🥈 Carlos Ruiz 3 pts 🥉 María López 2 pts 4 José Martínez 1 pt Toca para ver el resto de la tabla Nueva partida Terminar juego",
       "comment": "La animación de confeti va para cuando ya se revela el primer lugar en adelante hasta el final de la partida y se cierre de la sala o se salgan de la tabla de clasificaciones en las pantallas de televisor, participante y presentador.",
       "createdAt": "2026-11-21T18:55:13.699Z",
-      "status": "open",
+      "status": "resolved",
       "sentAt": "2026-11-21T18:55:13.770Z",
-      "resolvedAt": null
+      "resolvedAt": "2026-11-21T19:02:52.558Z",
+      "resolution": "El confeti está en los cuatro marcos con el primer puesto ya revelado, y añadí el marco del presentador (que no existía): participante, acostada, televisor y presentador. El de «a medio revelar» sigue sin confeti porque el primero aún no se ve."
     }
   ]
 }
