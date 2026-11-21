@@ -926,7 +926,7 @@ function vistaHost() {
       <div class="fila-entre">
         <button class="boton boton-secundario" data-ir="menu">← Volver</button>
       </div>
-      <main class="crecer columna centro" style="gap:1.2rem">
+      <main class="crecer columna centro host-config">
         <h1>Panel del presentador</h1>
         <p class="tenue" style="text-align:center; max-width:34ch">
           Crea la sala. Los participantes entrarán con un código.
@@ -1467,10 +1467,10 @@ function vistaJugador(vista = 'play') {
       <div class="fila-entre">
         <button class="boton boton-secundario" data-ir="menu">← Volver</button>
       </div>
-      <main class="crecer columna centro" style="gap:1rem">
-        <h1 style="font-size:var(--t-xl)">Entrar a la partida</h1>
+      <main class="crecer columna centro entrar-sala">
+        <h1>Entrar a la partida</h1>
         ${codigoDeUrl() ? `<div class="aviso info">Sala ${esc(codigoDeUrl())}</div>` : ''}
-        <div class="columna" style="gap:.8rem; max-width:var(--ancho-form); width:100%">
+        <div class="columna form-entrada" style="gap:.8rem; max-width:var(--ancho-form); width:100%">
           <div class="campo">
             <label for="codigo">Código de la sala ${ayuda('Son los cinco caracteres que muestra la pantalla del presentador. Se pueden escribir con espacios: «B 7 3 W S» es lo mismo que «B73WS».')}</label>
             <input id="codigo" type="text" maxlength="12" autocapitalize="characters"
