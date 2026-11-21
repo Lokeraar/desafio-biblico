@@ -44,6 +44,66 @@
   }
   .panel-host .reloj-ronda .reloj{width:auto;flex:0 0 auto;text-align:right}
   .panel-host .reloj-ronda .barra-tiempo{flex:1 1 auto;min-width:0}
+
+  /* ================= LA CABECERA DEL PRESENTADOR =================
+     Christian: «Está montándose encima del “En línea”, deben respetar sus
+     espacios mutuamente». Y sobre cada texto: «Usa text-fitting, que quepa en
+     una sola línea».
+
+     MEDIDO en 390x844 (los tres textos a 16 pt):
+       «← Menú»      ~104 px
+       «En línea»    ~106 px
+       dos `gap`       24 px
+       -> quedan      124 px para el rotulo del juego,
+          que pide    244 px.
+     FALTAN 120 px. No es un problema de ajuste: tres piezas no caben en una
+     fila de 358 px, y encoger la letra un 49 % la dejaria en el suelo de 8 pt.
+
+     La solucion es fisica: en VERTICAL el rotulo del juego baja a su propia
+     fila, alineado a la derecha. Respeta los espacios, no se monta y cabe
+     entero (358 px para 244 px). En ACOSTADO sobran 578 px, asi que se quedan
+     las tres en la misma fila, como estan. */
+  .tela.v .cabecera-host{flex-wrap:wrap;row-gap:.35rem}
+  .tela.v .cabecera-host .rotulo-juego{
+    flex: 0 0 100%; margin-left: 0; align-items: flex-end; text-align: right;
+  }
+  /* el nombre del juego a UNA fila, con el ajuste encogiendo si hace falta */
+  .cabecera-host .nombre-juego{white-space:nowrap;max-width:none}
+  /* «En línea» tampoco parte: es una etiqueta de estado, no una frase */
+  .cabecera-host > span{white-space:nowrap;flex:0 0 auto}
+
+  /* ================= LOS DOS SELECTS DE LA CONFIGURACIÓN =================
+     Christian: «Que el texto contenido use text-fitting a 1 sola fila» sobre
+     «10 preguntas» y «15 segundos».
+     MEDIDO: 358 px utiles, menos 8 px de gap, dan 175 px por campo. El select
+     hereda `padding: .8em 1em` (21.33 px de letra) y su borde: deja 128 px de
+     interior, y «10 preguntas» pide 133 px. DESBORDA por 5 px.
+     Se aprieta el relleno horizontal y se acota la letra a `--t-sm`. Asi el
+     texto se lee entero y el campo no se estira. */
+  .campos-dos{min-width:0}
+  .campos-dos .campo{min-width:0;flex:1 1 0}
+  .campos-dos select{padding:.6em .45em;font-size:var(--t-sm);min-width:0}
+  .campos-dos label{font-size:var(--t-sm);line-height:1.25}
+
+  /* ================= EL QR NO DESBORDA SU TARJETA =================
+     Christian: «El qr no debe desbordar en el texto de la tarjeta».
+     La rejilla da al QR `clamp(96px, 30%, 340px)` = 107 px en el telefono, y
+     dentro de la caja blanca el cuadro pedia 110 px FIJOS mas 8 px de relleno
+     por lado: 126 px. Se salia 19 px.
+     Ahora el cuadro toma el ancho de su caja y mantiene el cuadrado con
+     `aspect-ratio`, en vez de pedir un ancho que no tiene. */
+  .qr-caja{max-width:100%;min-width:0}
+  .qr-caja .dibujo{width:100%;height:auto;aspect-ratio:1;padding:4px;
+    font-size:9px;line-height:1.1;overflow-wrap:anywhere}
+
+  /* ================= EL INTERLINEADO BAJA AL ALTO DEL QR =================
+     Christian: «El interlineado reducción para que quede del tamaño del alto
+     del qr».
+     Con `line-height` heredado de 1.5, las cuatro lineas de `sala-datos`
+     (rotulo, codigo, participantes y ayuda) median mas que el QR de al lado y
+     la fila crecia de mas. Apretado, el bloque cabe en el alto del QR. */
+  .sala-cabecera .sala-datos{line-height:1.15;gap:.1rem}
+  .sala-datos .codigo-sala{line-height:1.05;font-size:var(--t-2xl)}
 </style>
 </head>
 <body>
@@ -65,7 +125,7 @@
       <div class="rotulo">390×844 · configuración</div>
       <div class="tela v">
         <div style="display:flex;flex-direction:column;height:100%;padding:16px">
-          <div class="fila-entre" style="flex:0 0 auto">
+          <div class="fila-entre cabecera-host" style="flex:0 0 auto">
             <button class="boton-salir">← Volver</button>
             <span style="display:flex;align-items:center;gap:.35rem;font-size:var(--t-sm);color:var(--tinta-suave)">
               <span class="punto-vivo"></span> En línea
@@ -84,7 +144,7 @@
               <label>Tema</label>
               <select><option>2 Corintios — 25 preguntas</option></select>
             </div>
-            <div style="display:flex;gap:.5rem">
+            <div class="campos-dos" style="display:flex;gap:.5rem">
               <div class="campo">
                 <label>Preguntas en esta partida</label>
                 <select><option>10 preguntas</option></select>
@@ -133,7 +193,7 @@
       <div class="rotulo">390×844 · lobby con tres participantes</div>
       <div class="tela v">
         <div style="display:flex;flex-direction:column;height:100%;padding:16px;gap:.6rem">
-          <div class="fila-entre" style="flex:0 0 auto">
+          <div class="fila-entre cabecera-host" style="flex:0 0 auto">
             <button class="boton-salir">← Menú</button>
             <span style="display:flex;align-items:center;gap:.35rem;font-size:var(--t-sm);color:var(--tinta-suave)">
               <span class="punto-vivo"></span> En línea
@@ -232,7 +292,7 @@
       <div class="rotulo">390×844 · ronda abierta</div>
       <div class="tela v">
         <div class="panel-host pantalla">
-          <div class="fila-entre" style="flex:0 0 auto">
+          <div class="fila-entre cabecera-host" style="flex:0 0 auto">
             <button class="boton-salir">← Menú</button>
             <span style="display:flex;align-items:center;gap:.35rem;font-size:var(--t-sm);color:var(--tinta-suave)">
               <span class="punto-vivo"></span> En línea
@@ -285,7 +345,7 @@
       <div class="rotulo">844×390 · ronda acostada</div>
       <div class="tela h">
         <div class="panel-host pantalla">
-          <div class="fila-entre" style="flex:0 0 auto">
+          <div class="fila-entre cabecera-host" style="flex:0 0 auto">
             <button class="boton-salir">← Menú</button>
             <span style="display:flex;align-items:center;gap:.35rem;font-size:var(--t-sm);color:var(--tinta-suave)">
               <span class="punto-vivo"></span> En línea

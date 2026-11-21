@@ -416,9 +416,10 @@
       "excerpt": "En línea",
       "comment": "Usa text-fitting, que quepa en una sola línea",
       "createdAt": "2026-11-21T18:16:39.161Z",
-      "status": "open",
+      "status": "resolved",
       "sentAt": "2026-11-21T18:16:39.222Z",
-      "resolvedAt": null
+      "resolvedAt": "2026-11-21T18:42:32.105Z",
+      "resolution": "Cabecera del presentador: medido, las tres piezas no caben en 358 px (faltan 120 px). En vertical el rótulo del juego baja a su propia fila a la derecha, con nowrap para «En línea» y el nombre; en acostado se quedan los tres en la misma fila porque sobran 578 px. Ya no se montan."
     },
     {
       "id": "z6m47cs1",
@@ -427,9 +428,10 @@
       "excerpt": "Completar el versículo",
       "comment": "Usa text-fitting, que quepa en una sola línea",
       "createdAt": "2026-11-21T18:16:42.851Z",
-      "status": "open",
+      "status": "resolved",
       "sentAt": "2026-11-21T18:16:42.916Z",
-      "resolvedAt": null
+      "resolvedAt": "2026-11-21T18:42:32.105Z",
+      "resolution": "Cabecera del presentador: medido, las tres piezas no caben en 358 px (faltan 120 px). En vertical el rótulo del juego baja a su propia fila a la derecha, con nowrap para «En línea» y el nombre; en acostado se quedan los tres en la misma fila porque sobran 578 px. Ya no se montan."
     },
     {
       "id": "5miwkeyp",
@@ -438,9 +440,10 @@
       "excerpt": "10 preguntas",
       "comment": "Que el texto contenido use text-fitting a 1 sola fila",
       "createdAt": "2026-11-21T18:18:08.811Z",
-      "status": "open",
+      "status": "resolved",
       "sentAt": "2026-11-21T18:18:08.854Z",
-      "resolvedAt": null
+      "resolvedAt": "2026-11-21T18:42:32.192Z",
+      "resolution": "Los dos selects a una fila: 175 px por campo dejaban 128 px de interior y «10 preguntas» pide 133. Relleno horizontal apretado (.6em .45em) y letra a --t-sm: ahora el interior es 145 px y el texto se lee entero."
     },
     {
       "id": "sosekeve",
@@ -449,9 +452,10 @@
       "excerpt": "15 segundos",
       "comment": "Que el texto contenido use text-fitting a 1 sola fila",
       "createdAt": "2026-11-21T18:18:12.410Z",
-      "status": "open",
+      "status": "resolved",
       "sentAt": "2026-11-21T18:18:12.477Z",
-      "resolvedAt": null
+      "resolvedAt": "2026-11-21T18:42:32.192Z",
+      "resolution": "Los dos selects a una fila: 175 px por campo dejaban 128 px de interior y «10 preguntas» pide 133. Relleno horizontal apretado (.6em .45em) y letra a --t-sm: ahora el interior es 145 px y el texto se lee entero."
     },
     {
       "id": "qln36878",
@@ -460,9 +464,10 @@
       "excerpt": "Completar el versículo",
       "comment": "Usa text-fitting, que quepa en una sola línea",
       "createdAt": "2026-11-21T18:18:57.582Z",
-      "status": "open",
+      "status": "resolved",
       "sentAt": "2026-11-21T18:18:57.632Z",
-      "resolvedAt": null
+      "resolvedAt": "2026-11-21T18:42:32.105Z",
+      "resolution": "Cabecera del presentador: medido, las tres piezas no caben en 358 px (faltan 120 px). En vertical el rótulo del juego baja a su propia fila a la derecha, con nowrap para «En línea» y el nombre; en acostado se quedan los tres en la misma fila porque sobran 578 px. Ya no se montan."
     },
     {
       "id": "43q7q5nl",
@@ -471,9 +476,10 @@
       "excerpt": "En línea",
       "comment": "Usa text-fitting, que quepa en una sola línea",
       "createdAt": "2026-11-21T18:19:07.184Z",
-      "status": "open",
+      "status": "resolved",
       "sentAt": "2026-11-21T18:19:07.242Z",
-      "resolvedAt": null
+      "resolvedAt": "2026-11-21T18:42:32.105Z",
+      "resolution": "Cabecera del presentador: medido, las tres piezas no caben en 358 px (faltan 120 px). En vertical el rótulo del juego baja a su propia fila a la derecha, con nowrap para «En línea» y el nombre; en acostado se quedan los tres en la misma fila porque sobran 578 px. Ya no se montan."
     },
     {
       "id": "5cb27fvt",
@@ -482,9 +488,10 @@
       "excerpt": "Código de la sala B73WS 3 participantes Escanea el QR o escribe el código",
       "comment": "El interlineado reducción para que quede del tamaño del alto del qr.",
       "createdAt": "2026-11-21T18:19:58.125Z",
-      "status": "open",
+      "status": "resolved",
       "sentAt": "2026-11-21T18:19:58.164Z",
-      "resolvedAt": null
+      "resolvedAt": "2026-11-21T18:42:32.308Z",
+      "resolution": "Interlineado de sala-datos apretado a 1.15 y el código a 1.05, para que las cuatro líneas quepan en el alto del QR de al lado."
     },
     {
       "id": "1jcoa980",
@@ -493,9 +500,10 @@
       "excerpt": "QR de la sala #/join?c=B73WS",
       "comment": "El qr no debe desbordar en el texto de la tarjeta",
       "createdAt": "2026-11-21T18:20:25.006Z",
-      "status": "open",
+      "status": "resolved",
       "sentAt": "2026-11-21T18:20:25.074Z",
-      "resolvedAt": null
+      "resolvedAt": "2026-11-21T18:42:32.231Z",
+      "resolution": "El QR ya no desborda: la rejilla le da 107 px y el cuadro pedía 110 fijos más relleno (126 px en total, 19 de más). Ahora toma el ancho de su caja con aspect-ratio 1 en vez de pedir un ancho que no tiene."
     },
     {
       "id": "aw25ki1j",
@@ -504,9 +512,10 @@
       "excerpt": "Completar el versículo",
       "comment": "Está  montándose encima del \"En línea\", deben respetar sus espacios mutuamente.",
       "createdAt": "2026-11-21T18:22:08.251Z",
-      "status": "open",
+      "status": "resolved",
       "sentAt": "2026-11-21T18:22:08.401Z",
-      "resolvedAt": null
+      "resolvedAt": "2026-11-21T18:42:32.105Z",
+      "resolution": "Cabecera del presentador: medido, las tres piezas no caben en 358 px (faltan 120 px). En vertical el rótulo del juego baja a su propia fila a la derecha, con nowrap para «En línea» y el nombre; en acostado se quedan los tres en la misma fila porque sobran 578 px. Ya no se montan."
     },
     {
       "id": "2bjo7nk4",
@@ -519,6 +528,28 @@
       "sentAt": "2026-11-21T18:27:41.470Z",
       "resolvedAt": "2026-11-21T18:33:13.161Z",
       "resolution": "Reloj del presentador centrado y con su barra visible. La barra ya estaba en el marcado pero medía 0 px: `.reloj { width: 100% }` en base-app.css se comía todo el ancho. Acotado a 22rem, centrado, y `.reloj` con width auto y flex 0 0 auto como en la app real. Ahora la barra mide ~301 px."
+    },
+    {
+      "id": "z7goihnh",
+      "file": "05-presentador.html",
+      "selector": "body > div > div:nth-of-type(6) > div:nth-of-type(2) > div:nth-of-type(2) > div > div:nth-of-type(1) > div > span:nth-of-type(2)",
+      "excerpt": "Completar el versículo",
+      "comment": "Usa text-fitting, que quepa en una sola línea",
+      "createdAt": "2026-11-21T18:35:05.813Z",
+      "status": "open",
+      "sentAt": "2026-11-21T18:35:05.848Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "01lotrmf",
+      "file": "05-presentador.html",
+      "selector": "body > div > div:nth-of-type(6) > div:nth-of-type(2) > div:nth-of-type(2) > div > div:nth-of-type(3) > div:nth-of-type(2) > button:nth-of-type(1)",
+      "excerpt": "Pausar",
+      "comment": "reubícalo debajo a la izquierda del versículo. Y desplaza el versículo un poco más hacia arriba para que no se choquen sus cajas.",
+      "createdAt": "2026-11-21T18:36:31.052Z",
+      "status": "open",
+      "sentAt": "2026-11-21T18:36:31.098Z",
+      "resolvedAt": null
     }
   ]
 }
