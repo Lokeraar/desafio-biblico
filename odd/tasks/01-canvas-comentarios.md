@@ -62,32 +62,31 @@ Christian del 2026-11-21 04:50.
 
 # 02 — Pantallas que faltan en el canvas
 
-Orden acordado con Christian el 2026-11-21.
+Orden acordado con Christian el 2026-11-21. Omitiendo lo que él dejó «para
+después».
 
-## T1 — Panel del presentador (el bloque más grande)
-Momentos reales, del marcado de `src/app.js`:
-- [ ] Configuración: tema, preguntas, segundos, «Crear sala»
-- [ ] Lobby: QR + código, lista de participantes, «Empezar»
-- [ ] Ronda abierta: versículo con huecos, turno, reloj, pausar/terminar
-- [ ] Juicio: sentenciar-bien / sentenciar-mal
-- [ ] En pausa: «Reanudar»
-- [ ] Sala cerrada
+## T7 — Panel del presentador: HECHO (commit d70cee1)
+`design/completo/05-presentador.html` — seis momentos: configuración, lobby
+(con su variante vacía), ronda abierta en las dos orientaciones, juicio, pausa
+y sala cerrada.
 
-Acciones reales: abrir, iniciar, pausar, reanudar, saltar, revelar,
-sentenciar-bien, sentenciar-mal, pedir-terminar, repetir, admitir, expulsar,
-cerrar-pulsaciones.
+## T8 — Ceremonia
+Tabla de clasificación con podio escalonado, revelado por turnos, confeti y
+«Nueva partida» / «Terminar juego». Va junto al televisor, porque se miran a la
+vez. Estructura real en `src/lib/render.js`: `.pantalla-ceremonia`, `.marco-oro`,
+`.fila-clasif` (rejilla de 3 columnas: puesto, nombre, puntos), `.lista-ceremonia`
+(lo único con scroll) y `.ceremonia-footer`.
 
-## T2 — Ceremonia
-Tabla de clasificación con podio escalonado, revelado por turnos,
-«Nueva partida» y «Terminar juego». Presentador y televisor juntos.
-
-## T3 — Los nueve modales
+## T9 — Los nueve modales
 clave · cambiar clave · procesando · temas · preguntas · formularios ·
-versículos · editor de versículo · juicio.
+versículos · editor de versículo · juicio. Todos en `src/lib/admin-ui.js` y
+`modalJuicioHTML` en `src/lib/versiculo.js`.
 
-## T4 — Configuraciones y sala cerrada
+## T10 — Configuraciones y sala cerrada
+`vistaConfig` en `admin-ui.js`; la sala cerrada ya está cubierta dentro de T1.
 
 ## Fuera de alcance, por decisión de Christian
 - «Respuesta abierta»
 - Estados «parcial» y «éxito-vacío»
 - Historial de partidas
+- Descripción del juego a 16 pt
