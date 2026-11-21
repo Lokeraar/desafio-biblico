@@ -40,14 +40,37 @@
   --radio-sm: 12px;
   --sombra:  0 10px 30px rgba(0, 0, 0, .45);
 
-  /* tipografía fluida: nada de px fijos para el cuerpo */
-  --t-xs:   clamp(.75rem, .70rem + .25vw, .85rem);
-  --t-sm:   clamp(.875rem, .82rem + .3vw, .95rem);
-  --t-base: clamp(1rem, .95rem + .35vw, 1.1rem);
-  --t-lg:   clamp(1.15rem, 1.05rem + .6vw, 1.4rem);
-  --t-xl:   clamp(1.5rem, 1.25rem + 1.2vw, 2rem);
-  --t-2xl:  clamp(2rem, 1.5rem + 2.4vw, 3.2rem);
-  --t-3xl:  clamp(2.6rem, 1.8rem + 4vw, 4.6rem);
+  /* LA ESCALA ES UNA SOLA, EN TODAS LAS PANTALLAS.
+   *
+   * Christian: «la letra se ve muy pequena dentro de la app y hay algunos
+   * textos que no se leen bien... deberia ser una letra... normal».
+   *
+   * POR QUE ESTABA MAL. Esta escala es la de partida (telefono), y arrancaba
+   * en `clamp(1rem, ...)`: 1rem son 16 px = 12 pt. Habia OTRA escala mas
+   * abajo, dentro de `@media (min-width: 768px)`, que ponia el contenido a
+   * 1.3333rem = 16 pt. Dos escalas para el mismo texto, y la chica era la que
+   * se veia en el telefono, que es donde se juega.
+   *
+   * Medido antes del cambio, leyendo el tamano realmente aplicado en 390x844:
+   * descripcion del menu 10.67 px = 8 pt, nombre 11 pt, y el ajuste bajando
+   * todo al suelo porque no habia margen.
+   *
+   * Ahora las dos escalas son la misma. `1rem = 16 px = 12 pt`, asi que:
+   *   1.3333rem = 21.33 px = 16 pt  -> contenido (techo de la skill)
+   *   2rem      = 32 px    = 24 pt  -> titulos  (techo de la skill)
+   * No se necesita `clamp` con `vw`: la elasticidad ya la da el ajuste, que
+   * mide cada caja y encoge lo que no entra. Un `clamp` aqui seria una segunda
+   * decision invisible sobre lo mismo.
+   *
+   * Si algo no cabe, que lo resuelva el ajuste con su renglon de gracia, no un
+   * tamano de partida por debajo de lo legible. */
+  --t-xs:   1.3333rem; /* 16 pt — etiquetas, insignias y texto secundario */
+  --t-sm:   1.3333rem; /* 16 pt — texto secundario */
+  --t-base: 1.3333rem; /* 16 pt — contenido */
+  --t-lg:   1.5rem;    /* 18 pt */
+  --t-xl:   1.75rem;   /* 21 pt */
+  --t-2xl:  2rem;      /* 24 pt — techo de titulo */
+  --t-3xl:  2rem;      /* 24 pt — ningun titulo pasa de aqui */
 }
 
 * { box-sizing: border-box; }

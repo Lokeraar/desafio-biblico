@@ -560,7 +560,14 @@ export const ROLES = [
    * crecer en alto, que es lo que él pidió. La excepción a «el resto de la
    * interfaz va en 1 + 1» es suya y está aquí, visible, no escondida. */
   { sel: '.juego-tarjeta .nombre', categoria: 'contenido', renglones: 2 },
-  { sel: '.juego-tarjeta .desc', categoria: 'contenido', renglones: 2 },
+  /* TRES renglones para la descripcion, no dos.
+   *
+   * Christian: «deberia ser una letra... normal. no ajustada al espacio
+   * disponible». Con letra normal, la descripcion de «Completar el
+   * versiculo» no cabe en dos renglones de 257 px: medido, el ajuste la
+   * dejaba en 11 pt en el telefono y 9 pt acostado, que es exactamente lo que
+   * el rechaza. La letra no se encoge: se le da el renglon que necesita. */
+  { sel: '.juego-tarjeta .desc', categoria: 'contenido', renglones: 3 },
   /* Títulos: techo de 24 pt. Entran todos los encabezados, incluido el h1
      de la portada, que antes se quedaba con el tamaño de la hoja y partía en
      dos renglones sin que nadie comprobara si encogiendo cabía en uno. */

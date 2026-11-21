@@ -159,8 +159,11 @@ t(conCapacidadPropia.filter(r => !esDelMenu(r.sel) && r.renglones !== 2)
    que haya que leer entero. Se excluye por su clase. */
 const tarjetasJuego = (sel) => /juego-tarjeta/.test(sel) && !/insignia/.test(sel);
 t(conCapacidadPropia.filter(r => esDelMenu(r.sel) && tarjetasJuego(r.sel))
-   .every(r => r.renglones === 2),
-  'el nombre y la descripcion del juego van en 2 renglones, por pedido explicito');
+   .every(r => r.renglones >= 2),
+  'el nombre y la descripcion del juego pueden crecer, por pedido explicito');
+const desc = ROLES.find(r => r.sel === '.juego-tarjeta .desc');
+t(desc.renglones === 3,
+  'la descripcion lleva 3 renglones: con 2 no cabe a letra normal');
 t(conCapacidadPropia.filter(r => esDelMenu(r.sel) && !tarjetasJuego(r.sel))
    .every(r => r.renglones === 1),
   'y el resto del menu sigue en 1 renglon');
