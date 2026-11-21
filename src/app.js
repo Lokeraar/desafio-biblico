@@ -1356,9 +1356,32 @@ function finDePartidaJugador(s, yo) {
     </main>`;
 }
 
-function vistaJugador() {
-  const s = app.estado;
-  const yo = app.yo;
+function vistaJugador(vista = 'play') {
+  /*
+   * ENTRAR A UNA SALA NUEVA NO MIRA LA SALA VIEJA.
+   *
+   * Defecto real, con captura: un participante sale de una partida, el
+   * presentador cierra la sala después, y al tocar «Jugar como participante»
+   * aparecia «El presentador cerro la sala» en vez del formulario del codigo.
+   * El telefono quedaba sin forma de entrar a otra sala desde ahi.
+   *
+   * La causa: esta funcion empieza por el estado de la SALA, sin mirar en que
+   * ruta esta. En `#/join` la persona quiere entrar, no ver como termino lo
+   * anterior: el estado viejo no tiene nada que decir aqui.
+   *
+   * Se resuelve aqui y no solo en el boton «Jugar como participante» porque a
+   * `#/join` tambien se llega escribiendo la direccion, escaneando el QR o
+   * recargando con la sesion de una sala que ya murio.
+   *
+   * Se ignora SOLO para pintar: no se destruye nada. La sesion guardada se
+   * queda donde esta. Si se borrara aqui, pulsar «atras» en el navegador
+   * despues de entrar sacaria al jugador de su partida viva, que es peor que
+   * el defecto que se esta arreglando. Cuando la persona entra de verdad,
+   * `unirse` reemplaza la sesion; cuando se va, la suelta `salir-host`. */
+  const enEntrada = vista === 'join';
+
+  const s = enEntrada ? null : app.estado;
+  const yo = enEntrada ? null : app.yo;
 
   /*
    * El FIN DE PARTIDA se decide antes que cualquier juego.
@@ -2185,7 +2208,7 @@ function render() {
   switch (vista) {
     case 'host':  html = vistaHost(); break;
     case 'join':
-    case 'play':  html = vistaJugador(); break;
+    case 'play':  html = vistaJugador(vista); break;
     case 'tv':    html = vistaTV(); break;
     case 'config': html = vistaConfig({ hayClave: hayNube }); break;
     default:      html = vistaMenu();
