@@ -57,3 +57,37 @@ Christian del 2026-11-21 04:50.
 - [ ] Los cinco artboards cierran y tienen los divs balanceados.
 - [ ] `design.json` es JSON válido y lista los cinco.
 - [ ] Los 19 comentarios quedan resueltos con nota.
+
+---
+
+# 02 — Pantallas que faltan en el canvas
+
+Orden acordado con Christian el 2026-11-21.
+
+## T1 — Panel del presentador (el bloque más grande)
+Momentos reales, del marcado de `src/app.js`:
+- [ ] Configuración: tema, preguntas, segundos, «Crear sala»
+- [ ] Lobby: QR + código, lista de participantes, «Empezar»
+- [ ] Ronda abierta: versículo con huecos, turno, reloj, pausar/terminar
+- [ ] Juicio: sentenciar-bien / sentenciar-mal
+- [ ] En pausa: «Reanudar»
+- [ ] Sala cerrada
+
+Acciones reales: abrir, iniciar, pausar, reanudar, saltar, revelar,
+sentenciar-bien, sentenciar-mal, pedir-terminar, repetir, admitir, expulsar,
+cerrar-pulsaciones.
+
+## T2 — Ceremonia
+Tabla de clasificación con podio escalonado, revelado por turnos,
+«Nueva partida» y «Terminar juego». Presentador y televisor juntos.
+
+## T3 — Los nueve modales
+clave · cambiar clave · procesando · temas · preguntas · formularios ·
+versículos · editor de versículo · juicio.
+
+## T4 — Configuraciones y sala cerrada
+
+## Fuera de alcance, por decisión de Christian
+- «Respuesta abierta»
+- Estados «parcial» y «éxito-vacío»
+- Historial de partidas

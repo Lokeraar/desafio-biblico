@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Presentador — la app real</title>
+<link rel="stylesheet" href="base-app.css">
+<style>
+  html,body{margin:0}
+  .placa{max-width:1400px;margin:0 auto;padding:2rem 1.5rem 4rem;background:#0b1a1d;
+    color:#fff;font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  .placa > header{border-bottom:1px solid rgba(110,227,238,.22);padding-bottom:1rem;margin-bottom:1.5rem}
+  h1{margin:0 0 .25rem;font-size:1.75rem;font-weight:800}
+  header p{margin:0;color:#a9c6ca;max-width:80ch}
+  .h2{font-size:1.15rem;font-weight:750;margin:2.2rem 0 .4rem;color:#6fe3ee}
+  .h2 small{display:block;font-weight:400;color:#a9c6ca;font-size:.92rem;margin-top:.15rem}
+  .fila{display:flex;gap:1.6rem;align-items:flex-start;flex-wrap:wrap;margin-top:1rem}
+  .marco{flex:0 0 auto}
+  .rotulo{font-size:.85rem;color:#a9c6ca;margin-bottom:.4rem;font-family:ui-monospace,monospace}
+  .notas{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:.9rem}
+  .nota{border:1px solid #00525e;border-radius:10px;padding:.8rem 1rem;
+    background:linear-gradient(160deg,#102a2f,#0a2e33)}
+  .nota h3{margin:0 0 .35rem;font-size:.98rem;color:#6fe3ee}
+  .nota p{margin:.3rem 0;font-size:.92rem;color:#a9c6ca;line-height:1.5}
+  .nota.bien{border-left:4px solid #1fbf75}
+  .nota.mal{border-left:4px solid #e0483c}
+  .nota.duda{border-left:4px solid #f0a33a}
+  code{font-family:ui-monospace,monospace;font-size:.9em;background:rgba(111,227,238,.12);
+    padding:.08em .35em;border-radius:5px;color:#6fe3ee}
+</style>
+</head>
+<body>
+<div class="placa">
+
+  <header>
+    <h1>Presentador — la app real</h1>
+    <p>Los seis momentos del panel, sacados del marcado de <code>src/app.js</code>. Es la pantalla
+    que conduce la partida y la que faltaba en el canvas.</p>
+  </header>
+
+  <!-- ============ 1. CONFIGURACIÓN ============ -->
+  <div class="h2">1. Configuración — antes de crear la sala
+    <small>Tema, cantidad de preguntas y segundos. El botón que crea la sala.</small>
+  </div>
+
+  <div class="fila">
+    <div class="marco">
+      <div class="rotulo">390×844 · configuración</div>
+      <div class="tela v">
+        <div style="display:flex;flex-direction:column;height:100%;padding:16px">
+          <div class="fila-entre" style="flex:0 0 auto">
+            <button class="boton-salir">← Volver</button>
+            <span style="display:flex;align-items:center;gap:.35rem;font-size:var(--t-sm);color:var(--tinta-suave)">
+              <span class="punto-vivo"></span> En línea
+            </span>
+            <div class="app-rotulo-juego">
+              <span class="rot">Juego:</span>
+              <span class="nom">Completar el versículo</span>
+            </div>
+          </div>
+          <div style="flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;gap:.5rem">
+            <h1 style="margin:0;font-size:var(--t-2xl);line-height:1.1;font-weight:800;text-align:center">
+              Panel del presentador</h1>
+            <p class="tenue" style="margin:0;text-align:center;font-size:var(--t-sm)">
+              Elige el tema y cuántas preguntas se juegan. Después compartes el código.</p>
+            <div class="campo" style="margin-top:.4rem">
+              <label>Tema</label>
+              <select><option>2 Corintios — 25 preguntas</option></select>
+            </div>
+            <div style="display:flex;gap:.5rem">
+              <div class="campo">
+                <label>Preguntas en esta partida</label>
+                <select><option>10 preguntas</option></select>
+              </div>
+              <div class="campo">
+                <label>Segundos por pregunta</label>
+                <select><option>15 segundos</option></select>
+              </div>
+            </div>
+            <button class="boton-grande boton-oro" style="margin-top:.5rem">Crear sala</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="flex:1 1 340px;min-width:280px">
+      <div class="notas">
+        <div class="nota bien">
+          <h3>Los dos rótulos, en una línea</h3>
+          <p><code>.rotulo-campo</code> con <code>white-space: nowrap</code>: el ajuste encoge la letra
+          hasta que entra en un renglón, y así los selects suben. Sin el <code>nowrap</code>, el
+          ajuste mira la altura, declara «cabe» y el texto se sale.</p>
+        </div>
+        <div class="nota bien">
+          <h3>«Juego:» arriba a la derecha</h3>
+          <p>El mismo componente del menú y de la sala de espera. Si un día cambia el nombre de un
+          juego, cambia en los tres sitios a la vez.</p>
+        </div>
+        <div class="nota duda">
+          <h3>Detalle del código</h3>
+          <p>El <code>gap</code> de este <code>main</code> estaba <strong>en línea</strong>, y un estilo
+          en línea gana sobre cualquier clase. Por eso los ajustes por orientación no le hacían nada:
+          ahora vive en <code>.host-config</code>.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 2. LOBBY ============ -->
+  <div class="h2">2. Lobby — la sala esperando
+    <small>QR y código a la izquierda, quién entró abajo. Nada se abre solo.</small>
+  </div>
+
+  <div class="fila">
+    <div class="marco">
+      <div class="rotulo">390×844 · lobby con tres participantes</div>
+      <div class="tela v">
+        <div style="display:flex;flex-direction:column;height:100%;padding:16px;gap:.6rem">
+          <div class="fila-entre" style="flex:0 0 auto">
+            <button class="boton-salir">← Menú</button>
+            <span style="display:flex;align-items:center;gap:.35rem;font-size:var(--t-sm);color:var(--tinta-suave)">
+              <span class="punto-vivo"></span> En línea
+            </span>
+            <div class="app-rotulo-juego">
+              <span class="rot">Juego:</span>
+              <span class="nom">Completar el versículo</span>
+            </div>
+          </div>
+
+          <div class="sala-cabecera">
+            <div class="qr-caja"><div class="dibujo">QR de la sala<br>#/join?c=B73WS</div></div>
+            <div class="sala-datos">
+              <span class="mini tenue">Código de la sala</span>
+              <div class="codigo-sala" style="text-align:left">B73WS</div>
+              <span class="chico tenue">3 participantes</span>
+              <span class="mini tenue">Escanea el QR o escribe el código</span>
+            </div>
+          </div>
+
+          <div class="aviso info">
+            Lista para empezar: 10 versículos preparados.
+          </div>
+          <button class="boton-grande boton-oro">Empezar el primer versículo</button>
+
+          <div style="display:flex;flex-direction:column;gap:.4rem;margin-top:auto">
+            <h3 style="font-size:var(--t-sm);margin:0">Participantes</h3>
+            <ul class="lista-jugadores">
+              <li><span class="nombre-j">Ana Pérez</span><span class="chico tenue">0 pts</span></li>
+              <li><span class="nombre-j">Carlos Ruiz</span><span class="chico tenue">0 pts</span></li>
+              <li><span class="nombre-j">María López</span><span class="chico tenue">0 pts</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="marco">
+      <div class="rotulo">390×844 · lobby vacío</div>
+      <div class="tela v">
+        <div style="display:flex;flex-direction:column;height:100%;padding:16px;gap:.6rem">
+          <div class="fila-entre" style="flex:0 0 auto">
+            <button class="boton-salir">← Menú</button>
+            <div class="app-rotulo-juego">
+              <span class="rot">Juego:</span>
+              <span class="nom">Completar el versículo</span>
+            </div>
+          </div>
+          <div class="sala-cabecera">
+            <div class="qr-caja"><div class="dibujo">QR de la sala<br>#/join?c=B73WS</div></div>
+            <div class="sala-datos">
+              <span class="mini tenue">Código de la sala</span>
+              <div class="codigo-sala" style="text-align:left">B73WS</div>
+              <span class="chico tenue">0 participantes</span>
+              <span class="mini tenue">Escanea el QR o escribe el código</span>
+            </div>
+          </div>
+          <div class="aviso info">Lista para empezar: 10 versículos preparados.</div>
+          <button class="boton-grande boton-oro">Empezar el primer versículo</button>
+          <div style="display:flex;flex-direction:column;gap:.4rem;margin-top:auto">
+            <h3 style="font-size:var(--t-sm);margin:0">Participantes</h3>
+            <p class="mini tenue" style="margin:0">Nadie ha entrado todavía. Comparte el código.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="flex:1 1 320px;min-width:280px">
+      <div class="notas">
+        <div class="nota bien">
+          <h3>El QR y el código, juntos</h3>
+          <p>El QR para quien puede apuntar la cámara; el código en grande y monoespaciado para quien
+          lo va a dictar. Los dos con el mismo valor, del mismo sitio.</p>
+        </div>
+        <div class="nota bien">
+          <h3>El vacío ofrece la acción</h3>
+          <p>Sin participantes dice <strong>«Comparte el código»</strong>, no «no hay nadie». Es lo
+          único útil cuando la sala está recién creada.</p>
+        </div>
+        <div class="nota bien">
+          <h3>Sin botón de expulsar</h3>
+          <p>En este juego la lista es informativa. Retirar a alguien a mitad de un versículo deja
+          huecos que nadie va a reclamar y puntos ya pagados. Para cortar está «Terminar juego».</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 3. RONDA ============ -->
+  <div class="h2">3. Ronda abierta — el versículo y el turno
+    <small>El presentador ve el versículo completo, con las palabras ocultas subrayadas.</small>
+  </div>
+
+  <div class="fila">
+    <div class="marco">
+      <div class="rotulo">390×844 · ronda abierta</div>
+      <div class="tela v">
+        <div class="panel-host pantalla">
+          <div class="fila-entre" style="flex:0 0 auto">
+            <button class="boton-salir">← Menú</button>
+            <span style="display:flex;align-items:center;gap:.35rem;font-size:var(--t-sm);color:var(--tinta-suave)">
+              <span class="punto-vivo"></span> En línea
+            </span>
+            <div class="app-rotulo-juego">
+              <span class="rot">Juego:</span>
+              <span class="nom">Completar el versículo</span>
+            </div>
+          </div>
+
+          <div class="sala-cabecera">
+            <div class="qr-caja"><div class="dibujo">QR</div></div>
+            <div class="sala-datos">
+              <span class="mini tenue">Código de la sala</span>
+              <div class="codigo-sala" style="text-align:left">B73WS</div>
+              <span class="chico tenue">3 participantes</span>
+            </div>
+          </div>
+
+          <div class="fila-entre">
+            <span class="mini tenue">2 Corintios 3:2</span>
+            <span class="mini tenue">1 de 3 palabras a la vista</span>
+          </div>
+
+          <div class="reloj-ronda">
+            <span class="barra-tiempo"><i style="width:93%"></i></span>
+            <span class="reloj">14 s</span>
+          </div>
+
+          <div class="cuerpo-host">
+            <div class="zona-enunciado">
+              <p class="enunciado">Nuestras <span class="hueco">cartas</span> sois, escritas en
+              nuestro <span class="hueco">corazón</span>, conocidas y leídas de todos los hombres.</p>
+            </div>
+            <div class="zona-controles">
+              <ul class="lista-jugadores">
+                <li><span class="nombre-j">Ana Pérez</span><span class="chico tenue">3 pts</span></li>
+                <li><span class="nombre-j">Carlos Ruiz</span><span class="chico tenue">2 pts</span></li>
+                <li><span class="nombre-j">María López</span><span class="chico tenue">0 pts</span></li>
+              </ul>
+              <button class="boton boton-contorno">Pausar</button>
+              <button class="boton boton-peligro">Terminar juego</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="marco">
+      <div class="rotulo">844×390 · ronda acostada</div>
+      <div class="tela h">
+        <div class="panel-host pantalla">
+          <div class="fila-entre" style="flex:0 0 auto">
+            <button class="boton-salir">← Menú</button>
+            <span style="display:flex;align-items:center;gap:.35rem;font-size:var(--t-sm);color:var(--tinta-suave)">
+              <span class="punto-vivo"></span> En línea
+            </span>
+            <div class="app-rotulo-juego">
+              <span class="rot">Juego:</span>
+              <span class="nom">Completar el versículo</span>
+            </div>
+          </div>
+          <div class="fila-entre">
+            <span class="mini tenue">2 Corintios 3:2</span>
+            <span class="mini tenue">1 de 3 palabras a la vista</span>
+          </div>
+          <div class="cuerpo-host">
+            <div class="zona-enunciado">
+              <p class="enunciado">Nuestras <span class="hueco">cartas</span> sois, escritas en
+              nuestro <span class="hueco">corazón</span>, conocidas y leídas de todos los hombres.</p>
+            </div>
+            <div class="zona-controles">
+              <span class="mini tenue">Turno de Carlos Ruiz</span>
+              <ul class="lista-jugadores">
+                <li><span class="nombre-j">Ana Pérez</span><span class="chico tenue">3 pts</span></li>
+                <li><span class="nombre-j">Carlos Ruiz</span><span class="chico tenue">2 pts</span></li>
+              </ul>
+              <button class="boton boton-contorno">Pausar</button>
+              <button class="boton boton-peligro">Terminar juego</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="flex:1 1 300px;min-width:260px">
+      <div class="notas">
+        <div class="nota bien">
+          <h3>Las palabras ocultas, subrayadas</h3>
+          <p>El presentador ve el versículo <strong>completo</strong>. Lo subrayado es lo que los demás
+          no ven: así sabe qué tiene que callar sin un bloque aparte que repita la respuesta.</p>
+        </div>
+        <div class="nota bien">
+          <h3>Acostado, dos columnas</h3>
+          <p>El versículo a la izquierda con el alto entero; a la derecha el turno, los puntos y los
+          controles. En una sola columna pedía 337 px más de los que había.</p>
+        </div>
+        <div class="nota mal">
+          <h3>Lo que no puede pasar</h3>
+          <p>Que el botón «Terminar juego» quede fuera de la pantalla, o que el reloj siga corriendo
+          con la partida en pausa.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 4. JUICIO ============ -->
+  <div class="h2">4. Juicio — correcto o incorrecto
+    <small>El presentador decide. De aquí sale el punto.</small>
+  </div>
+
+  <div class="fila">
+    <div class="marco">
+      <div class="rotulo">390×844 · juicio</div>
+      <div class="tela v">
+        <div class="panel-host pantalla">
+          <div class="fila-entre" style="flex:0 0 auto">
+            <button class="boton-salir">← Menú</button>
+            <div class="app-rotulo-juego">
+              <span class="rot">Juego:</span>
+              <span class="nom">Completar el versículo</span>
+            </div>
+          </div>
+          <div class="aviso espera" style="text-align:center">
+            Turno de Carlos Ruiz
+          </div>
+          <div class="zona-enunciado" style="flex:1 1 auto">
+            <p class="enunciado">Nuestras <span class="hueco">cartas</span> sois, escritas en
+            nuestro <span class="hueco">corazón</span>, conocidas y leídas de todos los hombres.</p>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:.6rem">
+            <button class="boton-grande boton-oro">✓ Acertó</button>
+            <button class="boton-grande boton-peligro">✕ No acertó</button>
+            <button class="boton boton-contorno">Repetir la pregunta</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="flex:1 1 340px;min-width:280px">
+      <div class="notas">
+        <div class="nota bien">
+          <h3>Dos decisiones, no cuatro</h3>
+          <p>Acertó o no acertó. «Repetir» es la salida cuando nadie supo, y no cuenta como juicio. Un
+          tercer estado («a medias») obligaría a decidir cuánto vale medio acierto, y eso no está
+          definido.</p>
+        </div>
+        <div class="nota bien">
+          <h3>El versículo sigue a la vista</h3>
+          <p>Para juzgar hay que poder leer lo que se dijo. El versículo no se va al entrar al
+          juicio.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 5. PAUSA ============ -->
+  <div class="h2">5. En pausa
+    <small>El reloj se detiene y todos lo ven. El presentador puede reanudar.</small>
+  </div>
+
+  <div class="fila">
+    <div class="marco">
+      <div class="rotulo">390×844 · pausa</div>
+      <div class="tela v">
+        <div class="panel-host pantalla">
+          <div class="fila-entre" style="flex:0 0 auto">
+            <button class="boton-salir">← Menú</button>
+            <div class="app-rotulo-juego">
+              <span class="rot">Juego:</span>
+              <span class="nom">Completar el versículo</span>
+            </div>
+          </div>
+          <div class="aviso espera" style="text-align:center">Partida en pausa</div>
+          <div class="zona-enunciado" style="flex:1 1 auto">
+            <p class="enunciado">Nuestras <span class="hueco">cartas</span> sois, escritas en
+            nuestro <span class="hueco">corazón</span>, conocidas y leídas de todos los hombres.</p>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:.6rem">
+            <button class="boton-grande boton-oro">Reanudar</button>
+            <button class="boton boton-peligro">Terminar juego</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="flex:1 1 340px;min-width:280px">
+      <div class="notas">
+        <div class="nota bien">
+          <h3>El reloj no corre en pausa</h3>
+          <p>Se calcula con <code>pausedAt</code> y <code>pausedTotal</code>: el tiempo en pausa no
+          descuenta. Un reloj que sigue corriendo con la partida detenida castiga a los jugadores por
+          una pausa que decidió otro.</p>
+        </div>
+        <div class="nota bien">
+          <h3>«Reanudar», no «Pausar»</h3>
+          <p>El botón cambia de texto y de acción según el estado. Un botón que dice «Pausar» estando
+          en pausa obliga a adivinar qué hace.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 6. SALA CERRADA ============ -->
+  <div class="h2">6. Sala cerrada
+    <small>Al terminar o al cerrar la sala. El presentador vuelve al menú.</small>
+  </div>
+
+  <div class="fila">
+    <div class="marco">
+      <div class="rotulo">390×844 · cerrada</div>
+      <div class="tela v">
+        <div style="display:flex;flex-direction:column;height:100%;padding:16px">
+          <div class="fila-entre" style="flex:0 0 auto">
+            <button class="boton-salir">← Menú</button>
+            <div class="app-rotulo-juego">
+              <span class="rot">Juego:</span>
+              <span class="nom">Completar el versículo</span>
+            </div>
+          </div>
+          <div style="flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;
+               gap:1rem;text-align:center">
+            <div class="aviso err">Esta sala se cerró</div>
+            <p class="tenue" style="margin:0">
+              La partida terminó. Si van a jugar otra, crea una sala nueva: el código anterior ya no
+              sirve.</p>
+            <button class="boton-grande boton-oro">Crear otra sala</button>
+            <button class="boton-grande boton-contorno">← Menú</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="flex:1 1 340px;min-width:280px">
+      <div class="notas">
+        <div class="nota bien">
+          <h3>El código anterior ya no sirve</h3>
+          <p>Lo dice explícitamente. Sin esa frase, alguien reparte el código viejo y la gente no
+          entiende por qué no puede entrar.</p>
+        </div>
+        <div class="nota bien">
+          <h3>Crear otra, sin volver al menú</h3>
+          <p>Al terminar una partida lo más probable es empezar otra. Obligar a pasar por el menú es un
+          paso de más con la gente esperando.</p>
+        </div>
+        <div class="nota duda">
+          <h3>Pendiente de revisar</h3>
+          <p>El estado cerrado también lo dispara el barrido de inactividad a los 30 minutos. En ese
+          caso el mensaje debería decir <strong>por qué</strong> se cerró: <code>motivoCierre()</code>
+          ya devuelve ese texto, falta verlo aquí.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p style="margin-top:2rem;color:#a9c6ca;font-size:.9rem">
+    Estructura y textos sacados de <code>src/app.js</code>. Tamaños y colores de
+    <code>base-app.css</code>, copiado de <code>styles.css</code>. Los estados de la ceremonia van en
+    su propio artboard, junto al televisor.
+  </p>
+
+</div>
+</body>
+</html>

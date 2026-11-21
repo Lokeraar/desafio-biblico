@@ -36,6 +36,13 @@
       "tradeoff": "Las dos pantallas de la ronda juntas, porque se miran a la vez: el participante en el teléfono y el televisor en la pared. El precio es que son muchas placas y hay que desplazarse; y el reloj, que corre, aquí está quieto.",
       "width": 1400,
       "height": 2600
+    },
+    {
+      "file": "05-presentador.html",
+      "title": "Presentador: seis momentos del panel",
+      "tradeoff": "Los seis estados del panel en una placa para poder compararlos de un golpe: configuración, lobby, ronda, juicio, pausa y sala cerrada. El precio es que son muchas pantallas y hay que desplazarse; y el reloj, que corre, aquí está quieto.",
+      "width": 1400,
+      "height": 4200
     }
   ]
 }
