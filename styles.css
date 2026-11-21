@@ -1981,9 +1981,28 @@ body.tv .opciones { grid-template-columns: 1fr; }
      `.tenue`). Estaba en cian y competía con el versículo: la referencia es
      un dato de ubicación, no el contenido que hay que leer en voz alta. */
   color: var(--tinta-suave);
-  text-transform: uppercase;
-  letter-spacing: .06em;
+  /* SIN `text-transform: uppercase`.
+   *
+   * Christian: la referencia «no debe estar en mayusculas, sino en caso de
+   * titulo». La mayuscula sostenida es un recurso de etiqueta de interfaz; en
+   * un dato como «2 Corintios 3:2» obliga a leer letra por letra y ademas
+   * rompe los nombres propios, que ya vienen bien escritos desde la base.
+   *
+   * Se deja `none` explicito y no solo se quita la linea: esta regla hereda
+   * de su contenedor, y una `uppercase` puesta mas arriba volveria a
+   * aplicarse en silencio.
+   */
+  text-transform: none;
   flex: 0 0 auto;
+}
+
+/* Ninguna referencia biblica va en mayusculas sostenidas: es un dato con
+   nombres propios, no una etiqueta. Vale para las tres pantallas y para el
+   modal de juicio. */
+.ref,
+.cita,
+.hueco-host + .ref {
+  text-transform: none;
 }
 
 /* SIN `display: flex` en el versículo.
