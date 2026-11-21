@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ceremonia — la app real</title>
+<link rel="stylesheet" href="base-app.css">
+<style>
+  html,body{margin:0}
+  .placa{max-width:1400px;margin:0 auto;padding:2rem 1.5rem 4rem;background:#0b1a1d;
+    color:#fff;font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  .placa > header{border-bottom:1px solid rgba(110,227,238,.22);padding-bottom:1rem;margin-bottom:1.5rem}
+  h1{margin:0 0 .25rem;font-size:1.75rem;font-weight:800}
+  header p{margin:0;color:#a9c6ca;max-width:80ch}
+  .h2{font-size:1.15rem;font-weight:750;margin:2.2rem 0 .4rem;color:#6fe3ee}
+  .h2 small{display:block;font-weight:400;color:#a9c6ca;font-size:.92rem;margin-top:.15rem}
+  .fila{display:flex;gap:1.6rem;align-items:flex-start;flex-wrap:wrap;margin-top:1rem}
+  .marco{flex:0 0 auto}
+  .rotulo{font-size:.85rem;color:#a9c6ca;margin-bottom:.4rem;font-family:ui-monospace,monospace}
+  .notas{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:.9rem}
+  .nota{border:1px solid #00525e;border-radius:10px;padding:.8rem 1rem;
+    background:linear-gradient(160deg,#102a2f,#0a2e33)}
+  .nota h3{margin:0 0 .35rem;font-size:.98rem;color:#6fe3ee}
+  .nota p{margin:.3rem 0;font-size:.92rem;color:#a9c6ca;line-height:1.5}
+  .nota.bien{border-left:4px solid #1fbf75}
+  .nota.mal{border-left:4px solid #e0483c}
+  .nota.duda{border-left:4px solid #f0a33a}
+  code{font-family:ui-monospace,monospace;font-size:.9em;background:rgba(111,227,238,.12);
+    padding:.08em .35em;border-radius:5px;color:#6fe3ee}
+</style>
+</head>
+<body>
+<div class="placa">
+
+  <header>
+    <h1>Ceremonia — la app real</h1>
+    <p>La tabla de clasificación, sacada de <code>src/lib/render.js</code>. Se revela de abajo hacia
+    arriba: 3.º, luego 2.º, luego 1.º con confeti, y el resto. El primer puesto es lo último que se
+    ve.</p>
+  </header>
+
+  <!-- ============ 1. A MEDIO REVELAR ============ -->
+  <div class="h2">1. A medio revelar — 390 × 844
+    <small>Ya se vieron el 3.º y el 2.º. El 1.º todavía no.</small>
+  </div>
+
+  <div class="fila">
+    <div class="marco">
+      <div class="rotulo">390×844 · dos puestos revelados</div>
+      <div class="tela v">
+        <div class="pantalla-ceremonia">
+          <div class="marco-oro">
+            <h2 class="titulo-ceremonia">🏆 Clasificación</h2>
+            <ul class="lista-ceremonia">
+              <li class="fila-clasif">
+                <span class="puesto">🥉</span>
+                <span class="datos"><span class="nombre">María López</span></span>
+                <span class="puntos">2 pts</span>
+              </li>
+              <li class="fila-clasif">
+                <span class="puesto">🥈</span>
+                <span class="datos"><span class="nombre">Carlos Ruiz</span></span>
+                <span class="puntos">3 pts</span>
+              </li>
+              <li class="fila-clasif oculto">
+                <span class="puesto">? </span>
+                <span class="datos"><span class="nombre">· · · · ·</span></span>
+                <span class="puntos">—</span>
+              </li>
+              <li class="fila-clasif oculto">
+                <span class="puesto">?</span>
+                <span class="datos"><span class="nombre">· · · · ·</span></span>
+                <span class="puntos">—</span>
+              </li>
+            </ul>
+            <div class="ceremonia-footer">
+              <button class="boton boton-contorno">Seguir revelando</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="flex:1 1 340px;min-width:280px">
+      <div class="notas">
+        <div class="nota bien">
+          <h3>Se revela de abajo hacia arriba</h3>
+          <p>El suspenso está en el primer puesto, y por eso se destapa al final. Con tres jugadores:
+          paso 1 el 3.º, paso 2 el 2.º, paso 3 el 1.º. Con ocho: los tres primeros así y el cuarto paso
+          muestra el resto.</p>
+        </div>
+        <div class="nota bien">
+          <h3>Lo oculto se ve como silueta</h3>
+          <p>Filas atenuadas con puntos suspensivos, no un hueco vacío. Así se cuenta <em>cuántos</em>
+          faltan sin decir <em>quiénes</em>.</p>
+        </div>
+        <div class="nota bien">
+          <h3>La lista es lo único que hace scroll</h3>
+          <p><code>.lista-ceremonia</code> tiene <code>flex: 0 1 auto</code>, <code>min-height: 0</code>
+          y <code>overflow-y: auto</code>. El pie queda fijo abajo. Sin <code>min-height: 0</code> la
+          lista crece y empuja el pie fuera de la pantalla: ese fue el defecto.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 2. PODIO COMPLETO ============ -->
+  <div class="h2">2. Podio completo — 390 × 844
+    <small>El 1.º ya está a la vista. Sale la felicitación y el confeti.</small>
+  </div>
+
+  <div class="fila">
+    <div class="marco">
+      <div class="rotulo">390×844 · primero revelado</div>
+      <div class="tela v">
+        <div class="pantalla-ceremonia">
+          <div class="marco-oro">
+            <h2 class="titulo-ceremonia">🏆 Clasificación</h2>
+            <p class="felicitacion">🎉 ¡Felicitaciones, Ana Pérez!</p>
+            <ul class="lista-ceremonia">
+              <li class="fila-clasif primero">
+                <span class="puesto">🥇</span>
+                <span class="datos"><span class="nombre">Ana Pérez</span></span>
+                <span class="puntos">5 pts</span>
+              </li>
+              <li class="fila-clasif">
+                <span class="puesto">🥈</span>
+                <span class="datos"><span class="nombre">Carlos Ruiz</span></span>
+                <span class="puntos">3 pts</span>
+              </li>
+              <li class="fila-clasif">
+                <span class="puesto">🥉</span>
+                <span class="datos"><span class="nombre">María López</span></span>
+                <span class="puntos">2 pts</span>
+              </li>
+              <li class="fila-clasif">
+                <span class="puesto">4</span>
+                <span class="datos"><span class="nombre">José Martínez</span></span>
+                <span class="puntos">1 pt</span>
+              </li>
+            </ul>
+            <p class="pista-ceremonia">Toca para ver el resto de la tabla</p>
+            <div class="ceremonia-footer">
+              <button class="boton-grande boton-oro" style="width:auto">Nueva partida</button>
+              <button class="boton boton-contorno" style="width:auto">Terminar juego</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="marco">
+      <div class="rotulo">390×844 · el que mira está en la tabla</div>
+      <div class="tela v">
+        <div class="pantalla-ceremonia">
+          <div class="marco-oro">
+            <h2 class="titulo-ceremonia">🏆 Clasificación</h2>
+            <p class="felicitacion">🎉 ¡Felicitaciones, Ana Pérez!</p>
+            <ul class="lista-ceremonia">
+              <li class="fila-clasif primero">
+                <span class="puesto">🥇</span>
+                <span class="datos"><span class="nombre">Ana Pérez</span></span>
+                <span class="puntos">5 pts</span>
+              </li>
+              <li class="fila-clasif yo">
+                <span class="puesto">🥈</span>
+                <span class="datos"><span class="nombre">Carlos Ruiz</span></span>
+                <span class="puntos">3 pts</span>
+              </li>
+              <li class="fila-clasif">
+                <span class="puesto">🥉</span>
+                <span class="datos"><span class="nombre">María López</span></span>
+                <span class="puntos">2 pts</span>
+              </li>
+            </ul>
+            <div class="ceremonia-footer">
+              <button class="boton-grande boton-oro" style="width:auto">Jugar de nuevo</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="flex:1 1 320px;min-width:280px">
+      <div class="notas">
+        <div class="nota bien">
+          <h3>La felicitación nombra al ganador</h3>
+          <p>Aparece cuando el primer puesto ya está a la vista, sea cual sea el número de pasos que
+          hizo falta. No antes: diría el nombre que se quiere mantener en secreto.</p>
+        </div>
+        <div class="nota bien">
+          <h3>El que mira se reconoce</h3>
+          <p>Su fila lleva borde cian (<code>.fila-clasif.yo</code>). Sin eso, en una tabla de ocho hay
+          que buscarse leyendo.</p>
+        </div>
+        <div class="nota mal">
+          <h3>El confeti no puede tapar los nombres</h3>
+          <p>Es un defecto que ya ocurrió: el confeti se dibujaba encima de la lista y los nombres
+          quedaban ilegibles justo en el momento que todos miran. Tiene que ir detrás o fuera del área
+          de las filas.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 3. ACOSTADO ============ -->
+  <div class="h2">3. Acostada — 844 × 390
+    <small>El marco dorado toma el ancho; la lista sigue siendo lo único con scroll.</small>
+  </div>
+
+  <div class="fila">
+    <div class="marco">
+      <div class="rotulo">844×390 · podio completo</div>
+      <div class="tela h">
+        <div class="pantalla-ceremonia">
+          <div class="marco-oro">
+            <h2 class="titulo-ceremonia">🏆 Clasificación</h2>
+            <p class="felicitacion">🎉 ¡Felicitaciones, Ana Pérez!</p>
+            <ul class="lista-ceremonia">
+              <li class="fila-clasif primero">
+                <span class="puesto">🥇</span>
+                <span class="datos"><span class="nombre">Ana Pérez</span></span>
+                <span class="puntos">5 pts</span>
+              </li>
+              <li class="fila-clasif">
+                <span class="puesto">🥈</span>
+                <span class="datos"><span class="nombre">Carlos Ruiz</span></span>
+                <span class="puntos">3 pts</span>
+              </li>
+              <li class="fila-clasif">
+                <span class="puesto">🥉</span>
+                <span class="datos"><span class="nombre">María López</span></span>
+                <span class="puntos">2 pts</span>
+              </li>
+              <li class="fila-clasif">
+                <span class="puesto">4</span>
+                <span class="datos"><span class="nombre">José Martínez</span></span>
+                <span class="puntos">1 pt</span>
+              </li>
+            </ul>
+            <div class="ceremonia-footer">
+              <button class="boton-grande boton-oro" style="width:auto">Nueva partida</button>
+              <button class="boton boton-contorno" style="width:auto">Terminar juego</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="flex:1 1 340px;min-width:280px">
+      <div class="notas">
+        <div class="nota bien">
+          <h3>El ancho lo usa el marco</h3>
+          <p><code>width: min(100%, 900px)</code>: en un teléfono ocupa todo, en una pantalla grande se
+          centra y no se estira hasta lo absurdo.</p>
+        </div>
+        <div class="nota bien">
+          <h3>Acostado caben más filas</h3>
+          <p>Con menos alto disponible, la lista desplaza. El pie con «Nueva partida» sigue visible
+          porque está fuera de la lista.</p>
+        </div>
+        <div class="nota duda">
+          <h3>Decisión abierta</h3>
+          <p>Con muchos jugadores, acostado caben dos o tres filas. ¿Se reduce el alto de cada fila, o
+          se deja el scroll? Hoy hace scroll.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 4. TELEVISOR ============ -->
+  <div class="h2">4. El televisor en ceremonia — 844 × 475
+    <small>Sin botones de juego: el televisor no conduce nada. Solo el de salir.</small>
+  </div>
+
+  <div class="fila">
+    <div class="marco">
+      <div class="rotulo">844×475 · televisor, podio completo</div>
+      <div class="tela tv">
+        <div class="pantalla-ceremonia">
+          <div style="flex:0 0 auto;display:flex;justify-content:flex-start;padding-bottom:.4rem">
+            <button class="boton-salir">Salir de esta partida</button>
+          </div>
+          <div class="marco-oro">
+            <h2 class="titulo-ceremonia">🏆 Clasificación</h2>
+            <p class="felicitacion">🎉 ¡Felicitaciones, Ana Pérez!</p>
+            <ul class="lista-ceremonia">
+              <li class="fila-clasif primero">
+                <span class="puesto">🥇</span>
+                <span class="datos"><span class="nombre">Ana Pérez</span></span>
+                <span class="puntos">5 pts</span>
+              </li>
+              <li class="fila-clasif">
+                <span class="puesto">🥈</span>
+                <span class="datos"><span class="nombre">Carlos Ruiz</span></span>
+                <span class="puntos">3 pts</span>
+              </li>
+              <li class="fila-clasif">
+                <span class="puesto">🥉</span>
+                <span class="datos"><span class="nombre">María López</span></span>
+                <span class="puntos">2 pts</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="flex:1 1 320px;min-width:280px">
+      <div class="notas">
+        <div class="nota bien">
+          <h3>Sin footer de botones</h3>
+          <p>«Nueva partida» y «Terminar juego» son del presentador. El televisor solo mira: lo único
+          que lleva es «Salir de esta partida», que suelta la sala.</p>
+        </div>
+        <div class="nota bien">
+          <h3>Para leerse a metros</h3>
+          <p>El título y la felicitación son lo que se lee desde el fondo del salón. Los nombres van a
+          16 pt porque se leen en una pantalla grande, no en un teléfono.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p style="margin-top:2rem;color:#a9c6ca;font-size:.9rem">
+    Estructura de <code>src/lib/render.js</code>; medidas y colores de <code>base-app.css</code>,
+    copiado de <code>styles.css</code>. El confeti no está dibujado: es una animación y lo que importa
+    aquí es que <strong>no tape las filas</strong>.
+  </p>
+
+</div>
+</body>
+</html>

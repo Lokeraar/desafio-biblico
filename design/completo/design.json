@@ -43,6 +43,13 @@
       "tradeoff": "Los seis estados del panel en una placa para poder compararlos de un golpe: configuración, lobby, ronda, juicio, pausa y sala cerrada. El precio es que son muchas pantallas y hay que desplazarse; y el reloj, que corre, aquí está quieto.",
       "width": 1400,
       "height": 4200
+    },
+    {
+      "file": "06-ceremonia.html",
+      "title": "Ceremonia: la tabla de clasificación",
+      "tradeoff": "La ceremonia en sus dos orientaciones y en el televisor, con el revelado por turnos y el primero destacado. El precio es que el confeti no se puede dibujar aquí: es una animación, y lo que importa es dejar claro que no debe tapar las filas.",
+      "width": 1400,
+      "height": 3200
     }
   ]
 }

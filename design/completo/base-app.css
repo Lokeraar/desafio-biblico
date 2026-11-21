@@ -554,3 +554,83 @@ input::placeholder { color: #6d8b90; }
   width: 100%; font-size: var(--t-sm); padding: .7em 1.2em;
   border-radius: var(--radio-sm); font-weight: 700; cursor: pointer;
 }
+
+/* =====================================================================
+   CEREMONIA — tabla de clasificacion
+   Copiado de styles.css (`.pantalla-ceremonia`, `.marco-oro`, `.fila-clasif`)
+   y de render.js, que es quien la dibuja.
+   ===================================================================== */
+.pantalla-ceremonia {
+  position: absolute; inset: 0; padding: .8rem;
+  background: radial-gradient(120% 90% at 50% 0%, #1b6f4a 0%, #0f5a63 42%, #07222b 72%, #04151b 100%);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+
+/* el marco dorado: doble borde y brillo */
+.marco-oro {
+  position: relative; width: min(100%, 900px); margin-inline: auto;
+  flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: stretch;
+  gap: .6rem;
+  border: 3px solid #d9a520; border-radius: 10px;
+  padding: .9rem;
+  background: linear-gradient(180deg, rgba(0,0,0,.2), rgba(0,0,0,.4));
+  box-shadow: 0 0 0 2px rgba(0,0,0,.5) inset,
+              0 0 26px rgba(217,165,32,.35),
+              0 18px 50px rgba(0,0,0,.55);
+  overflow: hidden;
+}
+
+.titulo-ceremonia { margin: 0; line-height: 1.1; flex: 0 0 auto; text-align: center;
+  font-size: var(--t-xl); font-weight: 800; color: #f5c93b; }
+.felicitacion {
+  flex: 0 0 auto; margin: 0; text-align: center;
+  font-size: var(--t-lg); font-weight: 800; color: #f5c93b;
+}
+
+/* LA LISTA ES LO UNICO QUE HACE SCROLL */
+.lista-ceremonia {
+  list-style: none; margin: 0; padding: 0;
+  flex: 0 1 auto; min-height: 0;
+  overflow-y: auto; overscroll-behavior: contain;
+  display: flex; flex-direction: column; gap: .45rem;
+}
+
+/* rejilla de TRES columnas: puesto, nombre, puntos */
+.fila-clasif {
+  display: grid; grid-template-columns: 3rem minmax(0, 1fr) auto;
+  align-items: center; gap: .9rem;
+  padding: .75em 1em; border-radius: var(--radio-sm);
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(110,227,238,.12);
+}
+.fila-clasif .puesto {
+  display: grid; place-items: center; height: 2rem; min-width: 3rem;
+  font-weight: 800;
+}
+.fila-clasif .datos { display: flex; flex-direction: column; gap: .1rem; min-width: 0; }
+.fila-clasif .nombre {
+  font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: var(--t-sm);
+}
+.fila-clasif .puntos { font-weight: 800; font-variant-numeric: tabular-nums; color: var(--raya); }
+
+/* primero: destacado */
+.fila-clasif.primero {
+  background: linear-gradient(135deg, rgba(252,209,22,.18), rgba(217,165,32,.08));
+  border-color: rgba(252,209,22,.6);
+  box-shadow: 0 0 22px rgba(252,209,22,.2);
+}
+/* el que mira, si esta en la tabla */
+.fila-clasif.yo { border-color: var(--tu-400); background: rgba(0,160,176,.16); }
+/* los que aun no se revelaron: una silueta, no un hueco */
+.fila-clasif.oculto { opacity: .35; }
+
+.pista-ceremonia {
+  flex: 0 0 auto; margin: 0; text-align: center;
+  font-size: var(--t-xs); color: rgba(255,255,255,.6);
+}
+.ceremonia-footer {
+  flex: 0 0 auto; margin-top: auto;
+  display: flex; flex-wrap: wrap; gap: .5rem; justify-content: center;
+  padding-top: .6rem; border-top: 1px solid rgba(245,201,59,.25);
+}
