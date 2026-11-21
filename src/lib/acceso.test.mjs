@@ -35,6 +35,31 @@ t(!puedeEntrar('host', ''), 'clave vacia tampoco: cuenta como no tener');
 t(puedeEntrar('host', '4321'), 'con clave SI se entra al panel');
 t(puedeEntrar('config', '4321'), 'con clave SI se entra a configuracion');
 
+console.log('\n=== acceso: la primera clave tiene su puerta ===');
+
+/* LA EXCEPCION QUE NO ES UN DESCUIDO.
+ * `config` es donde se establece la PRIMERA clave. Si se cerrara con una clave
+ * que todavia no existe, una instalacion nueva quedaria trabada para siempre:
+ * sin clave no se entra, y sin entrar no se puede crear la clave.
+ *
+ * Se prueba con las dos caras, para que la excepcion no se coma la
+ * proteccion: sin clave configurada `config` se abre, y con clave configurada
+ * vuelve a pedir la suya. */
+t(puedeEntrar('config', null, { hayClaveConfigurada: false }),
+  'sin clave configurada, config SI se abre: es donde se crea la primera');
+t(!puedeEntrar('config', null, { hayClaveConfigurada: true }),
+  'con clave configurada, config vuelve a pedir la clave');
+t(!puedeEntrar('host', null, { hayClaveConfigurada: false }),
+  'la excepcion es SOLO de config: host sigue cerrado aunque no haya clave');
+t(!puedeEntrar('config', '', { hayClaveConfigurada: true }),
+  'clave vacia no abre config cuando ya hay clave puesta');
+t(puedeEntrar('config', '4321', { hayClaveConfigurada: true }),
+  'con clave en la sesion, config se abre aunque ya hubiera clave');
+t(!puedeEntrar('config', null),
+  'sin decir nada de la clave configurada, config pide clave (lo seguro por defecto)');
+t(puedeEntrar('  CONFIG  ', null, { hayClaveConfigurada: false }),
+  'la excepcion tambien normaliza: «  CONFIG  » es config');
+
 console.log('\n=== acceso: las vistas abiertas no dependen de la clave ===');
 
 t(puedeEntrar('menu', null), 'el menu se ve sin clave');

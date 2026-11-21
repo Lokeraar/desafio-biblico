@@ -47,11 +47,35 @@ export function requiereClave(vista) {
  * vuelve a pedir en cada pantalla. Volver a pedirla seria pedir la misma llave
  * dos veces para la misma puerta.
  *
+ * LA PRIMERA CLAVE ES LA EXCEPCION, y es obligatoria: se establece EN
+ * configuraciones. Si esa pantalla se cerrara con una clave que todavia no
+ * existe, una instalacion nueva quedaria sin ninguna puerta de entrada y sin
+ * forma de crear la primera llave. Es el mismo candado sin salida que ya se
+ * corrigio en la base (`20261118000001_clave_inicial.sql`): si no hay clave,
+ * no hay nada que comprobar.
+ *
  * @param {string} vista
  * @param {string|null} adminClave
+ * @param {{ hayClaveConfigurada?: boolean }} [opciones]
+ *        `hayClaveConfigurada` en `false` abre `config`: es la puerta para
+ *        crear la primera clave.
  * @returns {boolean}
  */
-export function puedeEntrar(vista, adminClave) {
+export function puedeEntrar(vista, adminClave, { hayClaveConfigurada = true } = {}) {
   if (!requiereClave(vista)) return true;
+  if (esVista(vista, 'config') && !hayClaveConfigurada) return true;
   return Boolean(adminClave);
+}
+
+/**
+ * ¿Esta vista es `vista`, comparando como lo hace `requiereClave`?
+ * Se saca aparte para que las dos funciones normalicen igual: si una aceptara
+ * «  HOST  » y la otra no, la misma ruta pediria clave y no la dejaria pasar.
+ *
+ * @param {string} vista
+ * @param {string} esperada
+ * @returns {boolean}
+ */
+function esVista(vista, esperada) {
+  return String(vista ?? '').trim().toLowerCase() === esperada;
 }
