@@ -602,6 +602,7 @@ function vistaMenu() {
   const disponibles = juegos.filter(j => j.listo).length;
 
   return `
+    <div class="menu-lienzo">
     <header class="menu-cabecera">
       <div class="portada">
         <img src="${portadaMostrada()}" alt="Desafío Bíblico 2026 — 2 Corintios"
@@ -681,7 +682,8 @@ function vistaMenu() {
           ${esLocalDisponible() ? 'Modo local' : 'Sin modo local'}
         </span>
       </footer>
-    </main>`;
+    </main>
+    </div>`;
 }
 
 /* ------------------------------------------------------------------ */

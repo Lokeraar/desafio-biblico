@@ -2443,6 +2443,94 @@ body.tv .opciones { grid-template-columns: 1fr; }
 .panel-host { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
 
 /*
+ * EL MENU NO DESBORDA EN NINGUNA ORIENTACION.
+ *
+ * Medido con la app real: 304 px de desborde en 390x844 y 967 px en 844x390.
+ *
+ * La causa principal es la portada: es una imagen panoramica a todo el ancho.
+ * A 844 px de ancho mide unos 475 px de alto, y ella sola ya pasa de los 390
+ * de la ventana acostada. En vertical, a 390 de ancho, mide unos 220 y empuja
+ * las tarjetas fuera.
+ *
+ * La portada es decorativa y las tarjetas son lo que se toca: se acota la
+ * portada por ALTO y se le da el ancho que queda.
+ */
+.menu-lienzo {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: clamp(.6rem, 2vh, 1.2rem) clamp(.6rem, 3vw, 1.4rem);
+  gap: clamp(.5rem, 1.6vh, .9rem);
+}
+
+/* En vertical la portada no pasa de un tercio del alto: alcanza para mostrar
+   el lema y deja sitio a las tres tarjetas. */
+.menu-cabecera { flex: 0 0 auto; }
+.menu-cabecera .portada { max-height: 30dvh; }
+.menu-cabecera .portada img {
+  width: 100%;
+  height: 100%;
+  max-height: 30dvh;
+  object-fit: cover;
+  object-position: center;
+}
+
+.menu-lienzo .menu-cuerpo {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-top: 0;
+  padding-bottom: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+@media (min-aspect-ratio: 1/1) {
+  .menu-lienzo {
+    flex-direction: row;
+    align-items: stretch;
+    gap: clamp(.7rem, 2vw, 1.4rem);
+  }
+
+  /* Acostado el alto es lo escaso: la portada pasa a la izquierda, con todo el
+     alto disponible y recortada a lo ancho. */
+  .menu-cabecera {
+    flex: 0 0 clamp(9rem, 32%, 20rem);
+    min-width: 0;
+    display: flex;
+  }
+  .menu-cabecera .portada {
+    max-height: none;
+    width: 100%;
+    display: flex;
+  }
+  .menu-cabecera .portada img {
+    max-height: none;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .menu-lienzo .menu-cuerpo {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  /* Las tres tarjetas en una fila: acostado hay ancho y falta alto. */
+  .menu-lienzo .menu-juegos {
+    flex-direction: row;
+    max-width: none;
+    gap: .5rem;
+  }
+  .menu-lienzo .menu-juegos .juego-card {
+    flex: 1 1 0;
+    min-width: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .35rem;
+    padding: .6rem;
+  }
+}
+
+/*
  * EL FORMULARIO DE CREAR SALA, ACOSTADO: LOS CAMPOS EN FILA.
  *
  * Medido: en 844x390 el panel pedia 727 px de alto en una ventana de 390, es
