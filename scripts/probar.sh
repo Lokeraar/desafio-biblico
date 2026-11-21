@@ -123,6 +123,24 @@ if [ "$solo_js" = false ]; then
       TOTAL_FALLAS=$((TOTAL_FALLAS + 1))
       SUITES_FALLIDAS+=("candado (SQL)")
     fi
+
+    # Cerrar salas. Va aparte por la misma razon que el candado: necesita sus
+    # propias salas, su propia clave y su propio ciclo de vida. Antes no la
+    # corria nadie y sus comprobaciones no contaban en ningun total.
+    salida_cerrar="$(bash "$RAIZ/supabase/tests/cerrar-salas.sh" 2>&1)"
+    ok_cerrar="$(printf '%s\n' "$salida_cerrar" | rg -o 'cerrar-salas: [0-9]+ correctas' | rg -o '[0-9]+' | tail -1)"
+    if printf '%s\n' "$salida_cerrar" | rg -q 'cerrar-salas: [0-9]+ correctas, 0 fallas'; then
+      echo "  cerrar-salas: ${ok_cerrar:-0} correctas, 0 fallas"
+      TOTAL_OK=$((TOTAL_OK + ${ok_cerrar:-0}))
+    elif printf '%s\n' "$salida_cerrar" | rg -q 'Omitido:'; then
+      echo "  cerrar-salas: omitido (sin Postgres)"
+      SUITES_OMITIDAS+=("cerrar-salas (SQL)")
+    else
+      echo "  cerrar-salas: FALLÓ"
+      printf '%s\n' "$salida_cerrar" | rg 'FALLA|no se ejecuto' | head -5 | sed 's/^/      /'
+      TOTAL_FALLAS=$((TOTAL_FALLAS + 1))
+      SUITES_FALLIDAS+=("cerrar-salas (SQL)")
+    fi
   fi
 fi
 

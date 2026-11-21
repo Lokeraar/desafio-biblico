@@ -119,6 +119,15 @@ export function modalClave({ para = 'entrar', error = null, pista = null, muestr
       explicacion: 'Para cambiar la imagen del menú hace falta la clave maestra.',
       boton: 'Continuar'
     },
+    /* LA PUERTA DEL PRESENTADOR.
+       No dice «clave maestra» a secas: quien llega aqui vio el menu y toco
+       «Entrar como presentador». El texto tiene que confirmarle que va por
+       donde cree, y decirle que detras esta el panel y la configuracion. */
+    acceso: {
+      titulo: 'Entrar como presentador',
+      explicacion: 'El panel del presentador y las configuraciones piden la clave maestra.',
+      boton: 'Entrar'
+    },
     config: {
       titulo: 'Cambiar la clave maestra',
       explicacion: 'Escribe la clave actual y después la nueva.',

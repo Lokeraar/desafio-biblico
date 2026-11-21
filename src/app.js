@@ -33,6 +33,7 @@ import {
 import { qrSVG } from './lib/qr.js';
 import { ceremoniaHTML, totalPasos } from './lib/render.js';
 import { decidirCrearSala, AL_CREAR } from './lib/crear-sala.js';
+import { puedeEntrar, requiereClave } from './lib/acceso.js';
 import {
   pantallaParticipante, pantallaTV, listaTurnosHTML, modalJuicioHTML,
   sinReferenciaAlFinal, relojHTML,
@@ -121,7 +122,20 @@ function ir(vista) {
   app.modoOcultar = false;
   app.ayudaOcultar = false;
   app.confirmar = null;
-  location.hash = '#/' + vista;
+
+  /* SI EL HASH YA ES ESE, NO PASA NADA.
+
+     `location.hash = ...` solo repinta cuando el valor CAMBIA: si es el mismo,
+     el navegador no dispara `hashchange` y `render()` no corre. Eso deja un
+     caso real roto: se entra a `#/host` escribiendo la URL, la puerta baja a
+     menu, la persona acierta la clave, `ir('host')` asigna el hash que ya
+     estaba... y la pantalla se queda en el menu con el modal cerrado. Parece
+     que la clave no sirvio.
+
+     Por eso, cuando el hash no cambia, se repinta a mano. */
+  const destino = '#/' + vista;
+  if (location.hash === destino) { render(); return; }
+  location.hash = destino;
 }
 
 window.addEventListener('hashchange', render);
@@ -287,6 +301,17 @@ const app = {
   // --- marca del menú: el lema y la portada ---
   marca: null,         // lo que devuelve la base; null = todavía no se pidió
   marcaCargada: false, // evita volver a pedirla en cada render
+  /* ¿Hay clave maestra configurada en el servidor?
+   * `null` = todavia no se sabe. Se pregunta al entrar a configuraciones.
+   * Importa porque una instalacion nueva NO TIENE clave, y la pantalla donde se
+   * crea la primera es justamente la que la clave protege: cerrarla sin saber
+   * esto dejaria la app sin ninguna puerta de entrada. */
+  claveConfigurada: null,
+  clavePreguntada: false, // la consulta se hace una sola vez
+  /* A que vista se queria entrar cuando se pidio la clave. Se guarda para
+   * llevarla alli despues de acertar, en vez de dejar a la persona en el menu
+   * teniendo que acordarse de donde iba. */
+  vistaPendiente: null
   // El lema se edita EN EL MENÚ. `editandoLema` es el texto que se está
   // escribiendo; `null` significa que se ve como texto normal.
   editandoLema: null,
@@ -762,16 +787,42 @@ function vistaMenu() {
       ${avisoHTML()}
 
       <div class="menu-acciones">
-        <button class="boton-grande boton-oro" data-ir="host">
+        ${/*
+          LO DEL PRESENTADOR NO SE MUESTRA SIN CLAVE.
+
+          Christian: «todo lo relacionado al proyecto -menu de crear salas,
+          panel del presentador, configuracion y presentacion- debe estar
+          oculto antes de la autenticacion».
+
+          Pero UNA puerta tiene que quedar a la vista: si se esconden todas,
+          no hay forma de autenticarse y la app se queda sin entrada. La que
+          queda es esta, y no navega: pide la clave y, al acertar, lleva al
+          panel. Las demas aparecen recien despues, con `acceso.js` ya
+          consultado.
+
+          Son TRES estados, no dos, y por eso son tres ramas:
+          - con clave y ya verificada: «Soy presentador», que navega;
+          - con clave sin verificar: «Entrar como presentador», que la pide;
+          - sin ninguna clave configurada: «Crear la clave», que va derecho a
+            configuraciones. Pedir una clave que no existe no tendria salida.
+          Si el primer caso y el tercero dibujaran el mismo boton, ademas,
+          habria dos botones llevando al mismo sitio en el primer arranque. */''}
+        ${puedeIrA('host') ? `<button class="boton-grande boton-oro" data-ir="host">
           🎤 Soy presentador
-        </button>
+        </button>` : !hayNube ? '' : app.claveConfigurada === false
+          ? `<button class="boton-grande boton-oro" data-ir="config">
+          🔑 Crear la clave de acceso
+        </button>`
+          : `<button class="boton-grande boton-oro" data-accion="pedir-acceso">
+          🔑 Entrar como presentador
+        </button>`}
         <button class="boton-grande boton-contorno" data-ir="join">
           🙋 Jugar como participante
         </button>
         <button class="boton boton-contorno" data-ir="tv">
           📺 Pantalla para el televisor
         </button>
-        ${hayNube ? `<button class="boton boton-contorno" data-ir="config">
+        ${hayNube && app.claveConfigurada !== false && puedeIrA('config') ? `<button class="boton boton-contorno" data-ir="config">
           ⚙️ Configuraciones
         </button>` : ''}
       </div>
@@ -2084,6 +2135,24 @@ let cerrando = false;
  * existiera. Un aviso rojo por no poder leer un adorno del menú sería peor
  * que el problema: el juego se puede jugar con el texto original.
  */
+/**
+ * Pregunta al servidor si hay clave maestra configurada.
+ *
+ * No verifica ninguna clave: solo mira si existe. Es publico a proposito
+ * (`admin_key_status` es `security definer` y devuelve tres booleanos y un
+ * contador), porque la pantalla que crea la primera clave tiene que poder
+ * abrirse sin tener clave.
+ *
+ * Si la consulta falla se deja en `null`: no se sabe. La puerta entonces se
+ * comporta como si hubiera clave (pide), que es el lado seguro.
+ */
+async function cargarEstadoClave() {
+  const { estado, error } = await admin.estadoClave();
+  if (error || !estado) return;
+  app.claveConfigurada = estado.configurada === true;
+  if (app.claveConfigurada === false) render();
+}
+
 async function cargarMarca() {
   if (!hayNube) return;
   const { marca, error } = await admin.marca();
@@ -2116,6 +2185,36 @@ async function cargarTemas() {
     app.temaElegido = app.temas.find(t => t.questions > 0)?.id ?? null;
   }
   render();
+}
+
+/**
+ * ¿Se puede mostrar lo del presentador?
+ *
+ * `claveConfigurada` llega del servidor y vale `null` mientras no se sabe.
+ * Mientras no se sepa, la respuesta es NO: es preferible que el boton tarde
+ * medio segundo en aparecer a que aparezca y al tocarlo no lleve a ninguna
+ * parte.
+ *
+ * La unica excepcion es la primera clave: si el servidor dice que NO hay
+ * clave configurada, hay que dejar llegar a configuraciones, porque es el
+ * unico sitio donde se puede crear. Sin eso, una instalacion nueva se queda
+ * sin ninguna puerta de entrada. Es la misma decision que toma `acceso.js`.
+ */
+/**
+ * ¿Se puede entrar a esta vista ahora?
+ * Delega en `acceso.js` para que la regla viva en un solo sitio y se pueda
+ * probar sin levantar la app.
+ */
+function puedeIrA(vista) {
+  /* SIN NUBE NO HAY PUERTA, y no puede haberla: la clave maestra vive en el
+     servidor y sin servidor no hay nada que comprobar. Si aqui se cerrara el
+     paso, el modo local se quedaria sin panel del presentador para siempre:
+     pediria una clave que nadie puede validar. En local manda el modo local,
+     que ya tiene su propia regla -un solo host vivo-. */
+  if (!hayNube) return true;
+  return puedeEntrar(vista, app.adminClave, {
+    hayClaveConfigurada: app.claveConfigurada !== false
+  });
 }
 
 /** Pide la clave maestra si todavía no se verificó en esta sesión. */
@@ -2356,7 +2455,8 @@ function modalActivo() {
 }
 
 function render() {
-  const { vista } = rutaActual();
+  // `let`: el guardia de acceso la baja a 'menu' cuando falta la clave.
+  let { vista } = rutaActual();
 
   /*
    * El toque es por RONDA, no por partida: cuando llega una ronda distinta el
@@ -2392,13 +2492,33 @@ function render() {
     app.temaElegido = null;
   }
 
+  /*
+   * LA PUERTA, PARA LA URL ESCRITA A MANO.
+   *
+   * `data-ir` ya la comprueba, pero eso no alcanza: escribir `#/host` en la
+   * barra del navegador no pasa por ningun boton. Sin este guardia la vista
+   * se dibujaria igual y la clave seria un adorno.
+   *
+   * En vez de no pintar nada -que deja la pantalla en blanco y parece rota-
+   * se pinta el MENU con el modal de la clave encima: se ve de donde se
+   * viene y que hace falta.
+   */
+  if (!puedeIrA(vista) && vista !== 'menu') {
+    app.vistaPendiente = vista;
+    app.modal = app.modal && app.modal.tipo === 'clave'
+      ? app.modal
+      : { tipo: 'clave', para: 'acceso' };
+    app.adminError = null;
+    vista = 'menu';
+  }
+
   let html;
   switch (vista) {
     case 'host':  html = vistaHost(); break;
     case 'join':
     case 'play':  html = vistaJugador(vista); break;
     case 'tv':    html = vistaTV(); break;
-    case 'config': html = vistaConfig({ hayClave: hayNube }); break;
+    case 'config': html = vistaConfig({ hayClave: app.claveConfigurada === true }); break;
     default:      html = vistaMenu();
   }
 
@@ -2483,6 +2603,20 @@ function render() {
   if (vista === 'menu' && hayNube && !app.marcaCargada) {
     app.marcaCargada = true;
     cargarMarca();
+  }
+
+  /*
+   * Si hay clave maestra se pregunta UNA vez, al pasar por el menu. Es lo que
+   * decide si la puerta pide clave o si hay que dejar pasar a configuraciones
+   * para crear la primera.
+   *
+   * `clavePreguntada` corta el bucle: sin ella, una consulta que vuelve vacia
+   * dejaria `claveConfigurada` en null y render() se llamaria a si mismo sin
+   * fin. Es el mismo cuidado que ya tiene `marcaCargada`.
+   */
+  if (hayNube && !app.clavePreguntada) {
+    app.clavePreguntada = true;
+    cargarEstadoClave();
   }
 
   /*
@@ -2692,6 +2826,24 @@ document.addEventListener('click', async ev => {
     }
 
     /* --- menú / navegación --- */
+    /* La única puerta que se ve sin tener la clave. No navega: pide la clave
+       y, al acertar, lleva al panel. Si no existiera esta acción no habría
+       forma de autenticarse, porque todo lo demás está oculto hasta entonces. */
+    case 'pedir-acceso': {
+      /* SIN CLAVE CONFIGURADA NO SE PIDE CLAVE, se va derecho a crearla.
+
+         Pedirla seria pedirle a la persona una llave que todavia no existe:
+         no habria forma de acertar y la app quedaria sin salida en su primer
+         arranque. La base ya lo resuelve igual: `admin_change_key` no pide la
+         anterior cuando no hay ninguna. */
+      if (app.claveConfigurada === false) { ir('config'); break; }
+      app.vistaPendiente = 'host';
+      app.modal = { tipo: 'clave', para: 'acceso' };
+      app.adminError = null;
+      render();
+      break;
+    }
+
     case 'crear-sala': {
       /* La decision vive en `lib/crear-sala.js`, con sus pruebas: el orden
          —tema, despues clave, despues crear— es lo que se olvida. */
@@ -2737,6 +2889,21 @@ document.addEventListener('click', async ev => {
       app.modal = null;
       app.adminError = null;
       app.editarPregunta = null;
+      /*
+       * SALIR DE LA PUERTA TIENE QUE DEJAR SALIR.
+       *
+       * Si se llego escribiendo `#/host` en la barra del navegador, el hash
+       * sigue siendo `#/host` aunque la pantalla muestre el menu. Al cerrar el
+       * modal sin acertar, render() volvia a ver `#/host`, volvia a bloquear y
+       * volvia a abrir el modal: el boton «Cancelar» no hacia nada y la app se
+       * quedaba atrapada sin ninguna salida.
+       *
+       * Se manda el hash al menu para que la URL diga la verdad de donde esta
+       * la persona. Sin esto, el candado se cierra por dentro. */
+      if (app.vistaPendiente) {
+        app.vistaPendiente = null;
+        if (location.hash !== '#/menu') { location.hash = '#/menu'; return; }
+      }
       render();
       break;
     }
@@ -3765,6 +3932,18 @@ document.addEventListener('submit', async ev => {
       app.adminError = null;
       render();
       await crearSalaAhora();
+      return;
+    }
+    /* LA PUERTA. Se acierta la clave y recién ahí se entra a donde se iba.
+       Se navega DESPUÉS de cerrar el modal: si se navegara con el modal
+       abierto, el fondo oscuro taparía la pantalla recién abierta y parecería
+       que la clave no sirvió de nada. */
+    if (para === 'acceso') {
+      const destino = app.vistaPendiente || 'host';
+      app.vistaPendiente = null;
+      app.modal = null;
+      app.adminError = null;
+      ir(destino);
       return;
     }
     if (para === 'portada') {
