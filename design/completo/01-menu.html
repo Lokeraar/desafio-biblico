@@ -39,14 +39,20 @@
   .portada{position:relative;width:100%;border-radius:var(--radio);overflow:hidden;
     box-shadow:0 8px 24px rgba(0,0,0,.45);
     background:linear-gradient(135deg,#1a5c66,#0a2e33);max-height:30%}
-  .tela.h .portada{flex:0 0 30%;max-height:none;display:flex;align-items:center}
+  .tela.h .portada{flex:0 0 30%;max-height:none;display:flex;align-items:center;
+    /* LETTERBOXING TRANSPARENTE: el aire alrededor de una foto ancha se ve como el
+       fondo del menu, a traves de una tarjeta con borde. Asi el marco no es un
+       color inventado: es el mismo fondo, y la foto se lee como si flotara. */
+    background:rgba(255,255,255,.04);
+    border:1px solid rgba(110,227,238,.22);
+    padding:.35rem}
   .portada .arte{width:100%;aspect-ratio:16/9;display:grid;place-items:center;
     background:
       radial-gradient(60% 80% at 30% 20%, rgba(252,209,22,.25), transparent 60%),
       linear-gradient(160deg,#12525e,#08272d);
     color:#9fe9f1;font-weight:800;letter-spacing:.06em;font-size:.8rem}
-  .tela.h .portada .arte{aspect-ratio:auto;height:100%;
-    background:linear-gradient(160deg,#12525e,#08272d)}
+  .tela.h .portada .arte{aspect-ratio:auto;height:100%;border-radius:10px;
+    background:transparent}
   .lapiz{position:absolute;top:.4rem;right:.4rem;width:1.9rem;height:1.9rem;border-radius:8px;
     background:rgba(3,12,14,.45);border:1px solid rgba(255,255,255,.25);
     display:grid;place-items:center;font-size:.8rem}
@@ -78,10 +84,11 @@
   .insig.sel{background:rgba(252,209,22,.18);color:#ffe58a;border-color:rgba(252,209,22,.5)}
   .insig.pronto{background:rgba(255,255,255,.08);color:#b9ccd0;border-color:rgba(255,255,255,.2)}
 
-  .acciones{display:flex;flex-direction:column;gap:.4rem;width:100%;margin-top:.2rem}
+  .acciones{display:flex;flex-direction:column;gap:.4rem;width:100%;margin-top:.2rem;
+    align-items:center}
   .tela.h .acciones{flex-direction:row;flex-wrap:wrap}
   .tela.h .acciones .btn{flex:1 1 8rem}
-  .btn{display:block;text-align:center;padding:.6em 1em;border-radius:12px;font-weight:800;
+  .btn{display:block;width:100%;text-align:center;padding:.6em 1em;border-radius:12px;font-weight:800;
     font-size:.95rem;border:1px solid transparent;text-decoration:none}
   .btn.oro{background:linear-gradient(180deg,#ffe066,#fcd116);color:#2a2200}
   .btn.contorno{background:transparent;border-color:rgba(110,227,238,.45);color:var(--tu-100)}
@@ -257,16 +264,19 @@
     <div style="flex:1 1 340px;min-width:280px">
       <div class="notas" style="margin-top:0">
         <div class="nota bien">
-          <h3>Letterboxing si la portada es ancha</h3>
+          <h3>Letterboxing transparente, como una tarjeta</h3>
           <p>La columna de la portada es alta y angosta. Una foto horizontal metida con
           <code>cover</code> se recorta por los lados y se pierde lo que anuncia; con
-          <code>contain</code> se ve entera y el aire sobra como marco.</p>
+          <code>contain</code> se ve entera.</p>
+          <p>El aire que sobra <strong>no lleva color propio</strong>: se ve el fondo del menú a
+          través de una tarjeta con borde. Así el marco no es un color inventado y la foto se lee
+          como si flotara sobre la pantalla.</p>
           <p>Una foto <strong>alta</strong> no lo necesita: ya llena la columna.</p>
         </div>
-        <div class="nota duda">
-          <h3>Decisión tuya</h3>
-          <p>¿El letterboxing lleva el degradado del tema, o un negro plano? El degradado se lee como
-          marco; el negro se lee como recorte. Hoy está el degradado.</p>
+        <div class="nota bien">
+          <h3>Decidido: tarjeta transparente</h3>
+          <p>Ni degradado ni negro: el fondo del menú a través de una tarjeta con borde. Christian
+          eligió que se vea «como una especie de tarjeta».</p>
         </div>
         <div class="nota bien">
           <h3>Las tarjetas bajan de fila</h3>
@@ -312,7 +322,12 @@
               <a class="btn oro">Jugar como participante</a>
               <a class="btn contorno">Soy presentador</a>
             </div>
-            <div class="pie"><span>v1.0</span><span>Sin modo local</span></div>
+            <div class="pie"><span>v1.0</span><span>Sin conexión</span></div>
+            <div style="background:rgba(240,163,58,.12);border:1px solid rgba(240,163,58,.45);
+                 border-radius:12px;padding:.5em .75em;font-size:.8rem;color:#ffd39b">
+              <strong>Sin conexión.</strong> Puedes jugar con lo que hay guardado:
+              2 juegos, 3 temas, 12 preguntas y 8 versículos.
+            </div>
           </div>
         </div>
       </div>
@@ -321,8 +336,11 @@
           <h3>No es un error</h3>
           <p>Sin portada guardada se usa la imagen original. No hay rojo, ni alarma, ni hueco vacío:
           el menú se ve completo.</p>
-          <p style="color:var(--espera)"><strong>Punto a decidir:</strong> «Sin modo local» hoy se lee
-          como un defecto. ¿Se calla cuando no hay nube, en vez de anunciarlo?</p>
+          <p><strong>Decidido:</strong> «Sin modo local» pasa a <strong>«Sin conexión»</strong>, y el
+          menú muestra <strong>lo que sí se puede jugar</strong> con lo guardado: juegos, temas,
+          preguntas y versículos. Un término técnico no dice nada, y un aviso sin salida tampoco.</p>
+          <p><strong>Decidido:</strong> «Tu sala sigue abierta» ahora reintenta de verdad, cada
+          pocos segundos, en vez de solo pedir recargar.</p>
         </div>
       </div>
     </div>

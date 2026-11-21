@@ -17,6 +17,7 @@ import { hayNube } from './config.js';
 import {
   SESION_MUERTA, decidirSesionJugador, decidirSalaHost, avisoSesionJugador
 } from './lib/liberar.js';
+import { animar, estadoDeSala } from './lib/orbe.js';
 import {
   selectorTema, modalClave, modalCambiarClave, modalTemas,
   modalPreguntas, modalFormPregunta, vistaConfig, validarPregunta,
@@ -338,6 +339,21 @@ function portadaMostrada() {
  * lapiz, y la nueva puede tener otra forma. Es idempotente: siempre reescribe
  * el atributo a partir de la imagen que este cargada.
  */
+/**
+ * Arranca los orbes de espera que haya en pantalla.
+ *
+ * Se para el anterior antes de crear el nuevo: dos animaciones sobre el mismo
+ * canvas se pelean y la vieja sigue viva aunque su canvas ya no exista.
+ */
+function arrancarOrbes(raiz) {
+  const caja = (raiz || document).querySelector('.orbe-espera');
+  if (!caja) return;
+  const canvas = caja.querySelector('canvas');
+  if (!canvas) return;
+  if (app.orbe) { app.orbe.parar(); app.orbe = null; }
+  app.orbe = animar(canvas, { estado: caja.dataset.orbe || 'working', tamano: 64 });
+}
+
 function marcarFormaPortada(raiz) {
   const img = (raiz || document).querySelector('.portada img');
   if (!img) return;
@@ -754,7 +770,9 @@ function vistaMenu() {
         <span>v1.0</span>
         <span class="fila" style="gap:.35rem">
           <span class="punto-vivo${esLocalDisponible() ? '' : ' apagado'}"></span>
-          ${esLocalDisponible() ? 'Modo local' : 'Sin modo local'}
+          ${/* «Sin modo local» no lo entiende nadie: es jerga tecnica. Lo que
+               importa es si hay conexion y QUE se puede jugar igual. */}
+          ${esLocalDisponible() ? 'Con conexión' : 'Sin conexión'}
         </span>
       </footer>
     </main>
@@ -1608,7 +1626,20 @@ function vistaJugador(vista = 'play') {
           Espera a que el presentador lance la primera pregunta.
         </p>
         <p class="codigo-sala" style="font-size:var(--t-2xl)">${esc(yo.name)}</p>
+        ${/* Christian: «renombrado a Este es tu nombre/alias en esta partida».
+             Dice DONDE aparece el nombre, que es el dato que le falta a quien
+             acaba de escribirlo y no sabe como se vera en la tabla. */''}
+        <p class="chico tenue centro" style="text-align:center; max-width:30ch">
+          Este es tu nombre/alias en esta partida
+        </p>
         <p class="chico tenue">${miPuntaje?.score ?? 0} puntos</p>
+        ${rotuloJuego()}
+        ${/* El orbe dice «la app sigue trabajando», para que la espera no se lea
+             como un cuelgue. El estado sale de `lib/orbe.js`, no se elige aqui. */''}
+        <div class="orbe-espera" data-orbe="${estadoDeSala('esperando')}">
+          <canvas aria-hidden="true"></canvas>
+          <span class="orbe-txt">Esperando al presentador</span>
+        </div>
       </main>`;
   }
 
@@ -2377,12 +2408,18 @@ function render() {
   if (typeof requestAnimationFrame === 'function') {
     requestAnimationFrame(() => ajustarTextos($app));
     requestAnimationFrame(() => marcarFormaPortada($app));
+    requestAnimationFrame(() => arrancarOrbes($app));
   }
 
   // Al salir de la pantalla del televisor se suelta su sondeo: una consulta
   // viva desde una vista abandonada gasta datos y batería sin que nadie
   // esté mirando la pantalla. También se olvida el estado para que al volver
   // a #/tv no se muestre una partida congelada sin nadie que la actualice.
+  /* UN ORBE QUE SIGUE GIRANDO EN UNA PANTALLA ABANDONADA GASTA BATERIA SIN QUE
+     NADIE LO MIRE. Se para siempre al cambiar de vista y se vuelve a crear en
+     la siguiente. */
+  if (app.orbe) { app.orbe.parar(); app.orbe = null; }
+
   if (vista !== 'tv' && app.tv) {
     app.tv.parar();
     app.tv = null;

@@ -30,34 +30,74 @@
     background:var(--fondo-juego);box-shadow:0 14px 40px rgba(0,0,0,.5);display:flex;flex-direction:column}
   .v{width:390px;height:844px}
   .h{width:844px;height:390px}
-  .lienzo{display:flex;flex-direction:column;min-height:0;padding:.7rem .9rem;gap:.5rem}
+  .lienzo{display:flex;flex-direction:column;min-height:0;padding:.7rem .9rem .8rem;gap:.45rem}
   .tela.h .lienzo{flex-direction:row;align-items:stretch;gap:.9rem}
 
   .volver{font-size:.85rem;padding:.4em .8em;border-radius:10px;align-self:flex-start;
     border:1px solid rgba(110,227,238,.45);color:var(--tu-100);background:transparent}
-  .centro{flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;gap:.6rem;
+
+  /* columna izquierda (o unica en vertical) */
+  .izq{display:flex;flex-direction:column;min-height:0;gap:.45rem;flex:1 1 auto}
+  .tela.h .izq{flex:0 0 46%}
+  .tela.h .der{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;min-height:0;gap:.4rem}
+
+  .centro{flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;gap:.5rem;
     min-height:0;min-width:0}
-  .tela.h .centro{gap:.4rem}
+
+  /* hero: Juego + nombre, a la derecha */
+  .hero{display:flex;flex-direction:column;align-items:flex-end;gap:.05rem;flex:0 0 auto}
+  .hero .rot{font-size:.78rem;font-weight:600;color:var(--tinta-suave);line-height:1.1}
+  .hero .nom-j{font-size:.95rem;font-weight:800;line-height:1.2;text-align:right;max-width:14ch}
 
   .aviso{border-radius:12px;padding:.45em .8em;font-size:.85rem;line-height:1.35;text-align:center}
   .aviso.espera{background:rgba(240,163,58,.14);border:1px solid rgba(240,163,58,.5);color:#ffd39b}
   .aviso.err{background:rgba(224,72,60,.14);border:1px solid rgba(224,72,60,.5);color:#ffc9c4}
 
   .yo{text-align:center}
-  .yo .nom{font-size:1.25rem;font-weight:900;line-height:1.2}
-  .yo .dice{font-size:.85rem;color:var(--tinta-suave);margin-top:.15rem}
+  .yo .nom{font-size:1.2rem;font-weight:900;line-height:1.2}
+  .yo .dice{font-size:.8rem;color:var(--tinta-suave);margin-top:.15rem}
 
-  .jugadores{display:flex;flex-wrap:wrap;gap:.4rem;justify-content:center;min-width:0}
-  .jug{display:flex;align-items:center;gap:.35rem;padding:.3em .7em;border-radius:999px;
-    background:rgba(255,255,255,.07);border:1px solid rgba(110,227,238,.22);font-size:.85rem;
+  .jugadores{display:flex;flex-wrap:wrap;gap:.35rem;justify-content:center;min-width:0}
+  .tela.h .jugadores{justify-content:flex-start;align-content:flex-start;
+    overflow-y:auto;min-height:0;flex:1 1 auto}
+  .jug{display:flex;align-items:center;gap:.3rem;padding:.28em .65em;border-radius:999px;
+    background:rgba(255,255,255,.07);border:1px solid rgba(110,227,238,.22);font-size:.82rem;
     font-weight:700;white-space:nowrap}
   .jug.yo{border-color:var(--tu-300);background:rgba(46,196,212,.15)}
-  .jug .punto{width:.45rem;height:.45rem;border-radius:50%;background:var(--ok);flex:0 0 auto}
+  .jug .punto{width:.42rem;height:.42rem;border-radius:50%;background:var(--ok);flex:0 0 auto}
 
-  .espera-ayuda{text-align:center;color:var(--tinta-suave);font-size:.8rem;max-width:32ch;
-    align-self:center}
-  .codigo{text-align:center;font-family:ui-monospace,monospace;font-size:1.6rem;font-weight:900;
+  /* ===== el orbe: representacion estatica de thinking-orbs =====
+     En la app es un canvas animado del paquete thinking-orbs: puntos
+     monocromos en orbita. Aqui se dibuja un fotograma con CSS para que el
+     diseno muestre DONDE va y QUE tamano tiene, no para sustituir la libreria. */
+  .orbe{width:64px;height:64px;position:relative;flex:0 0 auto;
+    display:grid;place-items:center}
+  .orbe i{position:absolute;border-radius:50%;background:#bfeaf2;
+    animation:orbita 2.4s linear infinite;transform-origin:center}
+  .orbe i:nth-child(1){width:7px;height:7px;animation-delay:0s}
+  .orbe i:nth-child(2){width:5px;height:5px;animation-delay:.4s}
+  .orbe i:nth-child(3){width:6px;height:6px;animation-delay:.8s}
+  .orbe i:nth-child(4){width:4px;height:4px;animation-delay:1.2s}
+  .orbe i:nth-child(5){width:5px;height:5px;animation-delay:1.6s}
+  .orbe i:nth-child(6){width:3px;height:3px;animation-delay:2s}
+  @keyframes orbita{
+    0%  {transform:rotate(0deg) translateX(20px)}
+    100%{transform:rotate(360deg) translateX(20px)}
+  }
+  @media (prefers-reduced-motion: reduce){ .orbe i{animation:none}
+    .orbe i:nth-child(odd){transform:rotate(40deg) translateX(18px)}
+    .orbe i:nth-child(even){transform:rotate(200deg) translateX(14px)} }
+
+  .pie-orbe{display:flex;flex-direction:column;align-items:center;gap:.15rem;
+    flex:0 0 auto;padding-top:.2rem}
+  .pie-orbe .txt{font-size:.78rem;color:var(--tinta-suave);text-align:center;line-height:1.3}
+  .tela.h .pie-orbe{align-items:flex-start;padding-top:.3rem}
+  .tela.h .pie-orbe .txt{text-align:left}
+
+  .codigo{text-align:center;font-family:ui-monospace,monospace;font-size:1.5rem;font-weight:900;
     letter-spacing:.15em;color:var(--amarillo)}
+  .espera-ayuda{text-align:center;color:var(--tinta-suave);font-size:.8rem;max-width:32ch;
+    align-self:center;margin:0}
 
   .notas{margin-top:1.6rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:.9rem}
   .nota{border:1px solid var(--tu-800);border-radius:var(--radio-sm);padding:.8rem 1rem;
@@ -76,12 +116,14 @@
 
   <header>
     <h1>Sala de espera</h1>
-    <p>Ya entró y todavía no se juega. Tiene que comunicar tres cosas y ninguna más: entró bien,
-    quiénes más están, y que espere.</p>
+    <p>Ya entró y todavía no se juega. Comunica tres cosas: entró bien, quiénes más están, y que
+    espere. El orbe animado dice que la app está trabajando, para que la espera no parezca un
+    cuelgue.</p>
   </header>
 
   <div class="h2">Vertical — 390 × 844
-    <small>El participante mira el teléfono y espera. No hay ningún botón que tocar.</small>
+    <small>Una columna: aviso, nombre, participantes, y el orbe al pie. Los participantes en orden de
+    llegada.</small>
   </div>
 
   <div class="fila">
@@ -89,20 +131,32 @@
       <div class="rotulo">vertical · tres participantes</div>
       <div class="tela v">
         <div class="lienzo">
-          <button class="volver">← Menú</button>
-          <div class="centro">
-            <div class="aviso espera">Estás en sala de espera</div>
-            <div class="yo">
-              <div class="nom">Ana Pérez</div>
-              <div class="dice">Este es tu nombre en la tabla</div>
+          <div class="izq">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">
+              <button class="volver">← Menú</button>
+              <div class="hero">
+                <span class="rot">Juego:</span>
+                <span class="nom-j">Completar el versículo</span>
+              </div>
             </div>
-            <div class="jugadores">
-              <span class="jug yo"><span class="punto"></span>Ana Pérez</span>
-              <span class="jug"><span class="punto"></span>Carlos Ruiz</span>
-              <span class="jug"><span class="punto"></span>María López</span>
+            <div class="centro">
+              <div class="aviso espera">Estás en sala de espera</div>
+              <div class="yo">
+                <div class="nom">Ana Pérez</div>
+                <div class="dice">Este es tu nombre/alias en esta partida</div>
+              </div>
+              <div class="jugadores">
+                <span class="jug yo"><span class="punto"></span>Ana Pérez</span>
+                <span class="jug"><span class="punto"></span>Carlos Ruiz</span>
+                <span class="jug"><span class="punto"></span>María López</span>
+              </div>
             </div>
-            <p class="espera-ayuda">El presentador abrirá la primera pregunta. No cierres esta
-            pantalla.</p>
+            <div class="pie-orbe">
+              <div class="orbe" role="status" aria-label="Esperando que empiece la partida">
+                <i></i><i></i><i></i><i></i><i></i><i></i>
+              </div>
+              <span class="txt">El presentador abrirá la primera pregunta</span>
+            </div>
           </div>
         </div>
       </div>
@@ -111,52 +165,73 @@
     <div style="flex:1 1 340px;min-width:280px">
       <div class="notas" style="margin-top:0">
         <div class="nota bien">
-          <h3>Sin botón que no lleva a nada</h3>
-          <p>Aquí no se juega todavía. Un botón «Empezar» que no puede funcionar es peor que no
-          tenerlo: el participante lo pulsa, no pasa nada, y cree que la app se rompió.</p>
+          <h3>El orbe dice «estoy trabajando»</h3>
+          <p>Al pie de la lista, en grande y animado. Sin él, una pantalla que no cambia durante un
+          minuto se lee como que la app se colgó. El estado es <code>working</code>: la app está
+          esperando al presentador.</p>
         </div>
         <div class="nota bien">
           <h3>Su nombre, grande</h3>
-          <p>Es la confirmación de que entró bien. Si se equivocó al escribirlo, este es el momento
-          de darse cuenta, no cuando aparezca en la tabla.</p>
+          <p>Es la confirmación de que entró bien. Si se equivocó, este es el momento de darse
+          cuenta, no cuando aparezca en la tabla. Y ahora dice «nombre/alias en esta partida»: el
+          dato de dónde aparece.</p>
         </div>
-        <div class="nota duda">
-          <h3>Decisión tuya</h3>
-          <p>Los participantes aparecen en orden de llegada. ¿Se ordenan alfabéticamente, o se deja
-          así para que cada uno se encuentre al final?</p>
+        <div class="nota bien">
+          <h3>Orden de llegada</h3>
+          <p>Decidido: se queda como está. Cada uno se encuentra al final, sin buscar su nombre en
+          orden alfabético.</p>
+        </div>
+        <div class="nota bien">
+          <h3>El juego, en el hero de la derecha</h3>
+          <p>«Juego:» arriba y el nombre debajo, igual que en el panel del presentador. Es el mismo
+          componente, así que no pueden separarse.</p>
         </div>
       </div>
     </div>
   </div>
 
   <div class="h2">Acostado — 844 × 390
-    <small>A la izquierda el aviso y el nombre; a la derecha la lista, que es lo que crece.</small>
+    <small>Izquierda: lo del participante, con el orbe al pie de esa columna. Derecha: solo
+    participantes entrantes.</small>
   </div>
 
   <div class="fila">
     <div class="marco">
-      <div class="rotulo">acostado · tres participantes</div>
+      <div class="rotulo">acostado · cinco participantes</div>
       <div class="tela h">
         <div class="lienzo">
-          <div style="display:flex;flex-direction:column;gap:.4rem;flex:0 0 46%">
-            <button class="volver">← Menú</button>
+          <div class="izq">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">
+              <button class="volver">← Menú</button>
+              <div class="hero">
+                <span class="rot">Juego:</span>
+                <span class="nom-j">Completar el versículo</span>
+              </div>
+            </div>
             <div class="centro">
               <div class="aviso espera">Estás en sala de espera</div>
               <div class="yo">
                 <div class="nom">Ana Pérez</div>
-                <div class="dice">Este es tu nombre en la tabla</div>
+                <div class="dice">Este es tu nombre/alias en esta partida</div>
               </div>
-              <p class="espera-ayuda">El presentador abrirá la primera pregunta.</p>
+            </div>
+            <div class="pie-orbe">
+              <div class="orbe" role="status" aria-label="Esperando que empiece la partida">
+                <i></i><i></i><i></i><i></i><i></i><i></i>
+              </div>
+              <span class="txt">El presentador abrirá la primera pregunta</span>
             </div>
           </div>
-          <div style="flex:1 1 auto;min-width:0;display:flex;flex-direction:column;
-               justify-content:center;gap:.5rem">
-            <div class="jugadores" style="justify-content:flex-start">
+          <div class="der">
+            <p style="margin:0;font-size:.8rem;color:var(--tinta-suave);font-weight:700">
+              Participantes entrantes:</p>
+            <div class="jugadores">
               <span class="jug yo"><span class="punto"></span>Ana Pérez</span>
               <span class="jug"><span class="punto"></span>Carlos Ruiz</span>
               <span class="jug"><span class="punto"></span>María López</span>
               <span class="jug"><span class="punto"></span>José Martínez</span>
               <span class="jug"><span class="punto"></span>Lucía Fernández</span>
+              <span class="jug"><span class="punto"></span>Pedro Gómez</span>
             </div>
           </div>
         </div>
@@ -167,21 +242,26 @@
       <div class="notas" style="margin-top:0">
         <div class="nota bien">
           <h3>La lista es lo que crece</h3>
-          <p>Con veinte participantes, la lista se desplaza dentro de su zona y el aviso de la
-          izquierda no se mueve. Es el caso donde el scroll <strong>sí</strong> es correcto: el
-          contenido crece con los datos.</p>
+          <p>La columna derecha se desplaza dentro de sí misma. El aviso y el orbe de la izquierda no
+          se mueven. Es el caso donde el scroll <strong>sí</strong> es correcto: el contenido crece
+          con los datos.</p>
+        </div>
+        <div class="nota bien">
+          <h3>El orbe, al pie de su columna</h3>
+          <p>No en el centro ni flotando: pegado al final de la columna izquierda, debajo del
+          nombre. Así la derecha queda entera para los participantes.</p>
         </div>
         <div class="nota mal">
           <h3>Lo que no puede pasar</h3>
-          <p>Que la lista empuje el aviso fuera de la pantalla con ocho participantes. Si la zona
-          crece sin límite, la pantalla se rompe justo cuando más gente hay.</p>
+          <p>Que la lista empuje el aviso fuera de la pantalla con veinte participantes, o que el
+          orbe se vaya con el scroll de la lista.</p>
         </div>
       </div>
     </div>
   </div>
 
   <div class="h2">Estados
-    <small>La sala de espera tiene los seis casos del sistema: aquí llegan todos.</small>
+    <small>Cargando y vacío, corregidos. Los de error, repartidos uno por placa.</small>
   </div>
 
   <div class="fila">
@@ -189,27 +269,42 @@
       <div class="rotulo">vacío · solo yo</div>
       <div class="tela v">
         <div class="lienzo">
-          <button class="volver">← Menú</button>
-          <div class="centro">
-            <div class="aviso espera">Estás en sala de espera</div>
-            <div class="yo">
-              <div class="nom">Ana Pérez</div>
-              <div class="dice">Este es tu nombre en la tabla</div>
+          <div class="izq">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">
+              <button class="volver">← Menú</button>
+              <div class="hero">
+                <span class="rot">Juego:</span>
+                <span class="nom-j">Completar el versículo</span>
+              </div>
             </div>
-            <div class="jugadores">
-              <span class="jug yo"><span class="punto"></span>Ana Pérez</span>
+            <div class="centro">
+              <div class="aviso espera">Estás en sala de espera</div>
+              <div class="yo">
+                <div class="nom">Ana Pérez</div>
+                <div class="dice">Este es tu nombre/alias en esta partida</div>
+              </div>
+              <p class="espera-ayuda">Eres el primero. Comparte el código:<br>
+              <strong style="color:var(--amarillo);font-size:1.15rem;letter-spacing:.1em">B73WS</strong></p>
+              <div class="jugadores">
+                <span class="jug yo"><span class="punto"></span>Ana Pérez</span>
+              </div>
             </div>
-            <p class="espera-ayuda">Eres el primero. Comparte el código con tu grupo:<br>
-            <strong style="color:var(--amarillo);font-size:1.1rem;letter-spacing:.1em">B73WS</strong></p>
+            <div class="pie-orbe">
+              <div class="orbe" role="status" aria-label="Esperando participantes">
+                <i></i><i></i><i></i><i></i><i></i><i></i>
+              </div>
+              <span class="txt">Esperando a que entren los demás</span>
+            </div>
           </div>
         </div>
       </div>
       <div style="max-width:390px;margin-top:.6rem">
         <div class="nota bien" style="margin:0">
           <h3>El vacío ofrece la acción que lo llena</h3>
-          <p>Si estás solo, lo útil no es «no hay nadie»: es el código de la sala para que entren.
-          Un vacío que no ofrece nada deja al participante mirando una pantalla quieta sin saber si
-          la app funciona.</p>
+          <p>Si estás solo, lo útil no es «no hay nadie»: es el <strong>código de la sala</strong>
+          para que entren, más un orbe que diga que la app sigue esperando. Un vacío sin acción deja
+          al participante mirando una pantalla quieta sin saber si funciona.</p>
+          <p>El estado del orbe cambia a <code>searching</code>: literalmente está buscando gente.</p>
         </div>
       </div>
     </div>
@@ -218,75 +313,178 @@
       <div class="rotulo">cargando · conectando</div>
       <div class="tela v">
         <div class="lienzo">
-          <button class="volver">← Menú</button>
-          <div class="centro">
-            <div class="aviso espera">Estás en sala de espera</div>
-            <div class="yo">
-              <div class="nom">Ana Pérez</div>
+          <div class="izq">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">
+              <button class="volver">← Menú</button>
+              <div class="hero">
+                <span class="rot">Juego:</span>
+                <span class="nom-j">Completar el versículo</span>
+              </div>
             </div>
-            <p class="espera-ayuda" style="font-size:.95rem">Conectando…</p>
-          </div>
-        </div>
-      </div>
-      <div style="max-width:390px;margin-top:.6rem">
-        <div class="nota duda" style="margin:0">
-          <h3>Dice qué está esperando</h3>
-          <p>«Conectando…» y no un círculo girando solo. Si tarda, el participante sabe que es la
-          conexión y no su teléfono.</p>
-          <p style="color:var(--espera)"><strong>Punto a decidir:</strong> hoy no hay forma de
-          cancelar. ¿Se ofrece un «volver» después de unos segundos?</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="marco">
-      <div class="rotulo">error · la sala se cerró</div>
-      <div class="tela v">
-        <div class="lienzo">
-          <button class="volver">← Menú</button>
-          <div class="centro">
-            <div class="aviso err">La sala B73WS ya cerró</div>
-            <p class="espera-ayuda">El presentador terminó la partida. Pídele un código nuevo si
-            van a jugar otra.</p>
-            <div style="display:flex;flex-direction:column;gap:.4rem;width:100%;max-width:20rem;
-                 align-self:center">
-              <button class="jug" style="justify-content:center;padding:.6em 1em;
-                background:linear-gradient(180deg,#ffe066,#fcd116);color:#2a2200;border:0;
-                font-size:.95rem">Probar con otro código</button>
-              <button class="jug" style="justify-content:center;padding:.6em 1em;
-                background:transparent;border:1px solid rgba(110,227,238,.45);color:var(--tu-100);
-                font-size:.95rem">← Menú</button>
+            <div class="centro">
+              <div class="aviso espera">Estás en sala de espera</div>
+              <div class="yo">
+                <div class="nom">Ana Pérez</div>
+                <div class="dice">Este es tu nombre/alias en esta partida</div>
+              </div>
+              <p class="espera-ayuda">Conectando con la sala…</p>
+            </div>
+            <div class="pie-orbe">
+              <div class="orbe" role="status" aria-label="Conectando con la sala">
+                <i></i><i></i><i></i><i></i><i></i><i></i>
+              </div>
+              <span class="txt">Conectando…</span>
             </div>
           </div>
         </div>
       </div>
       <div style="max-width:390px;margin-top:.6rem">
         <div class="nota bien" style="margin:0">
-          <h3>La sala cerrada solo se anuncia si se intenta entrar</h3>
-          <p>Antes, al abrir «Jugar como participante», aparecía la pantalla de una sala vieja ya
-          cerrada en vez del formulario. Ahora el formulario siempre aparece; el aviso de sala
-          cerrada sale solo cuando se intenta entrar a esa sala concreta.</p>
+          <h3>Corregido: dice qué espera, y se puede salir</h3>
+          <p>Dos arreglos. Primero, el texto dice <strong>con qué</strong> está conectando, no solo
+          «conectando». Segundo: <strong>«← Menú» ya es la salida</strong> — Christian lo señaló y
+          tiene razón, no hace falta un botón aparte que cancele. Se deja el botón de menú donde
+          está, visible desde el primer segundo.</p>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="h2">Los dos estados que el sistema deja para después
-    <small>Se documentan aquí para que el hueco sea visible, sin diseñar su comportamiento.</small>
+  <div class="h2">Los errores, repartidos
+    <small>Uno por placa, para que cada caso se pueda juzgar solo. El único sin orbe es «la sala ya
+    cerró»: ahí la app no está trabajando, terminó.</small>
+  </div>
+
+  <div class="fila">
+    <div class="marco">
+      <div class="rotulo">error · la sala ya cerró</div>
+      <div class="tela v">
+        <div class="lienzo">
+          <div class="izq">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">
+              <button class="volver">← Menú</button>
+            </div>
+            <div class="centro">
+              <div class="aviso err">La sala B73WS ya cerró</div>
+              <p class="espera-ayuda">El presentador terminó la partida. Pídele un código nuevo si
+              van a jugar otra.</p>
+              <div class="acciones" style="display:flex;flex-direction:column;gap:.4rem;
+                   width:100%;max-width:20rem;align-self:center">
+                <button class="jug" style="justify-content:center;padding:.6em 1em;
+                  background:rgba(252,209,22,.18);border:1px solid rgba(252,209,22,.55);
+                  color:#ffe9a3;font-size:.95rem">Probar con otro código</button>
+                <button class="jug" style="justify-content:center;padding:.6em 1em;
+                  background:transparent;border:1px solid rgba(110,227,238,.45);
+                  color:var(--tu-100);font-size:.95rem">← Menú</button>
+              </div>
+            </div>
+            <div style="flex:0 0 auto;height:64px"></div>
+          </div>
+        </div>
+      </div>
+      <div style="max-width:390px;margin-top:.6rem">
+        <div class="nota bien" style="margin:0">
+          <h3>Sin orbe: aquí no se espera nada</h3>
+          <p>Es el único estado que no lleva orbe, como pediste. La app no está trabajando: la
+          partida terminó y no va a llegar nada. Un orbe aquí prometería algo que no ocurre.</p>
+          <p>Se reserva el espacio del orbe para que el contenido no salte de sitio respecto a las
+          otras placas.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="marco">
+      <div class="rotulo">error · te expulsaron</div>
+      <div class="tela v">
+        <div class="lienzo">
+          <div class="izq">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">
+              <button class="volver">← Menú</button>
+            </div>
+            <div class="centro">
+              <div class="aviso err">El presentador te sacó de la partida</div>
+              <p class="espera-ayuda">Si crees que fue un error, pídele que te deje volver a
+              entrar.</p>
+              <button class="jug" style="justify-content:center;padding:.6em 1em;align-self:center;
+                background:transparent;border:1px solid rgba(110,227,238,.45);
+                color:var(--tu-100);font-size:.95rem;max-width:20rem;width:100%">← Menú</button>
+            </div>
+            <div class="pie-orbe">
+              <div class="orbe" role="status" aria-label="Sin conexión con la partida">
+                <i></i><i></i><i></i><i></i><i></i><i></i>
+              </div>
+              <span class="txt">No formas parte de esta partida</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="max-width:390px;margin-top:.6rem">
+        <div class="nota bien" style="margin:0">
+          <h3>El mensaje no culpa al participante</h3>
+          <p>Dice qué pasó y qué puede hacer. No es un error de la app ni del jugador: es una
+          decisión de otra persona, y el texto lo refleja.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="marco">
+      <div class="rotulo">error · sin conexión</div>
+      <div class="tela v">
+        <div class="lienzo">
+          <div class="izq">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">
+              <button class="volver">← Menú</button>
+              <div class="hero">
+                <span class="rot">Juego:</span>
+                <span class="nom-j">Completar el versículo</span>
+              </div>
+            </div>
+            <div class="centro">
+              <div class="aviso err">No hay conexión</div>
+              <p class="espera-ayuda">Tu lugar sigue guardado. En cuanto vuelva la señal, entras sin
+              escribir nada.</p>
+            </div>
+            <div class="pie-orbe">
+              <div class="orbe" role="status" aria-label="Reintentando conectar">
+                <i></i><i></i><i></i><i></i><i></i><i></i>
+              </div>
+              <span class="txt">Reintentando…</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="max-width:390px;margin-top:.6rem">
+        <div class="nota bien" style="margin:0">
+          <h3>El orbe sigue girando aquí, y es honesto</h3>
+          <p>En este caso la app <strong>sí</strong> está trabajando: reintenta cada pocos segundos.
+          Es la diferencia con «la sala ya cerró», donde ya no hay nada que esperar.</p>
+          <p>Y el texto dice lo que importa: <strong>no se perdió el lugar</strong>.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="h2">Los dos estados que quedan para después
+    <small>Trazo sin contenido, para que el hueco sea visible sin decidir por ti.</small>
   </div>
 
   <div class="fila">
     <div class="marco">
       <div class="rotulo">parcial · lo que llegó y lo que no</div>
-      <div class="tela v" style="opacity:.55;border-style:dashed">
+      <div class="tela v" style="opacity:.5;border-style:dashed">
         <div class="lienzo">
-          <button class="volver">← Menú</button>
-          <div class="centro">
-            <div class="aviso espera">Estás en sala de espera</div>
-            <div class="yo"><div class="nom">Ana Pérez</div></div>
-            <div class="jugadores"><span class="jug">—</span><span class="jug">—</span></div>
-            <p class="espera-ayuda">Trazo sin contenido: nadie decidió todavía qué se ve cuando la
-            lista de jugadores llega y la partida no.</p>
+          <div class="izq">
+            <button class="volver">← Menú</button>
+            <div class="centro">
+              <div class="aviso espera">Estás en sala de espera</div>
+              <div class="jugadores"><span class="jug">—</span><span class="jug">—</span></div>
+              <p class="espera-ayuda">Trazo sin contenido: nadie decidió qué se ve cuando llega la
+              lista de jugadores y la partida no.</p>
+            </div>
+            <div class="pie-orbe">
+              <div class="orbe" role="status"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+              <span class="txt">—</span>
+            </div>
           </div>
         </div>
       </div>
@@ -294,13 +492,16 @@
 
     <div class="marco">
       <div class="rotulo">éxito-vacío · terminó sin nadie</div>
-      <div class="tela v" style="opacity:.55;border-style:dashed">
+      <div class="tela v" style="opacity:.5;border-style:dashed">
         <div class="lienzo">
-          <button class="volver">← Menú</button>
-          <div class="centro">
-            <div class="aviso espera">Estás en sala de espera</div>
-            <p class="espera-ayuda">Trazo sin contenido: la partida terminó y no anotó nadie. No es
-            un error, y todavía no se decidió cómo se dice.</p>
+          <div class="izq">
+            <button class="volver">← Menú</button>
+            <div class="centro">
+              <div class="aviso espera">Estás en sala de espera</div>
+              <p class="espera-ayuda">Trazo sin contenido: la partida terminó y no anotó nadie. No
+              es un error, y todavía no se decidió cómo se dice.</p>
+            </div>
+            <div style="flex:0 0 auto;height:64px"></div>
           </div>
         </div>
       </div>
@@ -309,11 +510,14 @@
     <div style="flex:1 1 300px;min-width:260px">
       <div class="notas" style="margin-top:0">
         <div class="nota duda">
-          <h3>Decisión de Christian</h3>
-          <p>Los dos quedaron para después el 21/11/2026. Se dibujan sin contenido a propósito: un
-          diseño inventado sería una decisión tomada por quien no le corresponde.</p>
-          <p>Son los que producen las pantallas más raras: la red va a medias, o la partida termina
-          sin puntajes.</p>
+          <h3>Pendientes por decisión de Christian</h3>
+          <p>Los dos quedaron para después el 21/11/2026. Se dibujan sin contenido: un diseño
+          inventado sería una decisión tomada por quien no le corresponde.</p>
+        </div>
+        <div class="nota bien">
+          <h3>El orbe en los seis estados</h3>
+          <p>Va en todos menos «la sala ya cerró», porque es el único donde la app terminó. En
+          «sin conexión» sigue girando, y ahí es verdad: reintenta.</p>
         </div>
       </div>
     </div>

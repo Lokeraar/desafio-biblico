@@ -2,8 +2,24 @@
   "arrangement": "free",
   "positions": {
     "00-sistema.html": {
-      "x": 0,
-      "y": 961
+      "x": 62,
+      "y": 2803
+    },
+    "01-menu.html": {
+      "x": 1482,
+      "y": 2786
+    },
+    "02-entrar.html": {
+      "x": 2920,
+      "y": 2773
+    },
+    "03-sala-espera.html": {
+      "x": 4400,
+      "y": 2773
+    },
+    "04-ronda.html": {
+      "x": 5880,
+      "y": 2773
     }
   }
 }
