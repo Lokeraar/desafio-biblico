@@ -107,6 +107,7 @@ function rutaActual() {
  */
 function ir(vista) {
   app.modal = null;
+  app.entradaRechazada = null;
   app.adminError = null;
   app.editarPregunta = null;
   app.editarVersiculo = null;
@@ -250,6 +251,10 @@ const app = {
   // porque cada aviso vuelve a dibujar el formulario y, sin esto, un error
   // como «Esa sala no existe» borraba el código recién dictado.
   formJoin: { codigo: null, nombre: '' },
+  /* Cuando alguien intenta entrar con el codigo de una sala que ya cerro.
+     Se guarda el codigo para nombrarla y para no borrarlo del campo: la
+     persona querra corregirlo, no escribirlo de nuevo. */
+  entradaRechazada: null,
   // Lo mismo para el código del televisor: un código mal escrito no debe
   // desaparecer del campo al mostrar el error.
   formTV: { codigo: null },
@@ -1420,6 +1425,29 @@ function vistaJugador(vista = 'play') {
       restanteMs: base ? E.restanteMs(base) : null,
       totalMs: rr?.deadlineMs ?? null
     });
+  }
+
+  /* Intento entrar con el codigo de una sala que ya cerro.
+   *
+   * Pantalla propia SOLO aqui: al abrir el formulario no se muestra nada de
+   * esto (seria hablar de una sala que la persona no ha mencionado), y en la
+   * partida tampoco. Es la respuesta a un intento concreto, con el codigo que
+   * se probo. Lo pidio Christian: esa pantalla «solamente debe aparecer si el
+   * usuario intenta ingresar nuevamente a esa misma sala ingresando el codigo
+   * pero ya la sala cerro». */
+  if (!yo && app.entradaRechazada) {
+    return `
+      <main class="crecer columna centro" style="gap:1rem">
+        <div class="aviso espera centro" style="text-align:center">
+          La sala ${esc(app.entradaRechazada.codigo)} ya cerró.
+        </div>
+        <p class="tenue centro chico" style="text-align:center; max-width:34ch">
+          El código estaba bien: la partida terminó. Pide el código de una sala
+          nueva, o vuelve al menú.
+        </p>
+        <button class="boton boton-oro" data-accion="volver-a-entrar">Probar con otro código</button>
+        <button class="boton boton-secundario" data-ir="menu">← Menú</button>
+      </main>`;
   }
 
   if (!yo) {
@@ -2997,7 +3025,22 @@ document.addEventListener('click', async ev => {
           });
         }
         const r = await app.cliente.unirse(codigo, nombre);
-        if (r.error) { ponerAviso('error', traducirError(r.error)); return; }
+        if (r.error) {
+          /* Sala cerrada no es un error de escritura: el codigo estaba bien y
+             la sala ya no existe. Merece su propia pantalla, que le diga que
+             no se equivoco y que puede entrar a otra, en vez de un aviso
+             rojo encima del formulario. Cualquier otro error (nombre repetido,
+             sala inexistente, partida ya arrancada) sigue siendo un aviso:
+             ahi si hay algo que corregir en el formulario. */
+          if (String(r.error).includes('sala_cerrada')) {
+            app.entradaRechazada = { codigo };
+            app.formJoin = { codigo, nombre };
+            render();
+            return;
+          }
+          ponerAviso('error', traducirError(r.error));
+          return;
+        }
 
         app.yo = {
           playerId: r.player_id,
@@ -3137,6 +3180,16 @@ document.addEventListener('click', async ev => {
         ponerAviso('error', traducirError(fallo));
         return;
       }
+      render();
+      break;
+    }
+
+    /* Desde la pantalla de «la sala ya cerró» se vuelve al formulario, con el
+       código todavía escrito para poder corregirlo. */
+    case 'volver-a-entrar': {
+      app.entradaRechazada = null;
+      app.adminError = null;
+      app.aviso = null;
       render();
       break;
     }
