@@ -139,10 +139,127 @@
           ajustes por orientación no le hacían nada. Ahora vive en <code>.config-entrada</code>.</p>
         </div>
         <div class="nota duda">
-          <h3>Pendiente de revisar</h3>
-          <p>Si hay varias salas abiertas, aquí falta un «cerrar salas abiertas» protegido por esta
-          misma clave. Hoy la única forma de cerrar una sala perdida es esperar el barrido de 30
-          minutos.</p>
+          <h3>El cierre de salas, ya dibujado abajo</h3>
+          <p>Christian pidió crearlo: «Para cerrar sala individual (introduciendo el código) como
+          para cerrar todas». Está dibujado en la sección <strong>«Cerrar salas abiertas»</strong>, con
+          sus dos estados: una sala por su código, y todas de una vez.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="h2">Cerrar salas abiertas
+    <small>La salida cuando el presentador pierde una sala: cerrarla con la clave, sin esperar el
+    barrido de 30 minutos.</small>
+  </div>
+
+  <div class="fila">
+    <div class="marco">
+      <div class="rotulo">390×844 · cerrar una sala por su código</div>
+      <div class="tela v">
+        <div style="display:flex;flex-direction:column;height:100%;padding:16px">
+          <div class="fila-entre" style="flex:0 0 auto">
+            <button class="boton-salir">← Volver</button>
+          </div>
+          <div class="app-centro" style="gap:.8rem">
+            <h1 style="margin:0;font-size:var(--t-2xl);font-weight:800;text-align:center">
+              ⚙️ Configuraciones</h1>
+            <div class="tarjeta-config">
+              <h2 style="font-size:var(--t-lg);margin:0 0 .3rem">Sala abierta</h2>
+              <p class="chico tenue" style="margin:0 0 .9rem">
+                Si una sala quedó abierta y ya no tienes su panel, escríbela aquí. Se cierra para
+                todos al instante.</p>
+              <div class="app-campo" style="margin-bottom:.7rem">
+                <label>Código de la sala</label>
+                <input value="B73WS" autocapitalize="characters" spellcheck="false">
+              </div>
+              <button class="boton-grande boton-oro">Cerrar esa sala</button>
+            </div>
+            <div class="aviso info" style="text-align:center">
+              Se cierra tal como lo haría el presentador: los teléfonos lo ven en el siguiente
+              sondeo.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="max-width:390px;margin-top:.6rem">
+        <div class="nota bien" style="margin:0">
+          <h3>Por código, no por identificador</h3>
+          <p>El presentador recuerda <strong>B73WS</strong>, no un <code>uuid</code>. Pedirle el
+          identificador de la base sería pedirle algo que nunca vio.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="marco">
+      <div class="rotulo">390×844 · cerrar todas, con confirmación</div>
+      <div class="tela v">
+        <div style="display:flex;flex-direction:column;height:100%;padding:16px">
+          <div class="fila-entre" style="flex:0 0 auto">
+            <button class="boton-salir">← Volver</button>
+          </div>
+          <div class="app-centro" style="gap:.8rem">
+            <h1 style="margin:0;font-size:var(--t-2xl);font-weight:800;text-align:center">
+              ⚙️ Configuraciones</h1>
+            <div class="tarjeta-config">
+              <h2 style="font-size:var(--t-lg);margin:0 0 .3rem">Salas abiertas</h2>
+              <p class="chico tenue" style="margin:0 0 .6rem">
+                Ahora mismo hay <strong>3 salas</strong> sin cerrar.</p>
+              <ul style="list-style:none;margin:0 0 .9rem;padding:0;
+                   display:flex;flex-direction:column;gap:.3rem">
+                <li class="chico tenue">B73WS · 4 participantes</li>
+                <li class="chico tenue">K92MQ · 2 participantes</li>
+                <li class="chico tenue">T41XR · sin participantes</li>
+              </ul>
+              <button class="boton boton-peligro" style="width:100%">
+                Cerrar las 3 salas</button>
+            </div>
+            <div class="aviso espera" style="text-align:center">
+              ¿Seguro? Se cerrarán las 3 a la vez y no se puede deshacer.
+            </div>
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+              <button class="boton boton-contorno" style="flex:1">Cancelar</button>
+              <button class="boton-grande boton-oro" style="flex:1">Sí, cerrar las 3</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="max-width:390px;margin-top:.6rem">
+        <div class="nota mal" style="margin:0">
+          <h3>Cerrar todas pide confirmación, y dice cuántas</h3>
+          <p>Un botón que borra el trabajo de tres grupos no puede estar a un toque. El texto dice el
+          número (<strong>3</strong>) antes de pulsar, y la confirmación repite el número: quien lee
+          «cerrar 3» sabe qué está cerrando.</p>
+        </div>
+      </div>
+    </div>
+
+    <div style="flex:1 1 300px;min-width:260px">
+      <div class="notas">
+        <div class="nota bien">
+          <h3>Las dos van con la clave maestra ya abierta</h3>
+          <p>Esta pantalla se entra con la clave, y la clave queda verificada en la sesión
+          (<code>app.adminClave</code>). No se pide otra vez para cada sala: sería pedir la misma
+          llave dos veces para la misma puerta.</p>
+        </div>
+        <div class="nota bien">
+          <h3>La sala que existe hoy</h3>
+          <p><code>host_close_room(p_room, p_token)</code> cierra <strong>una</strong> sala, pero pide
+          el <strong>token del presentador</strong>. Si se cerró la pestaña o se cambió de teléfono, ese
+          token ya no está: por eso hace falta la vía por código y con la clave.</p>
+        </div>
+        <div class="nota bien">
+          <h3>Dos formas, un solo sitio</h3>
+          <p>Una sala por su <strong>código</strong> cuando se sabe cuál es, o <strong>todas</strong>
+          cuando ya no se recuerda ninguna. Las dos viven aquí, en Configuraciones, porque las dos son
+          mantenimiento y las dos piden la misma clave que ya protege esta pantalla.</p>
+        </div>
+        <div class="nota bien">
+          <h3>El caso que resuelve</h3>
+          <p>El presentador cerró la pestaña, cambió de teléfono o se le fue la señal con la sala
+          abierta. Los jugadores siguen esperando en una pantalla que ya nadie conduce. Hoy la única
+          salida es el barrido a los 30 minutos; con esto se cierra en el momento.</p>
         </div>
       </div>
     </div>
