@@ -1349,10 +1349,19 @@ body.tv .qr-tv { max-width: clamp(220px, 34vmin, 380px); }
   margin-inline: auto;
 }
 .juego-tarjeta {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  /* FLEX CON ENVOLTURA, no una rejilla de tres columnas fijas.
+   *
+   * Christian: «en menu vertical cuando selecciono uno y aparece que esta
+   * seleccionado se corta el texto y no se lee completo». La causa era la
+   * tercera columna: la insignia «Seleccionado» es mas larga que «Elegible»,
+   * y al crecer se comia el ancho del nombre, que quedaba aplastado.
+   *
+   * Con `flex-wrap`, si la insignia no cabe a la derecha BAJA a su propia
+   * linea, y el nombre conserva el ancho. No hay que elegir entre los dos. */
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: .75rem;
+  gap: .5rem .75rem;
   padding: .7em .9em;
   border-radius: 14px;
   border: 1px solid rgba(110, 227, 238, .22);
@@ -1382,6 +1391,9 @@ body.tv .qr-tv { max-width: clamp(220px, 34vmin, 380px); }
   flex-direction: column;
   gap: .1rem;
   min-width: 0;
+  /* El texto pide el ancho que necesita; si la insignia no cabe al lado, baja
+     a su propia linea en vez de comprimir el nombre. */
+  flex: 1 1 8rem;
 }
 .juego-tarjeta .nombre {
   font-weight: 800;
@@ -1415,6 +1427,9 @@ body.tv .qr-tv { max-width: clamp(220px, 34vmin, 380px); }
   color: #9df0c4;
   border: 1px solid rgba(31, 191, 117, .45);
   white-space: nowrap;
+  /* No se encoge nunca: o entra a la derecha del nombre, o baja a su linea. */
+  flex: 0 0 auto;
+  margin-left: auto;
 }
 .juego-tarjeta:disabled .insignia {
   background: rgba(255, 255, 255, .08);
@@ -2744,17 +2759,22 @@ body.tv .opciones { grid-template-columns: 1fr; }
 
   /* Las tres tarjetas en una fila: acostado hay ancho y falta alto. */
   .menu-lienzo .menu-juegos {
+    /* VARIAS FILAS si hace falta, no una sola aplastada. Christian: «en menu
+       horizontal en la parte de escoger el juego no se lee el nombre del
+       juego, usa varias filas para distintos juegos si hace falta».
+       Con las tres tarjetas en una fila, cada una se quedaba con un tercio del
+       ancho y el nombre no cabia. */
     flex-direction: row;
+    flex-wrap: wrap;
     max-width: none;
     gap: .5rem;
   }
-  .menu-lienzo .menu-juegos .juego-card {
-    flex: 1 1 0;
+  .menu-lienzo .menu-juegos .juego-tarjeta {
+    /* `auto` como base: la tarjeta pide el ancho que su texto necesita y baja
+       a la fila siguiente si no cabe, en vez de encogerse hasta cortar. */
+    flex: 1 1 clamp(11rem, 30%, 20rem);
     min-width: 0;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: .35rem;
-    padding: .6rem;
+    padding: .5em .7em;
   }
 }
 
