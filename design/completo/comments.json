@@ -248,8 +248,120 @@
       "excerpt": "Esperando al presentador",
       "comment": "Muévelo a una segunda columna, en la primera estaría lo demás, en la segunda solo el thinking-oro en grande.",
       "createdAt": "2026-11-21T14:22:25.373Z",
-      "status": "open",
+      "status": "resolved",
       "sentAt": "2026-11-21T14:22:25.422Z",
+      "resolvedAt": "2026-11-21T15:59:59.163Z",
+      "resolution": "Acostado en dos columnas: a la izquierda el nombre y los datos, a la derecha solo el orbe a 96 px"
+    },
+    {
+      "id": "5br34nop",
+      "file": "03-sala-espera.html",
+      "selector": "body > div > div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(2) > div > div:nth-of-type(2) > div:nth-of-type(1) > span:nth-of-type(1)",
+      "excerpt": "Juego:",
+      "comment": "Esto y el nombre del juego (Completar el versículo) van en la parte superior derecha de de la pantalla, no de la caja.",
+      "createdAt": "2026-11-21T15:57:12.357Z",
+      "status": "resolved",
+      "sentAt": "2026-11-21T15:57:12.432Z",
+      "resolvedAt": "2026-11-21T15:59:19.441Z",
+      "resolution": "«Juego:» y el nombre pasan a la cabecera de la pantalla (arriba a la derecha), fuera de la caja central, en vertical y acostado; lo mismo en la app"
+    },
+    {
+      "id": "lzbo1vp6",
+      "file": "03-sala-espera.html",
+      "selector": "body > div > div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(2) > div > div:nth-of-type(2) > div > div",
+      "excerpt": "",
+      "comment": "Esto agrándalo de tamaño que abarque esa caja hasta encima del esperando al presentador y esperando al presentador ponlo como footer",
+      "createdAt": "2026-11-21T16:00:41.572Z",
+      "status": "open",
+      "sentAt": "2026-11-21T16:00:41.653Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "1fpq3lls",
+      "file": "03-sala-espera.html",
+      "selector": "body > div > div:nth-of-type(6) > div:nth-of-type(2) > div:nth-of-type(2) > div > div:nth-of-type(2) > p",
+      "excerpt": "Conectando…",
+      "comment": "Agrégale encima thinking-orbs aleatorios",
+      "createdAt": "2026-11-21T16:02:11.751Z",
+      "status": "open",
+      "sentAt": "2026-11-21T16:02:11.807Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "b9mtnlyg",
+      "file": "04-ronda.html",
+      "selector": "body > div > div:nth-of-type(4) > div:nth-of-type(1) > div:nth-of-type(2) > div > div:nth-of-type(2) > div:nth-of-type(1) > p",
+      "excerpt": "Nuestras cartas sois, escritas en nuestro corazón , conocidas y leídas de todos los hombres.",
+      "comment": "El texto debe comenzar de arriba hacia abajo, de izquierda a derecha.",
+      "createdAt": "2026-11-21T16:03:25.814Z",
+      "status": "open",
+      "sentAt": "2026-11-21T16:03:25.903Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "vbkta3lb",
+      "file": "04-ronda.html",
+      "selector": "body > div > div:nth-of-type(4) > div:nth-of-type(1) > div:nth-of-type(2) > div > div:nth-of-type(2) > div:nth-of-type(2) > button",
+      "excerpt": "PRESIONAR",
+      "comment": "Me encanta el tamaño del botón, algo asi quiero que apliques en las verticales también pero en sus debidas cajas.",
+      "createdAt": "2026-11-21T16:04:32.519Z",
+      "status": "open",
+      "sentAt": "2026-11-21T16:04:32.600Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "hmqbcrm0",
+      "file": "04-ronda.html",
+      "selector": "body > div > div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(2) > div > div:nth-of-type(2) > div:nth-of-type(1) > p",
+      "excerpt": "Nuestras cartas sois, escritas en nuestro corazón , conocidas y leídas de todos los hombres.",
+      "comment": "El texto debe comenzar de arriba hacia abajo, de izquierda a derecha, igualmente en las otras pantallas verticales.",
+      "createdAt": "2026-11-21T16:05:48.889Z",
+      "status": "open",
+      "sentAt": "2026-11-21T16:05:48.972Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "t71llwd7",
+      "file": "04-ronda.html",
+      "selector": "body > div > div:nth-of-type(4) > div:nth-of-type(1) > div:nth-of-type(2) > div > div:nth-of-type(2) > div:nth-of-type(1) > div",
+      "excerpt": "14 s",
+      "comment": "Céntralo",
+      "createdAt": "2026-11-21T16:07:24.882Z",
+      "status": "open",
+      "sentAt": "2026-11-21T16:07:24.939Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "or8m90sh",
+      "file": "04-ronda.html",
+      "selector": "body > div > div:nth-of-type(7) > div:nth-of-type(1) > div:nth-of-type(2) > div > div:nth-of-type(2) > p",
+      "excerpt": "Nuestras cartas sois, escritas en nuestro corazón , conocidas y leídas de todos los hombres.",
+      "comment": "El texto debe comenzar de arriba hacia abajo, de izquierda a derecha.",
+      "createdAt": "2026-11-21T16:08:02.147Z",
+      "status": "open",
+      "sentAt": "2026-11-21T16:08:02.226Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "r0u9k41p",
+      "file": "04-ronda.html",
+      "selector": "body > div > div:nth-of-type(7) > div:nth-of-type(1) > div:nth-of-type(2) > div > div:nth-of-type(3) > span:nth-of-type(2) > span:nth-of-type(2)",
+      "excerpt": "9 s",
+      "comment": "Agregale la barra temporizador",
+      "createdAt": "2026-11-21T16:12:15.032Z",
+      "status": "open",
+      "sentAt": "2026-11-21T16:12:15.176Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "926gc0uz",
+      "file": "05-presentador.html",
+      "selector": "body > div > div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(2) > div > div:nth-of-type(1) > div",
+      "excerpt": "Juego: Completar el versículo",
+      "comment": "Text-marketing a 2+1",
+      "createdAt": "2026-11-21T16:14:46.077Z",
+      "status": "open",
+      "sentAt": "2026-11-21T16:14:46.146Z",
       "resolvedAt": null
     }
   ]

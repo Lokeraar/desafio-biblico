@@ -54,8 +54,17 @@
       <div class="rotulo">390×844 · esperando</div>
       <div class="tela v">
         <div style="display:flex;flex-direction:column;height:100%">
-          <div style="padding:16px 16px 0">
+          <!-- EL ROTULO DEL JUEGO VA EN LA CABECERA DE LA PANTALLA, no dentro
+               de la caja central. Christian: «Esto y el nombre del juego van en
+               la parte superior derecha de la pantalla, no de la caja».
+               Va en la misma fila que «Volver», empujado a la derecha. -->
+          <div style="padding:16px 16px 0;display:flex;align-items:flex-start;
+               justify-content:space-between;gap:.75rem">
             <button class="boton-salir">← Volver</button>
+            <div class="app-rotulo-juego">
+              <span class="rot">Juego:</span>
+              <span class="nombre">Completar el versículo</span>
+            </div>
           </div>
           <div class="esp-main">
             <h2 class="esp-titulo">Ya estás dentro</h2>
@@ -67,10 +76,6 @@
               Este es tu nombre/alias en esta partida
             </p>
             <p class="esp-puntos">0 puntos</p>
-            <div class="app-rotulo-juego" style="align-self:flex-end;margin-left:0">
-              <span class="rot">Juego:</span>
-              <span class="nombre">Completar el versículo</span>
-            </div>
             <div class="orbe-espera" style="align-self:center">
               <div style="width:64px;height:64px;border-radius:50%;
                    background:radial-gradient(circle at 40% 35%, rgba(191,234,242,.85), rgba(191,234,242,.12) 70%);
@@ -137,17 +142,21 @@
               <p class="esp-nombre" style="font-size:32px;line-height:35px">Ana Pérez</p>
               <p class="esp-puntos" style="margin:0">Este es tu nombre/alias en esta partida</p>
               <p class="esp-puntos">0 puntos</p>
-              <div class="app-rotulo-juego" style="align-self:flex-end;margin-left:0">
-                <span class="rot">Juego:</span>
-                <span class="nombre">Completar el versículo</span>
-              </div>
             </div>
           </div>
 
-          <!-- columna 2: solo el orbe, en grande y centrado -->
-          <div style="flex:0 0 34%;display:flex;align-items:center;justify-content:center;
-               border-left:1px solid rgba(110,227,238,.18);padding:8px 16px">
-            <div class="orbe-espera" style="align-items:center">
+          <!-- columna 2: arriba el rotulo del juego —la esquina superior
+               derecha de la PANTALLA— y debajo el orbe, en grande y centrado.
+               Christian: «van en la parte superior derecha de la pantalla, no
+               de la caja». -->
+          <div style="flex:0 0 34%;display:flex;flex-direction:column;
+               border-left:1px solid rgba(110,227,238,.18);padding:10px 16px">
+            <div class="app-rotulo-juego" style="margin-left:0;align-self:flex-end">
+              <span class="rot">Juego:</span>
+              <span class="nombre">Completar el versículo</span>
+            </div>
+            <div class="orbe-espera" style="align-items:center;align-self:center;
+                 justify-content:center;flex:1 1 auto;display:flex;flex-direction:column">
               <div style="width:96px;height:96px;border-radius:50%;
                    background:radial-gradient(circle at 40% 35%, rgba(191,234,242,.92), rgba(191,234,242,.10) 72%);
                    border:1px solid rgba(191,234,242,.4)"></div>

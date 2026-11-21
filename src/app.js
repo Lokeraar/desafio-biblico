@@ -1653,7 +1653,12 @@ function vistaJugador(vista = 'play') {
 
   if (!r) {
     return `
-      ${barraVolver()}
+      ${/* EL ROTULO DEL JUEGO VA EN LA CABECERA DE LA PANTALLA, no dentro del
+           `main` central. Christian: «Esto y el nombre del juego van en la parte
+           superior derecha de la pantalla, no de la caja».
+           `barraVolver` acepta un `extra` que ya se coloca a la derecha con
+           `space-between`, asi que no hace falta marcado nuevo. */''}
+      ${barraVolver({ extra: rotuloJuego() })}
       <main class="crecer columna centro" style="gap:1rem">
         <h2 style="font-size:var(--t-lg)">Ya estás dentro</h2>
         <p class="tenue centro chico" style="text-align:center; max-width:30ch">
@@ -1667,7 +1672,6 @@ function vistaJugador(vista = 'play') {
           Este es tu nombre/alias en esta partida
         </p>
         <p class="chico tenue">${miPuntaje?.score ?? 0} puntos</p>
-        ${rotuloJuego()}
         ${/* El orbe dice «la app sigue trabajando», para que la espera no se lea
              como un cuelgue. El estado sale de `lib/orbe.js`, no se elige aqui. */''}
         <div class="orbe-espera" data-orbe="${estadoDeSala('esperando')}">

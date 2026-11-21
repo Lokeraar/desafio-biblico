@@ -17,3 +17,10 @@ Thumbs.db
 supabase/.temp/
 .shots/
 .issues/
+
+# Copia generada del sitio para servir en local (scripts/servir.sh).
+# En git solo viven las imagenes de public/img.
+public/*
+!public/img/
+public/img/*
+!public/img/*.webp
