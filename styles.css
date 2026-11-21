@@ -2531,7 +2531,7 @@ body.tv .opciones { grid-template-columns: 1fr; }
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     grid-auto-rows: min-content;
     align-items: start;
-    gap: .6rem 1rem;
+    gap: .35rem .9rem;
   }
   .modal form[data-form="pregunta"] > .campo,
   .modal form[data-form="versiculo"] > .campo { min-width: 0; }
@@ -2541,11 +2541,43 @@ body.tv .opciones { grid-template-columns: 1fr; }
   .modal form[data-form="versiculo"] > .aviso,
   .modal form[data-form="versiculo"] > .fila { grid-column: 1 / -1; }
 
-  /* Las cuatro respuestas en rejilla 2x2: en columna pedian cuatro renglones. */
-  .modal form[data-form="pregunta"] .respuestas,
-  .modal form[data-form="pregunta"] > .campo:last-of-type { min-width: 0; }
-  .modal form[data-form="pregunta"] .opcion-fila { min-width: 0; }
+  /* Las cuatro respuestas en 2x2. Medido: apiladas piden 331 px, y en una
+     ventana de 390 eso solo ya no cabe; en dos columnas son unos 180. */
+  .modal form[data-form="pregunta"] .campo:has(.opcion-fila) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: .35rem .6rem;
+    align-content: start;
+  }
+  .modal form[data-form="pregunta"] .campo:has(.opcion-fila) > label,
+  .modal form[data-form="pregunta"] .campo:has(.opcion-fila) > p {
+    grid-column: 1 / -1;
+    margin: 0;
+    /* La explicacion de «una correcta y tres incorrectas» ya la dice el
+       rotulo y se entiende sola: acostado ocupa 32 px de los que no hay. */
+    font-size: var(--t-xs);
+    line-height: 1.2;
+  }
+  .modal form[data-form="pregunta"] .opcion-fila {
+    min-width: 0;
+    gap: .4rem;
+  }
+  .modal form[data-form="pregunta"] .opcion-fila input[type="text"] {
+    padding-block: .18em;
+    font-size: var(--t-sm);
+  }
   .modal form[data-form="pregunta"] .opcion-fila input[type="text"] { min-width: 0; }
+
+  /* El area de texto no necesita tres renglones acostado: con dos se ve lo que
+     se escribe y se gana un renglon entero de alto. */
+  .modal form[data-form="pregunta"] textarea,
+  .modal form[data-form="versiculo"] textarea {
+    height: 3.2em;
+    min-height: 3.2em;
+    padding-block: .35em;
+    resize: none;
+  }
+
 }
 
 /*
