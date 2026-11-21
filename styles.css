@@ -2568,6 +2568,28 @@ body.tv .opciones { grid-template-columns: 1fr; }
   }
   .modal form[data-form="pregunta"] .opcion-fila input[type="text"] { min-width: 0; }
 
+  /* LAS ACCIONES DEL EDITOR DE VERSICULO, SIEMPRE A LA VISTA.
+   *
+   * Medido: el editor pide 240 px de scroll interno acostado (titulo,
+   * referencia, texto, contador, vista previa, deshacer y modo ocultar). Es un
+   * editor con vista previa y su contenido crece con el versiculo, asi que el
+   * scroll ahi es legitimo.
+   *
+   * Lo que NO es legitimo es que «Guardar» quede debajo del scroll: hay que
+   * bajar para guardar, y si el presentador no se da cuenta pierde lo escrito.
+   * El formulario de acciones se queda pegado al fondo del modal. */
+  .modal:has(> form[data-form="versiculo"]) {
+    overflow-y: auto;
+  }
+  .modal > form[data-form="versiculo"] {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    background: linear-gradient(to top, var(--fondo-2) 70%, transparent);
+    padding-top: .4rem;
+    margin-top: 0;
+  }
+
   /* El area de texto no necesita tres renglones acostado: con dos se ve lo que
      se escribe y se gana un renglon entero de alto. */
   .modal form[data-form="pregunta"] textarea,
