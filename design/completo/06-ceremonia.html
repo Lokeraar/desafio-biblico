@@ -45,6 +45,49 @@
     font-size: var(--t-sm); line-height: 1.3;
     color: var(--tinta-suave); text-align: center;
   }
+
+  /* ================= EL CONFETI, DIBUJADO Y ANIMADO =================
+     Christian: «Elimina esta regla y arregla la animacion, el confeti estaba
+     bien como estaba».
+
+     El confeti NO estaba dibujado en el artboard: habia una nota explicando que
+     era una animacion y que lo importante era que no tapara las filas. Christian
+     dice que el confeti estaba bien y que lo que hay que arreglar es la
+     animacion, asi que la nota se va y el confeti se dibuja de verdad.
+
+     El CSS es el de `styles.css:1134`, copiado tal cual: `position:absolute`
+     dentro del marco, `z-index:0`, y el contenido por encima con `z-index:1`.
+     Esa es LA razon de que no tape los nombres: un elemento posicionado se
+     pinta por encima de los que estan en el flujo normal, sin importar el orden
+     del DOM, asi que el contenido se posiciona y sube de capa. */
+  .marco-oro > .titulo-ceremonia,
+  .marco-oro > .felicitacion,
+  .marco-oro > .lista-ceremonia,
+  .marco-oro > .pista-ceremonia,
+  .marco-oro > .ceremonia-footer,
+  .marco-oro > .toque-revelar {
+    position: relative;
+    z-index: 1;
+  }
+  .confeti{
+    position:absolute; inset:0; overflow:hidden; pointer-events:none;
+    border-radius:10px; z-index:0;
+  }
+  .confeti i{
+    position:absolute; top:-12px; width:7px; height:11px;
+    border-radius:1px; opacity:.9;
+    animation: caer linear infinite;
+  }
+  @keyframes caer{
+    0%  { transform: translateY(-14px) rotate(0deg); opacity:0; }
+    8%  { opacity:.95; }
+    100%{ transform: translateY(105vh) rotate(600deg); opacity:.85; }
+  }
+  /* Con movimiento reducido el confeti no se mueve ni se muestra: es adorno,
+     y el adorno no puede ser lo unico que distingue el primer puesto. */
+  @media (prefers-reduced-motion: reduce){
+    .confeti i{ animation:none; display:none; }
+  }
 </style>
 </head>
 <body>
@@ -158,6 +201,40 @@
       <div class="tela v">
         <div class="pantalla-ceremonia">
           <div class="marco-oro">
+            <!-- EL CONFETI, como lo emite `confetiHTML` de render.js:
+                 30 piezas con su posicion, su color y su desfase. -->
+            <div class="confeti" aria-hidden="true">
+              <i style="left:0%;background:#f5c93b;animation-delay:0.0s;animation-duration:3.2s"></i>
+              <i style="left:37%;background:#ffffff;animation-delay:1.3s;animation-duration:3.9000000000000004s"></i>
+              <i style="left:74%;background:#3fae86;animation-delay:2.6s;animation-duration:4.6s"></i>
+              <i style="left:11%;background:#d9a520;animation-delay:3.9s;animation-duration:5.300000000000001s"></i>
+              <i style="left:48%;background:#2b7f96;animation-delay:1.2s;animation-duration:3.6s"></i>
+              <i style="left:85%;background:#ff5c8a;animation-delay:2.5s;animation-duration:4.300000000000001s"></i>
+              <i style="left:22%;background:#f5c93b;animation-delay:3.8s;animation-duration:5.0s"></i>
+              <i style="left:59%;background:#ffffff;animation-delay:1.1s;animation-duration:3.3000000000000003s"></i>
+              <i style="left:96%;background:#3fae86;animation-delay:2.4s;animation-duration:4.0s"></i>
+              <i style="left:33%;background:#d9a520;animation-delay:3.7s;animation-duration:4.7s"></i>
+              <i style="left:70%;background:#2b7f96;animation-delay:1.0s;animation-duration:5.4s"></i>
+              <i style="left:7%;background:#ff5c8a;animation-delay:2.3s;animation-duration:3.7s"></i>
+              <i style="left:44%;background:#f5c93b;animation-delay:3.6s;animation-duration:4.4s"></i>
+              <i style="left:81%;background:#ffffff;animation-delay:0.9s;animation-duration:5.1s"></i>
+              <i style="left:18%;background:#3fae86;animation-delay:2.2s;animation-duration:3.4000000000000004s"></i>
+              <i style="left:55%;background:#d9a520;animation-delay:3.5s;animation-duration:4.1000000000000005s"></i>
+              <i style="left:92%;background:#2b7f96;animation-delay:0.8s;animation-duration:4.800000000000001s"></i>
+              <i style="left:29%;background:#ff5c8a;animation-delay:2.1s;animation-duration:5.5s"></i>
+              <i style="left:66%;background:#f5c93b;animation-delay:3.4s;animation-duration:3.8000000000000003s"></i>
+              <i style="left:3%;background:#ffffff;animation-delay:0.7s;animation-duration:4.5s"></i>
+              <i style="left:40%;background:#3fae86;animation-delay:2.0s;animation-duration:5.2s"></i>
+              <i style="left:77%;background:#d9a520;animation-delay:3.3s;animation-duration:3.5s"></i>
+              <i style="left:14%;background:#2b7f96;animation-delay:0.6s;animation-duration:4.2s"></i>
+              <i style="left:51%;background:#ff5c8a;animation-delay:1.9s;animation-duration:4.9s"></i>
+              <i style="left:88%;background:#f5c93b;animation-delay:3.2s;animation-duration:3.2s"></i>
+              <i style="left:25%;background:#ffffff;animation-delay:0.5s;animation-duration:3.9000000000000004s"></i>
+              <i style="left:62%;background:#3fae86;animation-delay:1.8s;animation-duration:4.6s"></i>
+              <i style="left:99%;background:#d9a520;animation-delay:3.1s;animation-duration:5.300000000000001s"></i>
+              <i style="left:36%;background:#2b7f96;animation-delay:0.4s;animation-duration:3.6s"></i>
+              <i style="left:73%;background:#ff5c8a;animation-delay:1.7s;animation-duration:4.300000000000001s"></i>
+            </div>
             <h2 class="titulo-ceremonia">🏆 Clasificación</h2>
             <p class="felicitacion">🎉 ¡Felicitaciones, Ana Pérez!</p>
             <ul class="lista-ceremonia">
@@ -235,12 +312,6 @@
           <h3>El que mira se reconoce</h3>
           <p>Su fila lleva borde cian (<code>.fila-clasif.yo</code>). Sin eso, en una tabla de ocho hay
           que buscarse leyendo.</p>
-        </div>
-        <div class="nota mal">
-          <h3>El confeti no puede tapar los nombres</h3>
-          <p>Es un defecto que ya ocurrió: el confeti se dibujaba encima de la lista y los nombres
-          quedaban ilegibles justo en el momento que todos miran. Tiene que ir detrás o fuera del área
-          de las filas.</p>
         </div>
       </div>
     </div>
