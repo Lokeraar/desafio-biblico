@@ -109,7 +109,25 @@ body {
 .pantalla.pantalla-tv {
   height: 100dvh;
   max-height: 100dvh;
-  overflow: hidden;
+  /* SE PUEDE DESPLAZAR, no se corta.
+   *
+   * Christian: «Al pedir que las paginas cuyo contenido pueda verse completo
+   * sin necesidad de scrollear se muestre sin hacerlo no significa que no se
+   * pueda, es solo una forma de decir que se aproveche al maximo las
+   * dimensiones antes de requerir scrollear, no es un bloqueo, si en algun
+   * momento se necesita scrollear, debe permitirlo».
+   *
+   * Estaba en `overflow: hidden`, que CORTA lo que no cabe: si el ajuste no
+   * lograba que todo entrara (un telefono muy bajito, el teclado abierto, un
+   * versiculo larguisimo), lo que sobraba desaparecia sin forma de llegar a
+   * ello. Ahora `auto`: si cabe, no aparece ninguna barra; si no cabe, se
+   * desplaza.
+   *
+   * El ajuste sigue funcionando igual: la caja conserva alto fijo, que es lo
+   * que `techoDeLaCaja` necesita para calcular. El scroll es la red debajo,
+   * no el sustituto. */
+  overflow-y: auto;
+  overscroll-behavior: contain;
   /* `dvh` sigue al teclado y a la barra del navegador; `vh` no. */
   min-height: 0;
 }
@@ -2690,6 +2708,11 @@ body.tv .opciones { grid-template-columns: 1fr; }
   /* El `gap:1rem` de este `main` estaba en linea y ganaba sobre la clase.
      Acostado se aprieta, igual que el titulo y el relleno del boton. */
   .entrar-sala { gap: .5rem !important; }
+
+  /* Configuraciones: mismo criterio. Medido acostado pedia 431 px en 390. */
+  .config-entrada { gap: .5rem !important; }
+  .config-entrada > h1 { font-size: var(--t-lg); margin: 0; }
+  .config-entrada > .tenue { font-size: var(--t-xs); margin: 0; }
   .entrar-sala > h1 {
     font-size: var(--t-lg);
     margin: 0;
@@ -2755,8 +2778,22 @@ body.tv .opciones { grid-template-columns: 1fr; }
   min-height: 0;
   margin-top: 0;
   padding-bottom: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  /* EL MENU NO TIENE SCROLL PROPIO: scrollea la PAGINA.
+   *
+   * Christian: «en menu no puedo deslizar desde cualquier parte, solo si
+   * deslizo pisando inicialmente la portada, no deberia ser asi sino en
+   * general».
+   *
+   * LA CAUSA ERA ESTE PAR. `overflow-y: auto` convertia el cuerpo en un
+   * contenedor con scroll propio, y `overscroll-behavior: contain` le prohibe
+   * pasar el gesto a su ancestro. Pero el contenido del cuerpo CABE justo
+   * (medido: scrollHeight 1190 = clientHeight 1190), asi que no tenia nada que
+   * desplazar: el gesto moria ahi. Solo funcionaba empezando sobre la portada,
+   * que queda FUERA de este contenedor y por eso si llegaba al documento.
+   *
+   * Sin las dos lineas, el menu crece con la pagina y el documento scrollea
+   * desde cualquier punto. Es lo que pide el criterio: aprovechar el espacio
+   * primero, y permitir desplazarse cuando haga falta. */
 }
 
 @media (min-aspect-ratio: 1/1) {

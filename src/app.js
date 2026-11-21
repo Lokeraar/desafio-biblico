@@ -1959,13 +1959,17 @@ function vistaTV() {
       ? app.formTV.codigo
       : (codigoDeUrl() ?? '');
     return `
-      <main class="crecer columna centro" style="gap:1rem">
+      ${/* Mismo patron que la entrada del participante: el `gap` va en la
+           CLASE y no en linea, porque un estilo en linea gana sobre cualquier
+           regla y no hay forma de apretarlo acostado. Medido: en 844x390 este
+           formulario pedia 511 px en una ventana de 390. */''}
+      <main class="crecer columna centro entrar-sala">
         <h1>Desafío Bíblico</h1>
         <p class="tenue" style="text-align:center; max-width:34ch">
           Escribe el código que muestra la pantalla del presentador y este
           televisor sigue la partida.
         </p>
-        <div class="columna" style="gap:.8rem; max-width:var(--ancho-form); width:100%">
+        <div class="columna form-entrada" style="gap:.8rem; max-width:var(--ancho-form); width:100%">
           <div class="campo">
             <label for="codigo-tv">Código de la sala ${ayuda('Son los cinco caracteres que muestra el presentador. Se pueden escribir con espacios: «B 7 3 W S» es lo mismo que «B73WS».')}</label>
             <input id="codigo-tv" type="text" maxlength="12" autocapitalize="characters"

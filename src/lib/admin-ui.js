@@ -633,7 +633,7 @@ export function vistaConfig({ hayClave = false } = {}) {
     <div class="fila-entre">
       <button class="boton boton-secundario" data-ir="menu">← Volver</button>
     </div>
-    <main class="crecer columna centro" style="gap:1.2rem">
+    <main class="crecer columna centro config-entrada">
       <h1>⚙️ Configuraciones</h1>
       <p class="tenue" style="text-align:center">
         La clave maestra protege los temas y las preguntas del juego.
