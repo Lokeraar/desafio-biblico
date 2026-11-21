@@ -398,18 +398,22 @@ export function pantallaParticipante(estado, {
         <span class="nombre-barra">${esc(yo?.name ?? '')}</span>
         <span class="puntos">${yo?.score ?? 0} pts</span>
       </div>
-      ${r.reference ? `<span class="ref">${esc(r.reference)}</span>` : ''}
-      ${r.state === 'open' ? relojHTML(restanteMs, totalMs, 'reloj-jug') : ''}
-      <p class="versiculo">${versiculoHTML(sinReferenciaAlFinal(r.prompt, r.reference))}</p>
-      <div class="pie-jugador">
-        ${reintentando
-          ? '<p class="reconectando" role="status" aria-live="polite"><span class="girando" aria-hidden="true"></span>Reconectando…</p>'
-          : ''}
-        ${aviso ? `<div class="aviso ${aviso.tipo}">${esc(aviso.texto)}</div>` : ''}
-        ${turno ? `<div class="aviso neutro">${esc(turno)}</div>` : ''}
-        ${boton.activo
-          ? `<button class="boton-ok" type="button" data-accion="pulsar">${esc(boton.texto)}</button>`
-          : `<button class="boton-ok bloqueado" type="button" disabled>${esc(boton.texto)}</button>`}
+      <div class="cuerpo-jugador">
+        <div class="zona-versiculo">
+          ${r.reference ? `<span class="ref">${esc(r.reference)}</span>` : ''}
+          ${r.state === 'open' ? relojHTML(restanteMs, totalMs, 'reloj-jug') : ''}
+          <p class="versiculo">${versiculoHTML(sinReferenciaAlFinal(r.prompt, r.reference))}</p>
+        </div>
+        <div class="pie-jugador">
+          ${reintentando
+            ? '<p class="reconectando" role="status" aria-live="polite"><span class="girando" aria-hidden="true"></span>Reconectando…</p>'
+            : ''}
+          ${aviso ? `<div class="aviso ${aviso.tipo}">${esc(aviso.texto)}</div>` : ''}
+          ${turno ? `<div class="aviso neutro">${esc(turno)}</div>` : ''}
+          ${boton.activo
+            ? `<button class="boton-ok" type="button" data-accion="pulsar">${esc(boton.texto)}</button>`
+            : `<button class="boton-ok bloqueado" type="button" disabled>${esc(boton.texto)}</button>`}
+        </div>
       </div>
     </div>`;
 }

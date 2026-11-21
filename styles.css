@@ -1892,6 +1892,68 @@ body.tv .opciones { grid-template-columns: 1fr; }
   min-height: 0;
 }
 
+/*
+ * DE PIE: una columna. El versiculo arriba, el pie con el boton abajo.
+ * ACOSTADO: DOS COLUMNAS, el versiculo a la izquierda y el boton a la derecha.
+ *
+ * Por que dos columnas y no una: acostado la pantalla es ancha y baja (844x390
+ * en un telefono). El boton se quedaba con 58vh, que en 390 px de alto son
+ * 226, y al versiculo le dejaba 30 px: el texto media 47 y se cortaba. Una
+ * columna no puede resolver eso porque el alto no da; partirlo en dos si,
+ * porque el ancho sobraba.
+ *
+ * Medido antes: participante acostado, caja del versiculo 30 px de alto con un
+ * texto de 47 px. Despues: la caja pasa de 30 a ~150 px.
+ */
+.cuerpo-jugador {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(.4rem, 1.2vh, .8rem);
+}
+
+.jugador-versiculo .zona-versiculo {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+}
+
+/* `min-aspect-ratio` y no `orientation: landscape`: lo que importa es que haya
+   MAS ANCHO QUE ALTO, que es lo que permite partir en columnas. Un telefono
+   acostado y una tablet de pie no se distinguen por el nombre de la
+   orientacion, sino por esa proporcion. */
+@media (min-aspect-ratio: 1/1) {
+  .cuerpo-jugador {
+    flex-direction: row;
+    align-items: stretch;
+    gap: clamp(.6rem, 1.6vw, 1.2rem);
+  }
+
+  /* El texto manda: se queda con el ancho sobrante. */
+  .jugador-versiculo .zona-versiculo {
+    flex: 1 1 58%;
+    min-width: 0;
+  }
+
+  /* El pie, con el boton, a la derecha y con ancho propio: nunca tan ancho
+     que aplaste al texto ni tan angosto que el boton deje de ser circular. */
+  .jugador-versiculo .pie-jugador {
+    flex: 0 0 auto;
+    width: clamp(9rem, 26%, 16rem);
+    min-width: 0;
+    justify-content: center;
+  }
+
+  /* Acostado el alto es el recurso escaso: el boton no puede pedir 58vh. */
+  .jugador-versiculo .boton-ok {
+    max-height: 100%;
+    max-width: 100%;
+  }
+}
+
 .barra-jugador {
   display: flex;
   align-items: center;

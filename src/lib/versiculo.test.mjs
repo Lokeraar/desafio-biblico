@@ -723,14 +723,14 @@ console.log('=== El versiculo ocupa el alto y el boton el resto ===');
 
 const cssVers = readFileSync(new URL('../../styles.css', import.meta.url), 'utf8');
 
-const reglaVers = (cssVers.match(/\.jugador-versiculo \.versiculo \{[^}]*\}/)?.[0] ?? '')
+const reglaVers = (cssVers.match(/^\.jugador-versiculo \.versiculo \{[^}]*\}/m)?.[0] ?? '')
   .replace(/\/\*[\s\S]*?\*\//g, ' ');
 t(reglaVers.includes('flex: 1 1 auto'),
   'el versiculo crece: se queda con el espacio de arriba');
 
 /* Sin los comentarios: el texto que explica POR QUE no lleva `height: 100%`
    menciona esa propiedad, y la prueba se confundiria con la declaracion. */
-const reglaBoton = (cssVers.match(/\.boton-ok \{[^}]*\}/)?.[0] ?? '')
+const reglaBoton = (cssVers.match(/^\.boton-ok \{[^}]*\}/m)?.[0] ?? '')
   .replace(/\/\*[\s\S]*?\*\//g, ' ');
 t(reglaBoton.includes('aspect-ratio: 1'), 'el boton sigue siendo circular');
 t(reglaBoton.includes('flex: 1 1 auto'), 'y crece con el alto disponible');
@@ -741,13 +741,13 @@ t(reglaBoton.includes('max-width: 100%'),
 t(!/height:\s*100%/.test(reglaBoton),
   'sin height 100%: en una columna flex el alto lo pone flex');
 
-const reglaPie = (cssVers.match(/\.pie-jugador \{[^}]*\}/)?.[0] ?? '')
+const reglaPie = (cssVers.match(/^\.pie-jugador \{[^}]*\}/m)?.[0] ?? '')
   .replace(/\/\*[\s\S]*?\*\//g, ' ');
 t(reglaPie.includes('flex: 1 1 auto'), 'el pie crece para darle sitio al boton');
 t(reglaPie.includes('min-height: 0'),
   'y puede encogerse: con el teclado abierto o en apaisado no debe desbordar');
 
-const reglaSalir = (cssVers.match(/\.boton-salir \{[^}]*\}/)?.[0] ?? '')
+const reglaSalir = (cssVers.match(/^\.boton-salir \{[^}]*\}/m)?.[0] ?? '')
   .replace(/\/\*[\s\S]*?\*\//g, ' ');
 t(reglaSalir.includes('min-height'), 'el boton de salir conserva un alto pulsable');
 t(reglaSalir.includes('white-space: nowrap'),
