@@ -1,0 +1,13 @@
+{
+  "title": "Diseño completo de Desafío Bíblico",
+  "brief": "El sistema entero, no una lista de pantallas: qué existe, qué se permite, qué se prohíbe y qué pasa en cada estado. Cada pantalla se dibuja en vertical y acostada, con los seis estados donde el jugador los va a ver de verdad. El tablero de sistema va primero porque es el que decide: sin él, cada pantalla sería una opinión distinta.",
+  "artboards": [
+    {
+      "file": "00-sistema.html",
+      "title": "Sistema: navegación, componentes, estados y semántica",
+      "tradeoff": "Todo el sistema en una placa: se lee el recorrido entero sin cambiar de archivo y las reglas quedan al lado de lo que gobiernan. El precio es que hay que desplazarse en las dos direcciones, y que una placa de sistema no muestra cómo se ve una pantalla llena de datos.",
+      "width": 1360,
+      "height": 2600
+    }
+  ]
+}

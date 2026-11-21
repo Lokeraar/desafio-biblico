@@ -1,0 +1,586 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sistema — Diseño completo de Desafío Bíblico</title>
+<style>
+  :root{
+    --tu-100:#6fe3ee; --tu-300:#2ec4d4; --tu-600:#008090; --tu-800:#00525e; --tu-900:#0a2e33;
+    --fondo:#0b1a1d; --fondo-2:#102a2f; --tinta:#fff; --tinta-suave:#a9c6ca;
+    --amarillo:#fcd116; --rojo:#cf2123; --ok:#1fbf75; --espera:#f0a33a; --error:#e0483c;
+    --radio:16px; --radio-sm:10px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--fondo);color:var(--tinta);
+    font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  .placa{max-width:1320px;margin:0 auto;padding:2rem 1.25rem 4rem}
+  h1{font-size:clamp(1.5rem,1.2rem+1.4vw,2rem);margin:0 0 .35rem;
+    font-weight:800;letter-spacing:-.02em}
+  .sub{color:var(--tinta-suave);margin:0 0 1.75rem;font-size:1rem;max-width:78ch}
+  h2{font-size:clamp(1.15rem,1.05rem+0.5vw,1.35rem);margin:2.5rem 0 .9rem;
+    padding-bottom:.4rem;border-bottom:1px solid var(--tu-800);font-weight:750}
+  h2 .num{color:var(--tu-600);font-variant-numeric:tabular-nums;margin-right:.5rem}
+  h3{font-size:1rem;margin:0 0 .45rem;font-weight:700;color:var(--tu-100)}
+  h4{font-size:.95rem;margin:1.1rem 0 .35rem;font-weight:700;color:var(--tinta)}
+  p{margin:.4rem 0}
+  .rejilla{display:grid;gap:.9rem}
+  .r3{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+  .r2{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+  .caja{background:linear-gradient(160deg,var(--fondo-2),var(--tu-900));
+    border:1px solid var(--tu-800);border-radius:var(--radio);padding:1rem 1.1rem;min-width:0}
+  .caja.ruta{border-left:4px solid var(--tu-300)}
+  .caja.modal{border-left:4px solid var(--amarillo)}
+  .caja.estado{border-left:4px solid var(--espera)}
+  .caja.prohibido{border-left:4px solid var(--rojo)}
+  .caja.regla{border-left:4px solid var(--ok)}
+  code{font-family:ui-monospace,monospace;font-size:.92em;
+    background:rgba(111,227,238,.12);padding:.08em .4em;border-radius:6px;color:var(--tu-100)}
+  ul.lista{list-style:none;margin:.5rem 0 0;padding:0;display:flex;flex-direction:column;gap:.4rem}
+  ul.lista li{display:flex;gap:.5rem;align-items:baseline;font-size:.95rem;color:var(--tinta-suave)}
+  ul.lista li::before{content:"→";color:var(--tu-300);flex:0 0 auto;font-weight:700}
+  ul.lista li .destino{color:var(--tinta);font-weight:650}
+  ul.si{list-style:none;margin:.4rem 0 0;padding:0;display:flex;flex-direction:column;gap:.3rem}
+  ul.si li{font-size:.94rem;color:var(--tinta-suave);padding-left:1.2rem;position:relative}
+  ul.si li::before{position:absolute;left:0;font-weight:800}
+  ul.si.hace li::before{content:"✓";color:var(--ok)}
+  ul.si.niega li::before{content:"✕";color:var(--rojo)}
+  .etiqueta{display:inline-block;font-size:.82rem;font-weight:800;
+    padding:.15em .55em;border-radius:999px;letter-spacing:.02em;white-space:nowrap}
+  .e-ok{background:rgba(31,191,117,.2);color:#9df0c4;border:1px solid rgba(31,191,117,.45)}
+  .e-espera{background:rgba(240,163,58,.2);color:#ffd39b;border:1px solid rgba(240,163,58,.45)}
+  .e-error{background:rgba(224,72,60,.2);color:#ffb1a9;border:1px solid rgba(224,72,60,.45)}
+  .e-neutro{background:rgba(111,227,238,.14);color:var(--tu-100);border:1px solid rgba(111,227,238,.35)}
+  .e-falta{background:rgba(207,33,35,.22);color:#ffb1a9;border:1px solid rgba(207,33,35,.5)}
+  table{width:100%;border-collapse:collapse;margin:.7rem 0 0;font-size:.93rem}
+  th{text-align:left;font-weight:750;color:var(--tu-100);padding:.5rem .6rem;
+    border-bottom:1px solid var(--tu-800);font-size:.88rem;text-transform:none}
+  td{padding:.5rem .6rem;border-bottom:1px solid rgba(0,82,94,.5);color:var(--tinta-suave);
+    vertical-align:top}
+  td strong{color:var(--tinta);font-weight:700}
+  tr:last-child td{border-bottom:0}
+  .nota{font-size:.9rem;color:var(--tinta-suave);border-left:2px solid var(--tu-600);
+    padding-left:.7rem;margin:.7rem 0}
+  .dos{display:grid;grid-template-columns:1fr 1fr;gap:.9rem}
+  @media (max-width:760px){ .dos{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="placa">
+
+  <h1>Sistema — Desafío Bíblico</h1>
+  <p class="sub">
+    El sistema entero, no una lista de pantallas: qué existe, qué se permite, qué se prohíbe y qué
+    pasa en cada estado. Va primero porque es el que decide. Sin él, cada pantalla del canvas sería
+    una opinión distinta sobre las mismas cosas.
+  </p>
+
+  <!-- ============================================================ -->
+  <h2><span class="num">1</span> Qué es esto</h2>
+
+  <div class="rejilla r3">
+    <div class="caja">
+      <h3>Un juego de preguntas bíblicas</h3>
+      <p>Para una iglesia o un grupo, con un <strong>presentador</strong> que proyecta, un
+      <strong>televisor</strong> o pantalla grande que ve todo el mundo, y
+      <strong>participantes</strong> con su teléfono en la mano.</p>
+    </div>
+    <div class="caja">
+      <h3>Quién hace qué</h3>
+      <p>El presentador crea la sala y da la clave de acceso. Los participantes entran con un código
+      de cinco caracteres. El televisor muestra el mismo código para quien nunca lo vio.</p>
+    </div>
+    <div class="caja">
+      <h3>Dónde se juega</h3>
+      <p>En un teléfono, con una mano, de pie, con gente alrededor. Esa restricción decide casi todo
+      lo demás: la letra es grande, los blancos son amplios y nada depende de un gesto fino.</p>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2><span class="num">2</span> Navegación</h2>
+
+  <p>Seis rutas. No hay menú lateral ni pestañas: se navega por rutas y se sale por un botón que
+  dice a dónde va.</p>
+
+  <div class="rejilla r3">
+    <div class="caja ruta">
+      <h3>#/menu</h3>
+      <p class="nota">La puerta. Portada, lema, elección de juego y los botones de entrada.</p>
+      <ul class="lista">
+        <li><span class="destino">Jugar como participante</span> → <code>#/join</code></li>
+        <li><span class="destino">Presentar</span> → <code>#/host</code></li>
+        <li><span class="destino">Televisor</span> → <code>#/tv</code></li>
+        <li><span class="destino">Configuraciones</span> → <code>#/config</code></li>
+      </ul>
+    </div>
+    <div class="caja ruta">
+      <h3>#/join</h3>
+      <p class="nota">El formulario de entrada del participante: código de sala y nombre.</p>
+      <ul class="lista">
+        <li>Al entrar bien → <span class="destino">#/play</span></li>
+        <li><span class="destino">← Volver</span> → <code>#/menu</code></li>
+      </ul>
+    </div>
+    <div class="caja ruta">
+      <h3>#/play</h3>
+      <p class="nota">La partida, desde el lado del participante.</p>
+      <ul class="lista">
+        <li>Si no hay sesión guardada → vuelve a <code>#/join</code></li>
+        <li><span class="destino">← Menú</span> → <code>#/menu</code> y suelta la sesión</li>
+      </ul>
+    </div>
+    <div class="caja ruta">
+      <h3>#/host</h3>
+      <p class="nota">El panel del presentador. Primero elige tema, preguntas y segundos; después
+      conduce la partida.</p>
+      <ul class="lista">
+        <li>Crear sala → sigue en <code>#/host</code>, ya en la sala</li>
+        <li><span class="destino">← Menú</span> → cierra la sala y va a <code>#/menu</code></li>
+      </ul>
+    </div>
+    <div class="caja ruta">
+      <h3>#/tv</h3>
+      <p class="nota">La pantalla grande. Recuerda su sala y se reconecta al recargar.</p>
+      <ul class="lista">
+        <li><span class="destino">Salir de esta partida</span> → <code>#/menu</code></li>
+      </ul>
+    </div>
+    <div class="caja ruta">
+      <h3>#/config</h3>
+      <p class="nota">La clave maestra y la marca: lema y portada.</p>
+      <ul class="lista">
+        <li><span class="destino">← Volver</span> → <code>#/menu</code></li>
+        <li>Con clave → abre los modales de temas</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="caja prohibido" style="margin-top:.9rem">
+    <h3>Una sola salida, y suelta lo que tomó</h3>
+    <p>Cada pantalla tiene <strong>un</strong> camino de vuelta, y ese camino libera lo que la
+    pantalla tomó: la sesión del participante, la sala del presentador. Un botón de «volver» que solo
+    cambia de ruta deja la sesión viva y el siguiente intento choca con una sala fantasma.</p>
+    <ul class="si niega">
+      <li>Un botón que navega sin soltar la sesión.</li>
+      <li>Dos botones distintos que hacen lo mismo en la misma pantalla.</li>
+    </ul>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2><span class="num">3</span> El flujo de una partida</h2>
+
+  <div class="rejilla r2">
+    <div class="caja">
+      <h3>Antes de jugar</h3>
+      <ul class="lista">
+        <li><span class="destino">El presentador abre #/host</span> y elige tema, cuántas preguntas y
+        cuántos segundos por pregunta.</li>
+        <li>Pulsa <strong>Crear sala</strong>. Aparece un código de cinco caracteres.</li>
+        <li><span class="destino">Los participantes entran</span> con ese código y su nombre.</li>
+        <li>El televisor muestra el código en grande para quien llegó tarde.</li>
+      </ul>
+    </div>
+    <div class="caja">
+      <h3>Durante</h3>
+      <ul class="lista">
+        <li>El presentador abre la ronda. Hay un reloj.</li>
+        <li><span class="destino">El participante pulsa</span> para tomar el turno. El que llega
+        primero responde.</li>
+        <li>Los demás ven quién tiene el turno y esperan.</li>
+        <li>El presentador juzga: correcto o incorrecto. El televisor lo anuncia.</li>
+      </ul>
+    </div>
+    <div class="caja">
+      <h3>Al terminar</h3>
+      <ul class="lista">
+        <li>Ceremonia: tabla de clasificación escalonada.</li>
+        <li>El podio se revela por turnos, no de golpe.</li>
+        <li><span class="destino">Nueva partida</span> vuelve al lobby con los mismos jugadores.</li>
+        <li><span class="destino">Cerrar sala</span> avisa a todos y libera a cada uno.</li>
+      </ul>
+    </div>
+    <div class="caja prohibido">
+      <h3>Lo que no se puede</h3>
+      <ul class="si niega">
+        <li>Entrar a una partida ya iniciada (<code>partida_ya_iniciada</code>).</li>
+        <li>Dos participantes con el mismo nombre en la misma sala.</li>
+        <li>Un participante pulsando dos veces la misma ronda.</li>
+        <li>Que el reloj siga corriendo con la partida en pausa.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2><span class="num">4</span> Los seis estados</h2>
+
+  <p>Cobertura completa en las cuatro pantallas del jugador: participante, presentador, sala de
+  espera y televisor. Menú, configuración y modales se quedan con los que ya tienen.</p>
+  <p class="nota">Los dos marcados como «NO existe» no se diseñan en esta tanda: Christian los dejó
+  para después. Se documentan para que el hueco sea visible y no se confunda con un olvido.</p>
+
+  <div class="rejilla r3">
+    <div class="caja estado">
+      <h3>Cargando <span class="etiqueta e-neutro">existe</span></h3>
+      <p>Los datos todavía no llegaron. Dice <strong>qué</strong> está esperando, no solo «cargando».</p>
+      <p class="nota">Hoy: «Conectando…» en el participante. El presentador no tiene estado propio de
+      carga: si el servidor tarda, la pantalla se queda como estaba sin decir nada.</p>
+    </div>
+    <div class="caja estado">
+      <h3>Vacío <span class="etiqueta e-neutro">existe</span></h3>
+      <p>Cargó bien y no hay nada. Siempre ofrece <strong>la acción que lo llena</strong>.</p>
+      <p class="nota">Hoy: tema sin preguntas, tema sin versículos. Falta: sala sin participantes,
+      menú sin portada guardada.</p>
+    </div>
+    <div class="caja estado">
+      <h3>Error <span class="etiqueta e-neutro">existe</span></h3>
+      <p>Algo falló. Dice qué pasó, en palabras de persona, y qué puede hacer.</p>
+      <p class="nota">Hoy: sala inexistente, clave incorrecta, sala cerrada. La traducción de códigos
+      vive en un solo sitio, no repartida por las pantallas.</p>
+    </div>
+    <div class="caja estado">
+      <h3>Parcial <span class="etiqueta e-falta">NO existe</span></h3>
+      <p>Llegó una parte y la otra no: el versículo sin sus huecos, la sala sin la ronda.</p>
+      <p class="nota">Es el estado que produce las pantallas más raras y hoy no está diseñado.
+      <strong>Queda para después</strong>, por decisión del 21/11/2026: no se diseña ahora.</p>
+    </div>
+    <div class="caja estado">
+      <h3>Éxito <span class="etiqueta e-ok">existe</span></h3>
+      <p>Todo bien y con contenido. Es la pantalla que ya está diseñada.</p>
+    </div>
+    <div class="caja estado">
+      <h3>Éxito-vacío <span class="etiqueta e-falta">NO existe</span></h3>
+      <p>La acción salió bien y no produjo nada: la partida terminó y nadie anotó, se acabaron las
+      preguntas antes de lo previsto.</p>
+      <p class="nota">No es un error y no se puede tratar como uno. <strong>Queda para después</strong>,
+      por decisión del 21/11/2026.</p>
+    </div>
+  </div>
+
+  <div class="caja regla" style="margin-top:.9rem">
+    <h3>La regla que ordena los seis</h3>
+    <ul class="si hace">
+      <li><strong>Nunca dos estados a la vez.</strong> O carga, o está vacío, o falló. Una pantalla
+      que muestra «cargando» encima de un error deja al usuario sin saber qué creer.</li>
+      <li><strong>Todo estado tiene salida.</strong> Vacío ofrece la acción que lo llena; error
+      ofrece reintentar o volver; cargando ofrece cancelar si puede tardar.</li>
+      <li><strong>Un estado vacío no es un error.</strong> No usa rojo ni signo de alarma.</li>
+      <li><strong>Ningún estado deja la pantalla trabada.</strong> Si algo se bloqueó —un botón, un
+      candado, una operación en curso— se libera también cuando el camino se corta: error,
+      cancelación, retroceso, pestaña cerrada.</li>
+    </ul>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2><span class="num">5</span> Componentes</h2>
+
+  <p>Piezas que se repiten. Cada una existe una sola vez; si una pantalla necesita otra cosa, se
+  extiende la pieza, no se copia.</p>
+
+  <table>
+    <thead>
+      <tr><th>Pieza</th><th>Qué hace</th><th>Dónde aparece</th><th>Regla</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Botón grande</strong></td>
+        <td>El blanco principal de la pantalla</td>
+        <td>Entrar, Crear sala, Pulsar</td>
+        <td>Ocupa el ancho de su zona; nunca un ancho fijo</td>
+      </tr>
+      <tr>
+        <td><strong>Botón de contorno</strong></td>
+        <td>Acción secundaria</td>
+        <td>Volver, Cancelar, Menú</td>
+        <td>Nunca compite en peso con el principal</td>
+      </tr>
+      <tr>
+        <td><strong>Aviso</strong></td>
+        <td>Dice algo que pasó: espera, error, información</td>
+        <td>Todas</td>
+        <td>Tres tonos como máximo: espera, error, info</td>
+      </tr>
+      <tr>
+        <td><strong>Globo de ayuda (?)</strong></td>
+        <td>Explica un rótulo que no se entiende solo</td>
+        <td>Formularios</td>
+        <td>Se abre al tocar; nunca tapa el campo que explica</td>
+      </tr>
+      <tr>
+        <td><strong>Tarjeta de juego</strong></td>
+        <td>Elegir qué se juega</td>
+        <td>Menú</td>
+        <td>Nombre y descripción legibles: crece en alto antes que encoger la letra</td>
+      </tr>
+      <tr>
+        <td><strong>Insignia de estado</strong></td>
+        <td>Elegible, Seleccionado, Pronto</td>
+        <td>Menú</td>
+        <td>Es etiqueta, no contenido: puede ser más chica que el texto que acompaña</td>
+      </tr>
+      <tr>
+        <td><strong>Rótulo de juego</strong></td>
+        <td>Qué se está jugando</td>
+        <td>Cabecera del presentador</td>
+        <td>Dos filas: «Juego» arriba, el nombre debajo</td>
+      </tr>
+      <tr>
+        <td><strong>Lista de administración</strong></td>
+        <td>Temas, preguntas, versículos</td>
+        <td>Modales</td>
+        <td>Crece con los datos: se desplaza <strong>dentro</strong> de su caja</td>
+      </tr>
+      <tr>
+        <td><strong>Reloj</strong></td>
+        <td>Cuánto queda</td>
+        <td>Ronda</td>
+        <td>Deriva del reloj real, no de un contador que acumula error</td>
+      </tr>
+      <tr>
+        <td><strong>Tabla escalonada</strong></td>
+        <td>Clasificación tras cada ronda</td>
+        <td>Ceremonia</td>
+        <td>Se revela por turnos; el orden se entiende sin leer números</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ============================================================ -->
+  <h2><span class="num">6</span> Semántica de cada pantalla</h2>
+
+  <p>Qué comunica cada pantalla y en qué orden. El orden importa tanto como el contenido: es lo que
+  se lee primero cuando alguien mira el teléfono un segundo.</p>
+
+  <div class="rejilla r2">
+    <div class="caja">
+      <h3>Menú</h3>
+      <p><strong>Comunica:</strong> «aquí se empieza».</p>
+      <ol style="margin:.4rem 0 0;padding-left:1.3rem;color:var(--tinta-suave);font-size:.94rem">
+        <li>Identidad: portada y nombre del juego.</li>
+        <li>Qué se va a jugar: las tarjetas, con la elegida marcada.</li>
+        <li>Cómo entrar: los tres caminos, en orden de frecuencia.</li>
+      </ol>
+      <p class="nota">Nada de ajustes técnicos aquí. La configuración tiene su propia puerta.</p>
+    </div>
+    <div class="caja">
+      <h3>Entrar a la partida</h3>
+      <p><strong>Comunica:</strong> «faltan dos datos y entras».</p>
+      <ol style="margin:.4rem 0 0;padding-left:1.3rem;color:var(--tinta-suave);font-size:.94rem">
+        <li>El código, si llegó por enlace ya viene puesto.</li>
+        <li>El nombre, tal como quiere aparecer.</li>
+        <li>Entrar.</li>
+      </ol>
+      <h4>Qué pasa al escanear el QR</h4>
+      <p>El QR no lleva a una pantalla intermedia. Lleva a
+      <code>#/join?c=B73WS</code>, y esa ruta <strong>es</strong> «Jugar como
+      participante».</p>
+      <ul class="lista">
+        <li><span class="destino">1.</span> Se abre el formulario de entrada.</li>
+        <li><span class="destino">2.</span> El código ya está <strong>escrito en su campo</strong>,
+        sacado de la dirección (<code>codigoDeUrl()</code>).</li>
+        <li><span class="destino">3.</span> El campo del nombre está vacío y con el foco.</li>
+        <li><span class="destino">4.</span> El participante escribe su nombre y pulsa Entrar.</li>
+      </ul>
+      <p class="nota">O sea que <strong>ya hace lo que debe</strong>: escanear, escribir el nombre,
+      entrar. No se pide el código dos veces ni se pasa por el menú. Lo único que se puede discutir
+      es que el código siga siendo un campo editable en vez de un dato fijo; si se escribe mal, el
+      error lo dice el servidor.</p>
+    </div>
+    <div class="caja">
+      <h3>Sala de espera</h3>
+      <p><strong>Comunica:</strong> «ya estás dentro, falta que empiecen».</p>
+      <ol style="margin:.4rem 0 0;padding-left:1.3rem;color:var(--tinta-suave);font-size:.94rem">
+        <li>Que entró bien, con su nombre.</li>
+        <li>Quiénes más están.</li>
+        <li>Que espere, sin un botón que no lleva a nada.</li>
+      </ol>
+    </div>
+    <div class="caja">
+      <h3>La ronda (participante)</h3>
+      <p><strong>Comunica:</strong> «pulsa ahora».</p>
+      <ol style="margin:.4rem 0 0;padding-left:1.3rem;color:var(--tinta-suave);font-size:.94rem">
+        <li>El versículo, grande, legible de lejos.</li>
+        <li>El botón de pulsar, que ocupa su zona entera.</li>
+        <li>Quién tiene el turno y cuánto queda.</li>
+      </ol>
+      <p class="nota">Un solo blanco principal. Si hay dos, el jugador duda y pierde el turno.</p>
+    </div>
+    <div class="caja">
+      <h3>Panel del presentador</h3>
+      <p><strong>Comunica:</strong> «tú conduces».</p>
+      <ol style="margin:.4rem 0 0;padding-left:1.3rem;color:var(--tinta-suave);font-size:.94rem">
+        <li>Qué juego se está jugando, arriba a la derecha.</li>
+        <li>El estado de la ronda: quién tiene el turno, cuántas palabras se destaparon.</li>
+        <li>Los controles: abrir, juzgar, pausar, terminar.</li>
+      </ol>
+      <p class="nota">El presentador ve el versículo completo con las palabras ocultas subrayadas: es
+      lo que él lee en voz alta y lo que los demás no ven.</p>
+    </div>
+    <div class="caja">
+      <h3>Televisor</h3>
+      <p><strong>Comunica:</strong> «esto lo ve todo el mundo».</p>
+      <ol style="margin:.4rem 0 0;padding-left:1.3rem;color:var(--tinta-suave);font-size:.94rem">
+        <li>Lo que hay que leer, en el tamaño más grande de la app.</li>
+        <li>Quién va ganando, sin desorden.</li>
+        <li>El código de la sala, mientras se espera.</li>
+      </ol>
+      <p class="nota">Nada de controles: el televisor no se toca. Se diseña para leerse a varios
+      metros.</p>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2><span class="num">7</span> Reglas duras del sistema</h2>
+
+  <div class="caja regla" style="margin-bottom:.9rem">
+    <h3>Cómo leer esta sección</h3>
+    <p>Lo que sigue son <strong>reglas del sistema</strong>: valen para toda la app, en todas las
+    pantallas, sin excepción. El <em>ajuste de texto</em> —cuándo encoge la letra, cuándo toma una
+    línea de gracia, cuándo aparecen los puntos suspensivos— es otra cosa: es una
+    <strong>herramienta</strong> que se aplica donde se declara, y tiene sus propias reglas en la
+    skill <code>text-fitting</code>. Se separan a propósito para que no se pisen.</p>
+  </div>
+
+  <div class="rejilla r2">
+    <div class="caja regla">
+      <h3>Las dos orientaciones</h3>
+      <p>Vertical y acostada se diseñan por separado, no se estira la una para que sirva en la otra.
+      Acostado sobra ancho y falta alto: se reparte en columnas. Vertical: una sola columna.</p>
+    </div>
+    <div class="caja regla">
+      <h3>Todo lo que se bloquea se libera</h3>
+      <p>Un botón deshabilitado, un candado, una operación en curso: se libera también cuando el
+      camino se corta. La pregunta que ataja todos: <strong>¿qué pasa si el usuario cierra la
+      pestaña o pierde señal justo aquí?</strong></p>
+    </div>
+    <div class="caja regla">
+      <h3>Una sola escala de letra</h3>
+      <p>Contenido a <strong>16 pt</strong>, títulos a <strong>24 pt</strong>, en todas las pantallas
+      y todas las orientaciones. No hay una escala para teléfono y otra para tableta.</p>
+      <p class="nota">Cuánto puede encogerse dentro de esa escala, y con qué criterio, lo decide el
+      ajuste de texto según el caso que se le pida, no esta regla.</p>
+    </div>
+    <div class="caja regla">
+      <h3>El aspecto se decide, no se adivina</h3>
+      <p>Un cambio visual se entrega con la propuesta y los números medidos delante. La decisión de
+      si se lee bien es del usuario: un número de desborde no dice si un texto se lee.</p>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2><span class="num">8</span> El ajuste de texto, aparte</h2>
+
+  <p>No es una regla del sistema: es una herramienta con su propio contrato, declarado en la skill
+  <code>text-fitting</code>. Se aplica solo donde se declara, y se comporta distinto según lo que se
+  pida.</p>
+
+  <table>
+    <thead><tr><th>Si se pide…</th><th>Qué hace el ajuste</th><th>Dónde se usa</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Aprovechar todo el espacio</strong></td>
+        <td>Sube y baja la letra sin un tope fijo para que abarque su caja: crece si sobra sitio,
+        encoge si no cabe, hasta llenar lo disponible.</td>
+        <td>Versículo en juego, en el televisor y en el teléfono</td>
+      </tr>
+      <tr>
+        <td><strong>Una capacidad de N renglones</strong></td>
+        <td>Encoge la letra <strong>primero</strong>. Si al llegar al mínimo no cabe, toma
+        <strong>una</strong> línea de gracia y vuelve a crecer. Si aun así no entra, aparecen tres
+        puntos suspensivos donde se acabó la última letra que cupo.</td>
+        <td>Listas, tarjetas, filas de tabla, rótulos</td>
+      </tr>
+      <tr>
+        <td><strong>Nada declarado</strong></td>
+        <td>No se toca: va con la escala del sistema. Sin capacidad, sin puntos suspensivos, sin
+        sorpresas.</td>
+        <td>Prosa, párrafos, textos que fluyen</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="caja regla" style="margin-top:.9rem">
+    <h3>Los cuatro topes del ajuste</h3>
+    <ul class="si hace">
+      <li><strong>Techo de 16 pt</strong> para contenido y <strong>24 pt</strong> para títulos: por
+      encima no sube aunque sobre espacio.</li>
+      <li><strong>Suelo de 8 pt</strong>: por debajo no baja nunca. 8 pt es el último recurso antes de
+      los puntos suspensivos, no un tamaño de reposo.</li>
+      <li><strong>Una sola línea de gracia</strong>, no dos.</li>
+      <li><strong>El renglón de gracia se toma después de encoger</strong>, nunca antes: encoger no le
+      cuesta espacio a nadie, una línea sí.</li>
+    </ul>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2><span class="num">9</span> Lo que este diseño NO cubre</h2>
+
+  <div class="caja prohibido">
+    <h3>Fuera de alcance, a propósito</h3>
+    <ul class="si niega">
+      <li><strong>«Respuesta abierta»</strong>: está en el menú como «Pronto» y no tiene pantalla. Se
+      diseñará cuando Christian lo pida, al terminar «Completar el versículo».</li>
+      <li><strong>Historial de partidas</strong> y estadísticas por jugador: él decidió dejarlo para
+      después.</li>
+      <li><strong>Estados «parcial» y «éxito-vacío»</strong>: quedan para después, por decisión del
+      21/11/2026.</li>
+    </ul>
+    <p class="nota">Se listan para que la ausencia sea una decisión y no un olvido. Si alguna debe
+    entrar, se dice y se agrega al sistema antes que a las pantallas.</p>
+  </div>
+
+  <div class="caja regla" style="margin-top:.9rem">
+    <h3>Lo que SÍ entra: varias salas a la vez</h3>
+    <p>Verificado en el esquema de la base, no supuesto: <code>rooms</code> tiene
+    <code>code text not null unique</code> y <code>host_token</code> propio por fila, y
+    <code>new_room_code()</code> sortea un código y <strong>repite el sorteo hasta que no choque</strong>.
+    Nada limita a una sala por servidor.</p>
+    <ul class="si hace">
+      <li>Varios presentadores, cada uno en <strong>su dispositivo o su navegador</strong>, crean su
+      sala y reciben su código.</li>
+      <li>Cada sala tiene su token de presentador y su canal: no se ven entre ellas.</li>
+      <li>Un participante entra a la que le dieron con el código.</li>
+    </ul>
+    <p class="nota">La única limitación real es por <strong>dispositivo</strong>: el navegador guarda
+    una sola sesión de presentador y un solo juego elegido. Dos pestañas del mismo navegador
+    comparten esa sesión, así que la segunda no es un presentador distinto. Con dispositivos o
+    navegadores distintos, no hay problema. Si se quiere dos salas desde el mismo aparato, hay que
+    decidir si la sesión pasa a ser por sala.</p>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2><span class="num">10</span> Decisiones cerradas</h2>
+
+  <table>
+    <thead><tr><th>Decisión</th><th>Qué se resolvió</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Descripción del juego a 16 pt</strong></td>
+        <td>Se deja como está (11 pt en teléfono). Decisión de Christian: el nombre ya va a 16 pt y
+        la descripción orienta, no se lee en voz alta.</td>
+      </tr>
+      <tr>
+        <td><strong>Estados «parcial» y «éxito-vacío»</strong></td>
+        <td>Para después. No se diseñan ahora.</td>
+      </tr>
+      <tr>
+        <td><strong>Los rótulos del presentador</strong></td>
+        <td>Deja de ser una decisión abierta: el ajuste de texto resuelve el caso, no una regla del
+        sistema. Si se pide una línea, encoge; si se piden dos, usa dos.</td>
+      </tr>
+      <tr>
+        <td><strong>El QR</strong></td>
+        <td>Ya hace lo correcto: lleva a <code>#/join?c=CODIGO</code>, que es la pantalla de entrada,
+        con el código ya escrito. Falta solo escribir el nombre.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p class="nota" style="margin-top:1.5rem">
+    Este tablero es la base. Las pantallas van en los siguientes: cada una en vertical y acostada, y
+    con sus estados donde el jugador los va a ver.
+  </p>
+
+</div>
+</body>
+</html>
