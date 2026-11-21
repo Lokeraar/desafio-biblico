@@ -8,7 +8,8 @@ import {
   REM, UMBRAL_ZOOM, TOPE_FACTOR, factorEscala,
   TECHO_CONTENIDO, TECHO_TITULO, SUELO, PASOS,
   PERFILES, perfilPara, ptARem, ROLES, PASOS_TITULO, esTitulo, cabe,
-  esCajaDeTexto, ajustarGrupo, agruparPorCaja
+  esCajaDeTexto, ajustarGrupo, agruparPorCaja, altoUtil, renglonesQueCaben,
+  techoDeLaCaja
 } from './ajuste.js';
 
 let ok = 0, fail = 0;
@@ -430,6 +431,141 @@ t(rolPie?.renglones === 1, 'y tambien en 1 + 1');
    fuera y la fila mostraria dos tamanos. */
 t(rolOcultar?.sel.startsWith('.modal '),
   'se declaran por contenedor (.modal), no por clase de boton');
+
+
+/* ------------------------------------------------------------------ */
+console.log('=== El texto llena su caja: alto, no solo ancho ===');
+
+/* Lo pidio Christian: «usa cualquier medida que permita que cada pregunta
+   entre en el maximo de sus dimensiones de campo de escritura». Antes el
+   ajuste solo miraba el ANCHO y el techo era un numero fijo: en una caja alta
+   dejaba medio palmo vacio. */
+
+// Sin DOM no hay caja medible: se devuelve Infinity, que significa «sin tope».
+t(altoUtil(null) === Infinity, 'sin elemento no hay tope');
+t(altoUtil({}) === Infinity, 'un objeto que no es un nodo tampoco');
+t(renglonesQueCaben(null) === Infinity,
+  'sin caja no se inventan renglones: manda la capacidad declarada');
+
+/* Un doble minimo: lo que `altoUtil` consulta es `getComputedStyle`,
+   `clientHeight`, `parentElement` y los hermanos. */
+const estilo = (o) => () => ({
+  paddingTop: '0px', paddingBottom: '0px', lineHeight: '20px',
+  flex: 'none', flexBasis: 'auto', height: 'auto', display: 'block', ...o
+});
+
+// Caja con alto propio y flex: ese es su espacio.
+const cajaAlta = {
+  clientHeight: 200, parentElement: null,
+  getBoundingClientRect: () => ({ height: 200 })
+};
+globalThis.getComputedStyle = estilo({ flex: '1 1 auto', flexBasis: '0%' });
+t(altoUtil(cajaAlta) === 200, 'una caja flex con alto propio mide su alto');
+t(renglonesQueCaben(cajaAlta) === 10, 'y caben 10 renglones de 20 px');
+globalThis.getComputedStyle = estilo({ flex: '1 1 auto', flexBasis: '0%', paddingTop: '10px', paddingBottom: '10px' });
+t(altoUtil(cajaAlta) === 180, 'el relleno se descuenta del alto: no es espacio del texto');
+
+// Caja de alto automatico: el espacio lo deja el padre.
+const hijo = { clientHeight: 0, getBoundingClientRect: () => ({ height: 0 }), parentElement: null };
+const hermano1 = { getBoundingClientRect: () => ({ height: 40 }) };
+const hermano2 = { getBoundingClientRect: () => ({ height: 60 }) };
+const padre = {
+  clientHeight: 300, parentElement: null,
+  children: [hijo, hermano1, hermano2]
+};
+hijo.parentElement = padre;
+globalThis.getComputedStyle = estilo({ height: 'auto' });
+t(altoUtil(hijo) === 200,
+  'sin alto propio, el espacio es el del padre menos lo que ocupan los hermanos');
+
+// Un padre sin alto medible no inventa un tope.
+const padreSinAlto = { clientHeight: 0, children: [hijo], parentElement: null };
+hijo.parentElement = padreSinAlto;
+t(altoUtil(hijo) === Infinity, 'un padre sin alto no impone tope');
+
+delete globalThis.getComputedStyle;
+
+/* ------------------------------------------------------------------ */
+console.log('=== `llenar`: el rol calcula su techo desde la caja ===');
+
+/* El rol del versiculo declara `llenar`, que es lo que activa el calculo. */
+const rolVers = ROLES.find(r => r.sel.includes('.jugador-versiculo .versiculo'));
+t(rolVers != null, 'el versiculo del participante esta declarado');
+t(rolVers?.llenar === true, 'y pide llenar su caja, no quedarse en un techo fijo');
+/* El techo NO se elige a mano: sale de la caja. Un numero fijo desperdicia
+   la caja alta y desborda en la baja, que es justo lo que habia que evitar. */
+t(rolVers?.topeMax === undefined,
+  'no lleva un tope escrito a mano: el techo se calcula desde la caja');
+
+const rolTv = ROLES.find(r => r.sel.includes('.cuerpo-tv .versiculo'));
+t(rolTv?.llenar === true, 'el versiculo del televisor tambien llena su caja');
+
+/* Los roles que NO lo piden conservan el comportamiento de siempre: activarlo
+   en todas partes cambiaria el aspecto de pantallas que ya estaban bien. */
+const rolBoton = ROLES.find(r => r.sel.includes('menu-acciones'));
+t(rolBoton?.llenar === undefined, 'los botones del menu no llenan: capacidad declarada');
+const rolVacio = ROLES.find(r => r.sel === '.tenue');
+t(rolVacio?.llenar === undefined, 'la prosa tampoco: se queda como estaba');
+
+/* Sin caja medible el ajuste no explota ni recorta: se comporta como antes. */
+const sinCaja = ajustarGrupo([], { llenar: true });
+t(sinCaja.recortado === false, 'sin elementos no se recorta nada');
+
+
+/* ------------------------------------------------------------------ */
+console.log('=== El techo se calcula, no se elige ===');
+
+/* Un renglon mide `font-size x interlineado`. El tamano mas grande que cabe
+   en un alto dado es `alto / interlineado`: pasarse desborda, quedarse corto
+   desperdicia el campo. Christian: «el maximo de su campo calculado, no
+   fijado a mano, sin desbordar ni cortarse». */
+const estiloTecho = (o) => () => ({
+  paddingTop: '0px', paddingBottom: '0px',
+  fontSize: '16px', lineHeight: '22.4px',   // 1.4 = el interlineado del juego
+  flex: '1 1 auto', flexBasis: '0%', height: 'auto', display: 'block', ...o
+});
+
+// 224 px de alto con interlineado 1.4 -> 100 px por renglon -> techo 100 px.
+const caja224 = { clientHeight: 224, parentElement: null,
+                  getBoundingClientRect: () => ({ height: 224 }) };
+globalThis.getComputedStyle = estiloTecho({ flex: '1 1 auto', flexBasis: '0%' });
+/* 224 px / (1.4 x 1 renglon) = 160 px de hoja; con raiz 16 son 120 pt. */
+const techo224 = techoDeLaCaja(caja224);
+t(Math.round(techo224) === 120, 'un alto de 224 px en UN renglon da 120 pt');
+
+/* Con varios renglones el techo se reparte: es el tamano con el que N
+   renglones llenan la caja entera. 224 px en 10 renglones -> 16 px = 12 pt. */
+t(Math.round(techoDeLaCaja(caja224, 10)) === 12,
+  'repartido entre 10 renglones da 12 pt: el texto llena la caja');
+t(Math.round(techoDeLaCaja(caja224, 2)) === 60,
+  'y entre 2 renglones da 60 pt');
+t(techoDeLaCaja(caja224, 10) < techoDeLaCaja(caja224, 1),
+  'mas renglones permiten menos tamano por renglon');
+
+// El doble de alto da el doble de techo: crece con la caja, no esta fijado.
+const caja448 = { clientHeight: 448, parentElement: null,
+                  getBoundingClientRect: () => ({ height: 448 }) };
+t(Math.round(techoDeLaCaja(caja448)) === 240,
+  'el doble de alto da el doble de techo: se calcula, no se fija');
+
+// Mas bajo -> menos techo. Nunca al reves.
+t(techoDeLaCaja(caja224) < techoDeLaCaja(caja448),
+  'una caja mas baja permite menos tamano');
+
+// Sin caja medible no se inventa un tope.
+t(techoDeLaCaja(null) === Infinity, 'sin elemento no hay techo que calcular');
+globalThis.getComputedStyle = estiloTecho({ height: 'auto' });
+const sinAlto = { clientHeight: 0, parentElement: null,
+                  getBoundingClientRect: () => ({ height: 0 }) };
+t(techoDeLaCaja(sinAlto) === Infinity,
+  'sin caja medible devuelve Infinity: manda el techo del rol');
+
+// Un interlineado invalido no puede dar NaN ni un techo absurdo.
+globalThis.getComputedStyle = estiloTecho({ lineHeight: 'normal' });
+t(techoDeLaCaja(caja224) === Infinity,
+  'un interlineado no numerico no produce un techo falso');
+
+delete globalThis.getComputedStyle;
 
 console.log('\n===============================================');
 if (fail === 0) console.log(` TODO EN VERDE: ${ok} correctas, 0 fallas`);

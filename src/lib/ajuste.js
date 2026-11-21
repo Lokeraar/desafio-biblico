@@ -391,7 +391,7 @@ export function esCajaDeTexto(el) {
   return true;
 }
 
-export function ajustarGrupo(els, { pasos, renglones, gracia, categoria } = {}) {
+export function ajustarGrupo(els, { pasos, renglones, gracia, categoria, llenar = false } = {}) {
   /* SOLO CAJAS DE TEXTO.
    *
    * Un rol con selector amplio puede casar con un CONTENEDOR de maquetación
@@ -414,9 +414,46 @@ export function ajustarGrupo(els, { pasos, renglones, gracia, categoria } = {}) 
   /* La escalera sale de la categoría declarada en el rol. Solo si no se
      declaró se adivina por la etiqueta del elemento. */
   const cat = categoria || (esTitulo(grupo[0]) ? 'titulo' : 'contenido');
-  const techo = cat === 'titulo' ? ESCALA.titulo.techo
+  const techoRol = cat === 'titulo' ? ESCALA.titulo.techo
     : cat === 'etiqueta' ? ESCALA.etiqueta.techo
     : ESCALA.contenido.techo;
+
+  /*
+   * CON `llenar`, EL TECHO Y LA CAPACIDAD SALEN DE LA CAJA.
+   *
+   * Es lo que pidió Christian: «que cada pregunta entre en el máximo de sus
+   * dimensiones de campo de escritura». Un tamaño fijo no puede hacer eso: en
+   * una caja alta desperdicia la mitad del espacio y en una baja desborda.
+   *
+   * Se calcula cuántos renglones caben en el alto disponible y se arranca
+   * desde el tamaño más grande que quepa en UNO de esos renglones. Así el
+   * texto crece hasta llenar su campo, sea cual sea el aparato, sin que nadie
+   * elija un número a mano.
+   *
+   * El techo NO es un numero elegido a mano: `techoDeLaCaja` lo deriva del
+   * alto real dividido por el interlineado. Pasarse seria desbordar; quedarse
+   * corto, desperdiciar el campo. El suelo de accesibilidad sigue mandando.
+   */
+  let capacidadEfectiva = capacidad;
+  let techo = techoRol;
+  if (llenar) {
+    const medidas = grupo.map(el => {
+      const renglones = renglonesQueCaben(el);
+      return { renglones, techo: techoDeLaCaja(el, renglones) };
+    }).filter(m => Number.isFinite(m.renglones));
+
+    if (medidas.length) {
+      /* El caso que manda es el MAS apretado del grupo: si un elemento tiene
+         menos alto, su medida es la que decide, o el texto se saldría en ese. */
+      capacidadEfectiva = Math.max(1, Math.min(...medidas.map(m => m.renglones)));
+      const techoCaja = Math.min(...medidas.map(m => m.techo));
+      if (Number.isFinite(techoCaja)) {
+        techo = Math.max(techoRol, Math.floor(techoCaja));
+      }
+    }
+    /* Sin caja medible se queda el techo del rol: comportamiento de antes. */
+  }
+
   const escalones = pasos || escalera(techo);
 
   for (const el of grupo) {
@@ -456,13 +493,13 @@ export function ajustarGrupo(els, { pasos, renglones, gracia, categoria } = {}) 
 
   // 1 y 2: el MAYOR tamaño con el que todos entran en la capacidad declarada.
   for (const pt of escalones) {
-    if (cabe(probar(pt), capacidad)) {
+    if (cabe(probar(pt), capacidadEfectiva)) {
       return { pt, renglones: contarRenglones(grupo[0]), graciaUsada: false, recortado: false };
     }
   }
 
   // 3: se tocó el suelo y no entró. Ahora sí, la gracia: N+1.
-  const conGracia = capacidad + extra;
+  const conGracia = capacidadEfectiva + extra;
   for (const pt of escalones) {
     if (cabe(probar(pt), conGracia)) {
       return { pt, renglones: contarRenglones(grupo[0]), graciaUsada: true, recortado: false };
@@ -544,8 +581,14 @@ export const ROLES = [
      texto va en 1 + 1. */
   { sel: '.jugador-versiculo .ref, .jugador-versiculo .aviso, .barra-jugador',
     categoria: 'contenido', renglones: 1 },
+  /* `llenar: true`: el texto crece hasta llenar su caja, en vez de quedarse en
+     un techo fijo. Es lo que pidio Christian: «que cada pregunta entre en el
+     maximo de sus dimensiones de campo de escritura». En el participante la
+     caja es alta y el versiculo es el contenido que hay que leer; en el
+     televisor, mas aun. El tope de 40 pt evita que un versiculo de tres
+     palabras se convierta en un cartel. */
   { sel: '.jugador-versiculo .versiculo, .cuerpo-tv .versiculo',
-    categoria: 'titulo', renglones: 2 },
+    categoria: 'titulo', renglones: 2, llenar: true },
   { sel: '.tv-top .ref, .tv-top .sala, .pie-tv .aviso',
     categoria: 'contenido', renglones: 1 },
   { sel: '.codigo-grande', categoria: 'titulo', renglones: 1 },
@@ -639,6 +682,98 @@ export const ROLES = [
 ];
 
 /**
+ * Alto que el texto puede usar dentro de su caja, en píxeles.
+ *
+ * Es la mitad que faltaba del ajuste: solo se miraba el ANCHO. Por eso un
+ * texto podía quedar diminuto en una caja con medio palmo libre, que es lo
+ * que se veía en el teléfono: el diseño aprovecha el espacio y la app no.
+ *
+ * - Si la caja tiene alto propio (es un ítem flex con altura asignada), ese es
+ *   el espacio: su `clientHeight` menos el relleno.
+ * - Si el alto es automático (`clientHeight` 0 o el del contenido), el espacio
+ *   real es el que le deja su contenedor: el alto del padre menos el relleno y
+ *   menos lo que ya ocupan sus hermanos.
+ * - Sin contenedor medible devuelve `Infinity`: «no hay tope», y entonces el
+ *   ajuste se queda con la capacidad declarada, como antes.
+ */
+export function altoUtil(el) {
+  if (!el || typeof getComputedStyle !== 'function') return Infinity;
+  const cs = getComputedStyle(el);
+  const relleno = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+
+  const propio = el.clientHeight - relleno;
+  if (propio > 0 && cs.flex !== 'none' && /\d/.test(cs.flexBasis ?? '')) return propio;
+  if (propio > 0 && cs.display !== 'block' && cs.height !== 'auto') return propio;
+
+  const padre = el.parentElement;
+  if (!padre || typeof getComputedStyle !== 'function') return Infinity;
+  const csP = getComputedStyle(padre);
+  const rellenoP = (parseFloat(csP.paddingTop) || 0) + (parseFloat(csP.paddingBottom) || 0);
+  const delPadre = padre.clientHeight - rellenoP;
+  if (!(delPadre > 0)) return Infinity;
+
+  let ocupado = 0;
+  for (const hermano of padre.children) {
+    if (hermano === el) continue;
+    ocupado += hermano.getBoundingClientRect().height;
+  }
+  const hueco = delPadre - ocupado;
+  return hueco > 0 ? hueco : Infinity;
+}
+
+/**
+ * El tamaño MÁXIMO, en pt, que puede tener el texto sin salirse de su caja.
+ *
+ * Sale de la geometría, no de un número elegido: un renglón mide
+ * `font-size × interlineado`, así que el tamaño más grande que puede dibujarse
+ * dentro de un alto dado es `alto / interlineado`. Pasarse de ahí es
+ * desbordar; quedarse corto es desperdiciar el campo.
+ *
+ * Se devuelve en pt porque es la unidad de la escalera (`ESCALA`), con la
+ * misma conversión que usa `ptARem`: `pt = px × 12 / raíz`.
+ *
+ * `Infinity` cuando no hay caja medible: sin dato no se inventa un tope.
+ */
+export function techoDeLaCaja(el, renglones = 1) {
+  if (!el || typeof getComputedStyle !== 'function') return Infinity;
+  const alto = altoUtil(el);
+  if (!Number.isFinite(alto)) return Infinity;
+
+  const cs = getComputedStyle(el);
+  const fs = parseFloat(cs.fontSize);
+  const lh = parseFloat(cs.lineHeight);
+  if (!Number.isFinite(fs) || fs <= 0 || !Number.isFinite(lh) || lh <= 0) return Infinity;
+
+  /* Interlineado como proporción del tamaño: así no depende del tamaño que
+     tenga puesto ahora mismo, que es justo lo que vamos a cambiar. */
+  /* Se divide entre los renglones que el texto puede usar. Sin esto el techo
+     seria el de UNA linea que ocupa toda la caja: en el participante daba
+     120 pt, y la escalera arrancaba en un tamano absurdo para bajar de uno en
+     uno hasta que cupiera, con decenas de remaquetados inutiles.
+     Con el reparto, el techo es el tamano con el que N renglones llenan la
+     caja entera, que es exactamente lo que hay que probar primero. */
+  const cant = Number.isFinite(renglones) && renglones > 0 ? renglones : 1;
+  const proporcion = lh / fs;
+  const pxMax = alto / (proporcion * cant);
+
+  const raiz = raizPx() || REM;
+  return (pxMax * 12) / raiz;
+}
+
+/**
+ * Cuántos renglones caben en el alto disponible del elemento.
+ *
+ * `Infinity` cuando no hay tope: ahí manda la capacidad declarada en el rol.
+ */
+export function renglonesQueCaben(el) {
+  const alto = altoUtil(el);
+  if (!Number.isFinite(alto)) return Infinity;
+  const lh = parseFloat(getComputedStyle(el).lineHeight);
+  if (!Number.isFinite(lh) || lh <= 0) return Infinity;
+  return Math.max(1, Math.floor(alto / lh));
+}
+
+/**
  * Separa los elementos por la caja a la que pertenecen.
  *
  * Vive aparte de `ajustarTextos` para poder probarla sin navegador: recibe
@@ -687,7 +822,11 @@ export function ajustarTextos(raiz) {
     if (!els.length) continue;
     const opciones = {
       ...(rol.renglones != null ? { renglones: rol.renglones } : {}),
-      ...(rol.categoria ? { categoria: rol.categoria } : {})
+      ...(rol.categoria ? { categoria: rol.categoria } : {}),
+      /* `llenar` lo declara el rol: es el que sabe si su caja tiene un alto
+         que aprovechar. Por omision no se toca nada, para no cambiar el
+         aspecto de las pantallas que ya estaban bien. */
+      ...(rol.llenar ? { llenar: true } : {}),
     };
 
     /* CON `porCaja`, CADA CAJA ES SU PROPIA DECISIÓN.
