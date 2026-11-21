@@ -404,9 +404,10 @@
       "excerpt": "Completar el versículo",
       "comment": "Usa text-fitting, que quepa en 1 sola fila.",
       "createdAt": "2026-11-21T18:15:45.468Z",
-      "status": "open",
+      "status": "resolved",
       "sentAt": "2026-11-21T18:15:45.513Z",
-      "resolvedAt": null
+      "resolvedAt": "2026-11-21T18:29:39.024Z",
+      "resolution": "Rótulo del juego a 1 fila: nowrap más ajuste real (mide con Range contra el hueco de la cabecera y encoge la letra, suelo de 8 pt). Medido: 218px de hueco para un texto que pide 248px, entra a ~14 pt."
     },
     {
       "id": "p6mnzmyk",
@@ -428,6 +429,94 @@
       "createdAt": "2026-11-21T18:16:42.851Z",
       "status": "open",
       "sentAt": "2026-11-21T18:16:42.916Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "5miwkeyp",
+      "file": "05-presentador.html",
+      "selector": "body > div > div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(2) > div > div:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(1) > select",
+      "excerpt": "10 preguntas",
+      "comment": "Que el texto contenido use text-fitting a 1 sola fila",
+      "createdAt": "2026-11-21T18:18:08.811Z",
+      "status": "open",
+      "sentAt": "2026-11-21T18:18:08.854Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "sosekeve",
+      "file": "05-presentador.html",
+      "selector": "body > div > div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(2) > div > div:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(2) > select",
+      "excerpt": "15 segundos",
+      "comment": "Que el texto contenido use text-fitting a 1 sola fila",
+      "createdAt": "2026-11-21T18:18:12.410Z",
+      "status": "open",
+      "sentAt": "2026-11-21T18:18:12.477Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "qln36878",
+      "file": "05-presentador.html",
+      "selector": "body > div > div:nth-of-type(4) > div:nth-of-type(1) > div:nth-of-type(2) > div > div:nth-of-type(1) > div > span:nth-of-type(2)",
+      "excerpt": "Completar el versículo",
+      "comment": "Usa text-fitting, que quepa en una sola línea",
+      "createdAt": "2026-11-21T18:18:57.582Z",
+      "status": "open",
+      "sentAt": "2026-11-21T18:18:57.632Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "43q7q5nl",
+      "file": "05-presentador.html",
+      "selector": "body > div > div:nth-of-type(4) > div:nth-of-type(1) > div:nth-of-type(2) > div > div:nth-of-type(1) > span",
+      "excerpt": "En línea",
+      "comment": "Usa text-fitting, que quepa en una sola línea",
+      "createdAt": "2026-11-21T18:19:07.184Z",
+      "status": "open",
+      "sentAt": "2026-11-21T18:19:07.242Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "5cb27fvt",
+      "file": "05-presentador.html",
+      "selector": "body > div > div:nth-of-type(4) > div:nth-of-type(1) > div:nth-of-type(2) > div > div:nth-of-type(2) > div:nth-of-type(2)",
+      "excerpt": "Código de la sala B73WS 3 participantes Escanea el QR o escribe el código",
+      "comment": "El interlineado reducción para que quede del tamaño del alto del qr.",
+      "createdAt": "2026-11-21T18:19:58.125Z",
+      "status": "open",
+      "sentAt": "2026-11-21T18:19:58.164Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "1jcoa980",
+      "file": "05-presentador.html",
+      "selector": "body > div > div:nth-of-type(4) > div:nth-of-type(1) > div:nth-of-type(2) > div > div:nth-of-type(2) > div:nth-of-type(1) > div",
+      "excerpt": "QR de la sala #/join?c=B73WS",
+      "comment": "El qr no debe desbordar en el texto de la tarjeta",
+      "createdAt": "2026-11-21T18:20:25.006Z",
+      "status": "open",
+      "sentAt": "2026-11-21T18:20:25.074Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "aw25ki1j",
+      "file": "05-presentador.html",
+      "selector": "body > div > div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(2) > div > div:nth-of-type(1) > div > span:nth-of-type(2)",
+      "excerpt": "Completar el versículo",
+      "comment": "Está  montándose encima del \"En línea\", deben respetar sus espacios mutuamente.",
+      "createdAt": "2026-11-21T18:22:08.251Z",
+      "status": "open",
+      "sentAt": "2026-11-21T18:22:08.401Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "2bjo7nk4",
+      "file": "05-presentador.html",
+      "selector": "body > div > div:nth-of-type(6) > div:nth-of-type(1) > div:nth-of-type(2) > div > div:nth-of-type(4) > span:nth-of-type(2)",
+      "excerpt": "14 s",
+      "comment": "Alinealo al centro e incluye la barra de temporizador",
+      "createdAt": "2026-11-21T18:27:40.671Z",
+      "status": "open",
+      "sentAt": "2026-11-21T18:27:41.470Z",
       "resolvedAt": null
     }
   ]

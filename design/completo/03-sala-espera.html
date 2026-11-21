@@ -56,6 +56,15 @@
      el MISMO modelo para los seis. */
   .orbes-fila{display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap}
   .orbes-fila canvas{display:block;width:34px;height:34px}
+  /* EL ROTULO DEL JUEGO EN UNA SOLA FILA, solo en esta placa.
+     Christian: «Usa text-fitting, que quepa en 1 sola fila».
+     `nowrap` NO es opcional: con el nombre partido en dos renglones, el ajuste
+     mira la ALTURA, nunca ve que sobra ancho, declara «cabe» y el texto se
+     sale de su caja. Es la trampa ya pagada en este proyecto.
+     El `max-width: 14ch` de `base-app.css` obligaba a dos renglones: aqui se
+     retira, y el ancho util lo pone la fila de la cabecera. */
+  .rotulo-juego .nombre-juego{white-space:nowrap;max-width:none}
+  .rotulo-juego{min-width:0}
 </style>
 </head>
 <body>
@@ -398,6 +407,59 @@
     fila.dataset.modelo = 'orbits (respaldo: no cargo lib/orbe.js)';
     fila.title = 'thinking-orbs · orbits (respaldo)';
   }
+
+  /* EL ROTULO DEL JUEGO EN UNA SOLA FILA.
+     Christian: «Usa text-fitting, que quepa en 1 sola fila».
+     Este artboard es una placa estatica y no corre `ajuste.js`, que es quien
+     hace este trabajo en la app. Sin esto, `nowrap` sacaria el nombre de su
+     caja y el dibujo mentiria sobre lo que se ve de verdad.
+     Se hace lo mismo que el ajustador, en pequeno: medir y encoger la letra. */
+  const SUELO = 8 * (96 / 72);   // 8 pt en px: el suelo del proyecto
+  for (const el of document.querySelectorAll('.nombre-juego')) {
+    const rotulo = el.parentElement;
+    const filaCab = rotulo && rotulo.parentElement;
+    if (!filaCab) continue;
+
+    /* El espacio disponible se calcula desde la FILA: ancho menos relleno
+       menos lo que ocupan sus hermanos (el boton «Volver») y sus `gap`.
+       El ancho del propio rotulo no sirve: es hijo flexible y crece hasta
+       tapar al boton.
+
+       OJO CON LA DIRECCION. En el artboard acostado el contenedor es una
+       COLUMNA (rotulo arriba, orbe abajo): ahi los hermanos no compiten por el
+       ancho, asi que restarlos daba un disponible negativo y el rotulo se
+       quedaba sin ajustar, desbordando. Solo se restan cuando van en fila. */
+    const estiloFila = getComputedStyle(filaCab);
+    const enFila = !/column/.test(estiloFila.flexDirection);
+    const hermanos = enFila
+      ? [...filaCab.children].filter(h => h !== rotulo)
+      : [];
+    const ocupado = hermanos.reduce(
+      (suma, h) => suma + h.getBoundingClientRect().width, 0
+    ) + parseFloat(estiloFila.columnGap || estiloFila.gap || 0) * hermanos.length;
+
+    const disponible = filaCab.clientWidth
+      - parseFloat(estiloFila.paddingLeft)
+      - parseFloat(estiloFila.paddingRight)
+      - ocupado;
+    if (!(disponible > 0)) continue;
+
+    /* Se mide con `Range`, no con el ancho de la caja: con `nowrap` la caja
+       no cambia aunque el texto se salga, asi que mirar la caja no ve nada. */
+    const rango = document.createRange();
+    let tam = parseFloat(getComputedStyle(el).fontSize);
+    while (tam > SUELO) {
+      el.style.fontSize = tam + 'px';
+      rango.selectNodeContents(el);
+      if (rango.getBoundingClientRect().width <= disponible) break;
+      tam -= 0.25;
+    }
+    /* Los numeros quedan en el DOM para poder comprobarlos sin abrir el
+       navegador: es la unica forma de que una placa estatica sea verificable. */
+    el.dataset.ajustado = Math.round(tam * 10) / 10;
+    el.dataset.disponible = Math.round(disponible);
+  }
+
 </script>
 </body>
 </html>
