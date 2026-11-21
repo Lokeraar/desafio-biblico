@@ -73,6 +73,26 @@ bloq="$(q "select public.admin_key_status()->>'bloqueada'")"
 t "$([ "$bloq" = "false" ] && echo 1 || echo 0)" \
   "pasada la espera, deja de estar bloqueada"
 
+# 4b. EL CASO QUE FALTABA, y que dejaba pasar un defecto real.
+#
+#     Tras la espera, el conteo tiene que arrancar de CERO. Si no arranca,
+#     un solo fallo nuevo te devuelve a `clave_bloqueada` y te deja fuera
+#     otros diez minutos: en la practica tendrías UN intento, no cinco.
+#
+#     Por qué las pruebas de arriba y de abajo no lo detectaban: la clave
+#     CORRECTA reinicia el conteo por su cuenta, asi que entra igual con el
+#     defecto puesto. Solo una clave EQUIVOCADA justo despues de la espera
+#     distingue `clave_incorrecta` (bien) de `clave_bloqueada` (defecto).
+#
+#     Comprobado introduciendo el defecto a proposito: esta prueba falla, y
+#     las demas siguen en verde. Es la unica que lo ve.
+res="$(q "select public.admin_check_key('9999')")"
+t "$(printf '%s' "$res" | rg -q 'clave_incorrecta' && echo 1 || echo 0)" \
+  "tras la espera, una clave equivocada da clave_incorrecta (no clave_bloqueada)"
+intentos="$(q "select public.admin_intentos_fallidos()")"
+t "$([ "$intentos" = "1" ] && echo 1 || echo 0)" \
+  "y el conteo arranco de cero, con un solo fallo (conto $intentos)"
+
 res="$(q "select public.admin_check_key('$CLAVE')")"
 t "$(printf '%s' "$res" | rg -q '"ok"' && echo 1 || echo 0)" \
   "y la clave correcta vuelve a entrar"
