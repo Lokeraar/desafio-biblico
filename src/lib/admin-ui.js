@@ -123,6 +123,16 @@ export function modalClave({ para = 'entrar', error = null, pista = null, muestr
       titulo: 'Cambiar la clave maestra',
       explicacion: 'Escribe la clave actual y después la nueva.',
       boton: 'Entrar'
+    },
+    /* CREAR UNA SALA.
+       Christian: «hay que solicitar la clave maestra para poder crear la sala,
+       si la introduce incorrectamente no se crea».
+       El texto dice PARA QUE se pide: quien escribe la clave merece saber que
+       va a pasar si acierta. */
+    'crear-sala': {
+      titulo: 'Clave maestra',
+      explicacion: 'Para crear una sala hace falta la clave maestra.',
+      boton: 'Crear sala'
     }
   };
   const c = textos[para] ?? textos.entrar;

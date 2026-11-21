@@ -32,6 +32,7 @@ import {
 } from './lib/editor-versiculo.js';
 import { qrSVG } from './lib/qr.js';
 import { ceremoniaHTML, totalPasos } from './lib/render.js';
+import { decidirCrearSala, AL_CREAR } from './lib/crear-sala.js';
 import {
   pantallaParticipante, pantallaTV, listaTurnosHTML, modalJuicioHTML,
   sinReferenciaAlFinal, relojHTML,
@@ -2692,61 +2693,37 @@ document.addEventListener('click', async ev => {
 
     /* --- menú / navegación --- */
     case 'crear-sala': {
-      if (!app.temaElegido) {
+      /* La decision vive en `lib/crear-sala.js`, con sus pruebas: el orden
+         —tema, despues clave, despues crear— es lo que se olvida. */
+      const alCrear = decidirCrearSala({
+        temaElegido: app.temaElegido,
+        adminClave: app.adminClave
+      });
+
+      if (alCrear === AL_CREAR.SIN_TEMA) {
         ponerAviso('error', 'Elige un tema antes de crear la sala.');
         break;
       }
 
-      // Un solo host vivo. Si se crea una sala nueva sin retirar la
-      // anterior, los dos siguen consultando y el viejo sobrescribe el
-      // estado con SU código: en pantalla aparecía un código y el QR de
-      // otro, y la sala real era impredecible.
-      if (app.host?.destruir) app.host.destruir();
-      app.host = null;
-      app.estado = null;
+      /* LA CLAVE MAESTRA, PRIMERO.
+         Christian: «hay que solicitar la clave maestra para poder crear la
+         sala, si la introduce incorrectamente no se crea».
 
-      // Con proyecto configurado, la partida vive en la nube: varios
-      // teléfonos de verdad, no solo pestañas del mismo aparato.
-      if (hayNube) {
-        const host = crearHostNube({
-          topicId: app.temaElegido,
-          // El juego viaja al servidor al crear la sala: `rooms.game_slug`
-          // decide qué preguntas se pueden planificar y qué pantallas se
-          // dibujan después. Sin esto, la sala nacía siempre como selección
-          // simple y la tarjeta del juego nuevo no servía de nada.
-          gameSlug: app.juegoElegido,
-          onEstado: est => { app.estado = est; render(); }
-        });
-        const r = await host.crear(app.cantidadPreguntas, app.segundosRonda);
-        if (r.error) {
-          ponerAviso('error', traducirError(r.error));
-          break;
-        }
-        app.host = host;
-        // Guardar para sobrevivir a un refresco: la sala es del servidor,
-        // así que basta recordar su id y el token del presentador.
-        try {
-          localStorage.setItem(CLAVE_HOST, JSON.stringify({
-            roomId: r.roomId, hostToken: r.hostToken, code: r.code
-          }));
-        } catch { /* modo privado: la sala solo vive en memoria */ }
+         El boton que crea salas es UNO solo (`app.js:1088`) y su manejador es
+         comun a los dos juegos: `app.juegoElegido` solo decide que preguntas se
+         juegan. Por eso la clave se pide aqui y cubre Seleccion simple y
+         Completar el versiculo sin duplicar nada.
 
-        // NO se abre la primera pregunta sola. La sala nace en 'lobby' y la
-        // espera es parte del juego: la gente entra, el presentador ve quién
-        // llegó, y recién entonces pulsa. Abrirla sola se saltaba el lobby
-        // entero y nadie alcanzaba a entrar.
+         Si ya se verifico en esta sesion (`app.adminClave`), no se vuelve a
+         pedir: la llave se pide una vez por sesion, no en cada sala. */
+      if (alCrear === AL_CREAR.PEDIR_CLAVE) {
+        app.modal = { tipo: 'clave', para: 'crear-sala' };
+        app.adminError = null;
         render();
         break;
       }
 
-      app.host = crearHostLocal({
-        preguntas: BANCO,
-        onEstado: est => { app.estado = est; render(); }
-      });
-      app.host.preparar(app.cantidadPreguntas, app.segundosRonda);
-      // Por defecto, el presentador es quien orquesta: no necesita cuenta.
-      app.estado = app.host.estado();
-      render();
+      await crearSalaAhora();
       break;
     }
 
@@ -3376,6 +3353,69 @@ document.addEventListener('click', async ev => {
   }
 });
 
+/**
+ * Crea la sala de verdad. Se llama SOLO con la clave ya verificada.
+ *
+ * Se extrajo del `case 'crear-sala'` porque ahora hay dos caminos que llegan
+ * aqui: el boton cuando la clave ya esta en la sesion, y el modal de clave
+ * cuando se acaba de escribir. Duplicar el cuerpo seria dos sitios que se
+ * desincronizan; y ese cuerpo guarda el token del presentador, que es lo unico
+ * que permite volver a la sala tras recargar.
+ */
+async function crearSalaAhora() {
+  // Un solo host vivo. Si se crea una sala nueva sin retirar la
+  // anterior, los dos siguen consultando y el viejo sobrescribe el
+  // estado con SU código: en pantalla aparecía un código y el QR de
+  // otro, y la sala real era impredecible.
+  if (app.host?.destruir) app.host.destruir();
+  app.host = null;
+  app.estado = null;
+
+  // Con proyecto configurado, la partida vive en la nube: varios
+  // teléfonos de verdad, no solo pestañas del mismo aparato.
+  if (hayNube) {
+    const host = crearHostNube({
+      topicId: app.temaElegido,
+      // El juego viaja al servidor al crear la sala: `rooms.game_slug`
+      // decide qué preguntas se pueden planificar y qué pantallas se
+      // dibujan después. Sin esto, la sala nacía siempre como selección
+      // simple y la tarjeta del juego nuevo no servía de nada.
+      gameSlug: app.juegoElegido,
+      onEstado: est => { app.estado = est; render(); }
+    });
+    const r = await host.crear(app.cantidadPreguntas, app.segundosRonda);
+    if (r.error) {
+      ponerAviso('error', traducirError(r.error));
+      return;
+    }
+    app.host = host;
+    // Guardar para sobrevivir a un refresco: la sala es del servidor,
+    // así que basta recordar su id y el token del presentador.
+    try {
+      localStorage.setItem(CLAVE_HOST, JSON.stringify({
+        roomId: r.roomId, hostToken: r.hostToken, code: r.code
+      }));
+    } catch { /* modo privado: la sala solo vive en memoria */ }
+
+    // NO se abre la primera pregunta sola. La sala nace en 'lobby' y la
+    // espera es parte del juego: la gente entra, el presentador ve quién
+    // llegó, y recién entonces pulsa. Abrirla sola se saltaba el lobby
+    // entero y nadie alcanzaba a entrar.
+    render();
+    return;
+  }
+
+  app.host = crearHostLocal({
+    preguntas: BANCO,
+    onEstado: est => { app.estado = est; render(); }
+  });
+  app.host.preparar(app.cantidadPreguntas, app.segundosRonda);
+  // Por defecto, el presentador es quien orquesta: no necesita cuenta.
+  app.estado = app.host.estado();
+  render();
+  return;
+}
+
 function revelarSiguientePodio() {
   const tabla = E.tablaFinal(app.estado ?? { players: [] });
   const total = totalPasos(tabla);
@@ -3714,6 +3754,17 @@ document.addEventListener('submit', async ev => {
       const pendiente = app.marcaPendiente && app.marcaPendiente.tipo === 'lema'
         ? app.marcaPendiente.valor : '';
       await guardarLema(pendiente);
+      return;
+    }
+    /* CREAR LA SALA, ya con la clave verificada.
+       Christian: «si la introduce incorrectamente no se crea». Acertando, se
+       crea. El modal se cierra ANTES de crearla para que la pantalla del
+       presentador no quede tapada por el fondo oscuro. */
+    if (para === 'crear-sala') {
+      app.modal = null;
+      app.adminError = null;
+      render();
+      await crearSalaAhora();
       return;
     }
     if (para === 'portada') {
