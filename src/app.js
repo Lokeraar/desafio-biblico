@@ -15,6 +15,9 @@ import { crearHostLocal, crearClienteLocal, esLocalDisponible } from './lib/loca
 import { crearHostNube, crearClienteNube, admin, rpc, resolverSala, mirarSala } from './lib/cloud.js';
 import { hayNube } from './config.js';
 import {
+  SESION_MUERTA, decidirSesionJugador, decidirSalaHost, avisoSesionJugador
+} from './lib/liberar.js';
+import {
   selectorTema, modalClave, modalCambiarClave, modalTemas,
   modalPreguntas, modalFormPregunta, vistaConfig, validarPregunta,
   modalVersiculos, modalEditorVersiculo,
@@ -3364,10 +3367,8 @@ addEventListener('pagehide', () => {
         app.estado = est; render();
       }
     });
-    // Errores que SÍ significan que la sesión murió. Cualquier otro (red
-    // caída, servidor lento) es transitorio: expulsar al jugador por eso
-    // contradice justo lo que se quería arreglar.
-    const SESION_MUERTA = new Set(['jugador_ausente', 'sala_inexistente', 'sesion_incompleta']);
+    // Las listas de errores y la decision viven en `lib/liberar.js`, con sus
+    // pruebas: aqui solo se aplica el efecto.
 
     const intentar = (intentos) => {
       app.cliente.reanudar({
@@ -3400,19 +3401,29 @@ addEventListener('pagehide', () => {
           return;
         }
 
-        if (SESION_MUERTA.has(r.error)) {
+        /* La DECISION vive en `lib/liberar.js`, con sus pruebas. Aqui solo se
+           aplica el efecto. Se le pasa el estado para que una sala cerrada
+           suelte la sesion aunque la llamada haya salido bien. */
+        const decision = decidirSesionJugador(r, {
+          estado: app.estado?.status ?? null,
+          reintentosRestantes: intentos
+        });
+
+        if (decision === 'olvidar') {
           app.yo = null;
           app.cliente = null;
           guardarSesion();
-          ponerAviso('error', 'Tu sesión terminó. Vuelve a entrar con tu nombre.');
+          ponerAviso('error', avisoSesionJugador('olvidar'));
           return;
         }
 
-        // Fallo transitorio: se reintenta sin tocar la sesión guardada.
-        if (intentos > 0) {
+        if (decision === 'reintentar') {
           setTimeout(() => intentar(intentos - 1), 2000);
-        } else {
-          ponerAviso('error', 'No hay conexión. Se reintentará al recargar.');
+          return;
+        }
+
+        if (decision === 'esperar') {
+          ponerAviso('error', avisoSesionJugador('esperar'));
         }
       });
     };
@@ -3440,41 +3451,48 @@ addEventListener('pagehide', () => {
         gameSlug: app.juegoElegido,
         onEstado: est => { app.estado = est; render(); }
       });
-      host.reabrir(guardada).then(r => {
-        if (r?.error) {
-          // La sala ya no existe o el token dejó de valer: se limpia y el
-          // presentador puede crear una nueva.
-          localStorage.removeItem(CLAVE_HOST);
-          app.host = null;
-          app.estado = null;
+      /* LA DECISION VIVE EN `lib/liberar.js`, con sus pruebas.
+       *
+       * AQUI ESTABA EL DEFECTO: se borraba la sala guardada con CUALQUIER
+       * error. Un corte de señal al refrescar —que no dice nada de la sala—
+       * le borraba el panel al presentador en medio de una partida, con los
+       * participantes dentro y sin forma de recuperarla. Solo tres errores
+       * significan que la sala murió; el resto se reintenta. */
+      const reabrirHost = (restantes) => {
+        host.reabrir(guardada).then(r => {
+          const decision = decidirSalaHost(r, {
+            estado: app.estado?.status ?? null,
+            reintentosRestantes: restantes
+          });
+
+          if (decision === 'reintentar') {
+            setTimeout(() => reabrirHost(restantes - 1), 2000);
+            return;
+          }
+
+          if (decision === 'esperar') {
+            /* No se borra nada: la sala vive en el servidor y el token sigue
+               valiendo. Se avisa y se deja el panel como está, para que al
+               recuperar la señal el próximo refresco reconecte. */
+            ponerAviso('error', 'No hay conexión. Tu sala sigue abierta: recarga cuando vuelva la señal.');
+            return;
+          }
+
+          if (decision === 'olvidar') {
+            localStorage.removeItem(CLAVE_HOST);
+            host.destruir?.();
+            app.host = null;
+            app.estado = null;
+            render();
+            return;
+          }
+
+          app.host = host;
           render();
-          return;
-        }
-        /*
-         * La partida ya había terminado: no se reabre.
-         * Recargar después de volver al menú devolvía al presentador a la
-         * tabla de clasificación de la partida anterior, como si siguiera
-         * viva. Ahora se olvida la sala y el panel vuelve a pedir crear una.
-         */
-        /*
-         * Solo se olvida si la sala está CERRADA.
-         *
-         * Con 'ceremony' aquí, recargar el panel durante la ceremonia se
-         * llevaba por delante la tabla y la sesión del presentador, que es
-         * justo lo que necesita para revelar el podio.
-         */
-        const fin = app.estado?.status;
-        if (fin === 'closed') {
-          localStorage.removeItem(CLAVE_HOST);
-          host.destruir?.();
-          app.host = null;
-          app.estado = null;
-          render();
-          return;
-        }
-        app.host = host;
-        render();
-      });
+        });
+      };
+
+      reabrirHost(3);
     }
   }
 

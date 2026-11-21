@@ -36,14 +36,14 @@ SUITES_OMITIDAS=()
 # --- Pruebas de JavaScript -------------------------------------------
 if [ "$solo_sql" = false ]; then
   echo "=== Pruebas de JavaScript ==="
-  for suite in engine local partida cloud render qr admin-ui ajuste latido imagen reintento editor-versiculo versiculo; do
-    archivo="$RAIZ/src/lib/$suite.test.mjs"
-    if [ ! -f "$archivo" ]; then
-      echo "  FALTA $archivo"
-      SUITES_FALLIDAS+=("$suite (no existe)")
-      continue
-    fi
-
+  # La lista se DESCUBRE, no se escribe a mano.
+  #
+  # Estaba escrita a mano y `liberar.test.mjs` no figuraba: la prueba existia,
+  # pasaba, y NUNCA se ejecutaba. Un archivo nuevo quedaba invisible hasta que
+  # alguien se acordara de agregarlo, y nada lo avisaba. Descubriendo, un
+  # archivo nuevo se corre el mismo dia que se crea.
+  for archivo in "$RAIZ"/src/lib/*.test.mjs; do
+    suite="$(basename "$archivo" .test.mjs)"
     salida="$(node "$archivo" 2>&1)"
     codigo=$?
     resumen="$(printf '%s\n' "$salida" | rg -o '[0-9]+ correctas, [0-9]+ fallas' | tail -1)"
