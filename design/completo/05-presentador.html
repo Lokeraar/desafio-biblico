@@ -136,7 +136,8 @@
 
   <!-- ============ 1. CONFIGURACIÓN ============ -->
   <div class="h2">1. Configuración — antes de crear la sala
-    <small>Tema, cantidad de preguntas y segundos. El botón que crea la sala.</small>
+    <small>Tema, cantidad de preguntas y segundos. Y el botón que crea la sala, que ahora pide la
+    clave maestra.</small>
   </div>
 
   <div class="fila">
@@ -179,6 +180,70 @@
       </div>
     </div>
 
+
+    <div class="marco">
+      <div class="rotulo">390×844 · crear sala pide la clave</div>
+      <div class="tela v">
+        <div style="position:relative;display:flex;flex-direction:column;height:100%;padding:16px">
+          <div class="fila-entre cabecera-host" style="flex:0 0 auto">
+            <button class="boton-salir">← Volver</button>
+            <span style="display:flex;align-items:center;gap:.35rem;font-size:var(--t-sm);color:var(--tinta-suave)">
+              <span class="punto-vivo"></span> En línea
+            </span>
+            <div class="rotulo-juego">
+              <span class="rotulo">Juego:</span>
+              <span class="nombre-juego">Selección simple</span>
+            </div>
+          </div>
+          <div style="flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;gap:.5rem">
+            <h1 style="margin:0;font-size:var(--t-2xl);line-height:1.1;font-weight:800;text-align:center">
+              Panel del presentador</h1>
+            <div class="campo" style="margin-top:.4rem">
+              <label>Tema</label>
+              <select><option>2 Corintios — 25 preguntas</option></select>
+            </div>
+            <button class="boton-grande boton-oro" style="margin-top:.5rem">Crear sala</button>
+          </div>
+
+          <!-- EL MODAL DE CLAVE, ENCIMA DE LA CONFIGURACION.
+               Christian: «A todos los botones de crear sala Incluyendo los del
+               juego de seleccion simple Se le debe solicitar la llave maestra
+               para poder crear la sala si le introduce incorrectamente No se
+               crea».
+
+               El modal NO se cierra al fallar: se queda abierto con el error a
+               la vista. Cerrarlo al fallar perderia lo que la persona escribio
+               y, peor, el aviso de intentos no llegaria a leerse. Es el defecto
+               que ya se corrigio una vez en este proyecto (`app.js:3684`). -->
+          <div class="modal-fondo" style="position:absolute;inset:0">
+            <div class="modal">
+              <h2>Clave maestra</h2>
+              <p class="tenue" style="margin:0;font-size:var(--t-sm)">
+                Para crear la sala hace falta la clave maestra.</p>
+              <div class="campo">
+                <label>Clave</label>
+                <input type="password" placeholder="••••">
+              </div>
+              <div class="aviso err" style="margin:0">
+                La clave no es correcta. La sala no se ha creado.</div>
+              <div style="display:flex;gap:var(--esp);flex-wrap:wrap">
+                <button class="boton boton-contorno" style="width:auto;flex:1">Cancelar</button>
+                <button class="boton-grande boton-oro" style="width:auto;flex:1">Crear sala</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="max-width:390px;margin-top:.6rem">
+        <div class="nota bien" style="margin:0">
+          <h3>Con la clave mal, la sala NO se crea</h3>
+          <p>El modal se queda abierto y dice el motivo. Sin esto, quien se
+          equivoca escribe la clave, ve que el modal desaparece y no sabe si la
+          sala existe o no.</p>
+        </div>
+      </div>
+    </div>
+
     <div style="flex:1 1 340px;min-width:280px">
       <div class="notas">
         <div class="nota bien">
@@ -191,6 +256,20 @@
           <h3>«Juego:» arriba a la derecha</h3>
           <p>El mismo componente del menú y de la sala de espera. Si un día cambia el nombre de un
           juego, cambia en los tres sitios a la vez.</p>
+        </div>
+        <div class="nota bien">
+          <h3>Vale para los dos juegos, no solo para este</h3>
+          <p>Christian: «Incluyendo los del juego de selección simple». En la app hay <strong>un solo
+          botón</strong> que crea salas —<code>data-accion="crear-sala"</code>, <code>app.js:1088</code>—
+          y su manejador (<code>app.js:2694</code>) es común a los dos juegos: solo cambia
+          <code>app.juegoElegido</code>. Por eso la clave se pide en un sitio y cubre los dos.</p>
+        </div>
+        <div class="nota mal">
+          <h3>Esto todavía no está en la app</h3>
+          <p>Verificado con <code>grep</code>: el bloque <code>crear-sala</code> de
+          <code>app.js</code> no consulta <code>adminClave</code> ni llama a
+          <code>comprobarClave</code>. Hoy cualquiera crea una sala sin la clave. El dibujo de arriba
+          es lo que hay que construir.</p>
         </div>
         <div class="nota duda">
           <h3>Detalle del código</h3>

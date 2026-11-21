@@ -648,6 +648,18 @@
       "sentAt": "2026-11-21T20:41:40.279Z",
       "resolvedAt": "2026-11-21T21:46:27.488Z",
       "resolution": "Aplicado en el archivo 08-configuraciones.html: sección «Cerrar salas abiertas» con sus dos estados (cerrar una por su código y cerrar todas con confirmación que dice cuántas son). Solo diseño en el canvas; la construcción va en el código y está en curso."
+    },
+    {
+      "id": "fuks237g",
+      "file": "05-presentador.html",
+      "selector": "body > div > div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(2) > div > div:nth-of-type(2) > button",
+      "excerpt": "Crear sala",
+      "comment": "A todos los botones de crear sala Incluyendo los del juego de selección simple Se le debe solicitar la llave maestra para poder crear la sala si le introduce incorrectamente No se crea",
+      "createdAt": "2026-11-21T22:11:35.070Z",
+      "status": "resolved",
+      "sentAt": "2026-11-21T22:11:35.178Z",
+      "resolvedAt": "2026-11-21T22:19:28.102Z",
+      "resolution": "Añadido el estado «crear sala pide la clave» en la sección de configuración: modal de clave encima, con el error visible y sin cerrarse al fallar, y los botones Cancelar / Crear sala. Con la clave mal, la sala no se crea. Nota añadida explicando que en la app hay un solo crear-sala (app.js:1088) común a los dos juegos, y que hoy ese botón no consulta la clave (verificado con grep)."
     }
   ]
 }
