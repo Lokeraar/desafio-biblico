@@ -27,20 +27,12 @@
   .nota.duda{border-left:4px solid #f0a33a}
   code{font-family:ui-monospace,monospace;font-size:.9em;background:rgba(111,227,238,.12);
     padding:.08em .35em;border-radius:5px;color:#6fe3ee}
-  /* estructura de la sala de espera */
-  .esp{display:flex;flex-direction:column;height:100%;padding:10px 13px 11px;gap:8px}
-  .tela.h .esp{flex-direction:row;align-items:stretch;gap:11px}
-  .esp-izq{display:flex;flex-direction:column;min-height:0;gap:8px;flex:1 1 auto}
-  .tela.h .esp-izq{flex:0 0 46%}
-  .esp-der{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;min-height:0;gap:6px}
-  .esp-centro{flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;
-    gap:10px;min-height:0;min-width:0}
-  .esp-yo{text-align:center}
-  .esp-yo .nom{font-size:26px;line-height:31px;font-weight:800}
-  .esp-yo .dice{color:var(--tinta-suave)}
-  .esp-ayuda{text-align:center;color:var(--tinta-suave);max-width:34ch;align-self:center;margin:0}
-  .esp-codigo{text-align:center;font-family:ui-monospace,monospace;font-size:26px;
-    font-weight:800;letter-spacing:.15em;color:var(--amarillo)}
+  /* el main real: columna, centrada, con gap de 1rem */
+  .esp-main{flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;
+    gap:16px;min-height:0;padding:16px;text-align:center}
+  .esp-titulo{font-size:28px;line-height:31px;font-weight:800;margin:0}
+  .esp-nombre{font-size:38px;line-height:42px;font-weight:800;margin:0;color:#fff}
+  .esp-puntos{font-size:16px;line-height:24px;color:#a9c6ca;margin:0}
 </style>
 </head>
 <body>
@@ -48,41 +40,38 @@
 
   <header>
     <h1>Sala de espera — la app real</h1>
-    <p>Valores medidos: texto 21.3333 px, insignias 16 px, orbe de 64 px. Incluye el rótulo «Juego:»
-    arriba a la derecha y el orbe al pie, en las dos orientaciones.</p>
+    <p>Reconstruido desde el marcado de <code>src/app.js</code> (línea 1654). El título real es
+    <strong>«Ya estás dentro»</strong>, no «Estás en sala de espera», y <strong>no hay lista de
+    participantes</strong> en esta pantalla: el participante solo ve su propio nombre.</p>
   </header>
 
   <div class="h2">Vertical — 390 × 844
-    <small>Una columna: rótulo del juego, aviso, nombre, participantes y el orbe al pie.</small>
+    <small>Lo que el participante ve de verdad mientras espera.</small>
   </div>
 
   <div class="fila">
     <div class="marco">
-      <div class="rotulo">390×844 · tres participantes</div>
+      <div class="rotulo">390×844 · esperando</div>
       <div class="tela v">
-        <div class="esp">
-          <div class="esp-izq">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
-              <button class="app-volver">← Menú</button>
-              <div class="app-rotulo-juego">
-                <span class="rot">Juego:</span>
-                <span class="nom">Completar el versículo</span>
-              </div>
+        <div style="display:flex;flex-direction:column;height:100%">
+          <div style="padding:16px 16px 0">
+            <button class="app-volver">← Volver</button>
+          </div>
+          <div class="esp-main">
+            <h2 class="esp-titulo">Ya estás dentro</h2>
+            <p class="esp-puntos" style="max-width:30ch;align-self:center;margin:0">
+              Espera a que el presentador lance la primera pregunta.
+            </p>
+            <p class="esp-nombre">Ana Pérez</p>
+            <p class="esp-puntos" style="max-width:30ch;align-self:center;margin:0">
+              Este es tu nombre/alias en esta partida
+            </p>
+            <p class="esp-puntos">0 puntos</p>
+            <div class="app-rotulo-juego" style="align-self:flex-end;margin-left:0">
+              <span class="rot">Juego:</span>
+              <span class="nom">Completar el versículo</span>
             </div>
-            <div class="esp-centro">
-              <div class="app-aviso espera">Estás en sala de espera</div>
-              <div class="esp-yo">
-                <div class="nom">Ana Pérez</div>
-                <div class="dice">Este es tu nombre/alias en esta partida</div>
-              </div>
-              <div class="app-jugadores">
-                <span class="app-jug yo"><span class="pt"></span>Ana Pérez</span>
-                <span class="app-jug"><span class="pt"></span>Carlos Ruiz</span>
-                <span class="app-jug"><span class="pt"></span>María López</span>
-              </div>
-            </div>
-            <div class="orbe-espera">
-              <!-- representacion estatica del orbe; en la app es canvas animado -->
+            <div class="orbe-espera" style="align-self:center">
               <div style="width:64px;height:64px;border-radius:50%;
                    background:radial-gradient(circle at 40% 35%, rgba(191,234,242,.85), rgba(191,234,242,.12) 70%);
                    border:1px solid rgba(191,234,242,.35)"></div>
@@ -95,70 +84,53 @@
 
     <div style="flex:1 1 340px;min-width:280px">
       <div class="notas">
-        <div class="nota bien">
-          <h3>El orbe dice «trabajando»</h3>
-          <p>Al pie, 64 px, animado. Sin algo que se mueva, una pantalla quieta durante un minuto se
-          lee como un cuelgue. Estado <code>working</code>: espera al presentador.</p>
+        <div class="nota mal">
+          <h3>Lo que mi artboard inventaba</h3>
+          <p>Ponía un aviso «Estás en sala de espera» y una <strong>lista de participantes</strong>
+          con Ana, Carlos y María. En la app no existe esa lista en esta pantalla: la lista
+          <code>.lista-jugadores</code> vive en el <strong>panel del presentador</strong>.</p>
         </div>
         <div class="nota bien">
-          <h3>«Juego:» + el nombre</h3>
-          <p>Arriba a la derecha, dos filas. Es el mismo componente que usa el panel del presentador,
-          así que no pueden separarse.</p>
+          <h3>Lo que sí muestra</h3>
+          <p>Título «Ya estás dentro» · la frase de espera · <strong>su nombre en grande</strong>
+          (38 px) · «Este es tu nombre/alias en esta partida» · sus puntos · el rótulo del juego · el
+          orbe.</p>
         </div>
         <div class="nota bien">
-          <h3>«nombre/alias en esta partida»</h3>
-          <p>Dice <em>dónde</em> aparece el nombre, que es el dato que le falta a quien acaba de
-          escribirlo.</p>
+          <h3>El orbe, ya en la app</h3>
+          <p><code>.orbe-espera</code> con su canvas y el texto «Esperando al presentador», conectado a
+          <code>lib/orbe.js</code>. Estado <code>working</code>.</p>
         </div>
-        <div class="nota duda">
-          <h3>Sin scroll propio</h3>
-          <p>La columna no tiene <code>overflow</code>: si crece, desliza la página. Un contenedor con
-          scroll propio que no puede desplazarse es lo que rompía el gesto en el menú.</p>
+        <div class="nota bien">
+          <h3>«← Volver», no «← Menú»</h3>
+          <p>Lo pone <code>barraVolver()</code>, que es común a las vistas del jugador.</p>
         </div>
       </div>
     </div>
   </div>
 
   <div class="h2">Acostado — 844 × 390
-    <small>Izquierda: lo del participante con el orbe al pie. Derecha: solo participantes entrantes.</small>
+    <small>La misma columna, centrada. Sin columnas: aquí no hay lista que repartir.</small>
   </div>
 
   <div class="fila">
     <div class="marco">
-      <div class="rotulo">844×390 · seis participantes</div>
+      <div class="rotulo">844×390 · esperando</div>
       <div class="tela h">
-        <div class="esp">
-          <div class="esp-izq">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
-              <button class="app-volver">← Menú</button>
-              <div class="app-rotulo-juego">
-                <span class="rot">Juego:</span>
-                <span class="nom">Completar el versículo</span>
-              </div>
-            </div>
-            <div class="esp-centro">
-              <div class="app-aviso espera">Estás en sala de espera</div>
-              <div class="esp-yo">
-                <div class="nom">Ana Pérez</div>
-                <div class="dice">Este es tu nombre/alias en esta partida</div>
-              </div>
-            </div>
-            <div class="orbe-espera">
-              <div style="width:64px;height:64px;border-radius:50%;
+        <div style="display:flex;flex-direction:column;height:100%">
+          <div style="padding:10px 16px 0">
+            <button class="app-volver">← Volver</button>
+          </div>
+          <div class="esp-main" style="gap:8px">
+            <h2 class="esp-titulo" style="font-size:24px;line-height:27px">Ya estás dentro</h2>
+            <p class="esp-nombre" style="font-size:32px;line-height:35px">Ana Pérez</p>
+            <p class="esp-puntos" style="margin:0">Este es tu nombre/alias en esta partida</p>
+            <p class="esp-puntos">0 puntos</p>
+            <div class="orbe-espera" style="align-self:center;flex-direction:row;gap:10px">
+              <div style="width:40px;height:40px;border-radius:50%;
                    background:radial-gradient(circle at 40% 35%, rgba(191,234,242,.85), rgba(191,234,242,.12) 70%);
                    border:1px solid rgba(191,234,242,.35)"></div>
-              <span class="orbe-txt">Esperando al presentador</span>
-            </div>
-          </div>
-          <div class="esp-der">
-            <p style="margin:0;color:var(--tinta-suave);font-weight:700">Participantes entrantes:</p>
-            <div class="app-jugadores">
-              <span class="app-jug yo"><span class="pt"></span>Ana Pérez</span>
-              <span class="app-jug"><span class="pt"></span>Carlos Ruiz</span>
-              <span class="app-jug"><span class="pt"></span>María López</span>
-              <span class="app-jug"><span class="pt"></span>José Martínez</span>
-              <span class="app-jug"><span class="pt"></span>Lucía Fernández</span>
-              <span class="app-jug"><span class="pt"></span>Pedro Gómez</span>
+              <span class="orbe-txt" style="text-align:left">Esperando al presentador</span>
             </div>
           </div>
         </div>
@@ -168,189 +140,92 @@
     <div style="flex:1 1 340px;min-width:280px">
       <div class="notas">
         <div class="nota bien">
-          <h3>La derecha, solo para los que entran</h3>
-          <p>La lista es lo que crece, así que va sola en su columna. El aviso y el orbe de la
-          izquierda no se mueven con veinte participantes.</p>
+          <h3>Sin scroll propio</h3>
+          <p>La columna es <code>flex: 1</code> con <code>min-height: 0</code>. Si el contenido crece,
+          desliza la página: un contenedor con scroll propio que no puede desplazarse es justo lo que
+          rompía el gesto en el menú.</p>
         </div>
-        <div class="nota mal">
-          <h3>Lo que no puede pasar</h3>
-          <p>Que la lista empuje el aviso fuera de la pantalla, o que el orbe se vaya con el scroll de
-          la lista.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="h2">Estados
-    <small>Cargando y vacío corregidos. Los errores, uno por placa.</small>
-  </div>
-
-  <div class="fila">
-    <div class="marco">
-      <div class="rotulo">vacío · solo yo</div>
-      <div class="tela v">
-        <div class="esp">
-          <div class="esp-izq">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
-              <button class="app-volver">← Menú</button>
-              <div class="app-rotulo-juego">
-                <span class="rot">Juego:</span>
-                <span class="nom">Completar el versículo</span>
-              </div>
-            </div>
-            <div class="esp-centro">
-              <div class="app-aviso espera">Estás en sala de espera</div>
-              <div class="esp-yo">
-                <div class="nom">Ana Pérez</div>
-                <div class="dice">Este es tu nombre/alias en esta partida</div>
-              </div>
-              <p class="esp-ayuda">Eres el primero. Comparte el código:</p>
-              <div class="esp-codigo">B73WS</div>
-              <div class="app-jugadores">
-                <span class="app-jug yo"><span class="pt"></span>Ana Pérez</span>
-              </div>
-            </div>
-            <div class="orbe-espera">
-              <div style="width:64px;height:64px;border-radius:50%;
-                   background:radial-gradient(circle at 40% 35%, rgba(191,234,242,.85), rgba(191,234,242,.12) 70%);
-                   border:1px solid rgba(191,234,242,.35)"></div>
-              <span class="orbe-txt">Esperando a que entren los demás</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div style="max-width:390px;margin-top:.6rem">
-        <div class="nota bien" style="margin:0">
-          <h3>El vacío ofrece la acción que lo llena</h3>
-          <p>Si estás solo, lo útil es el <strong>código de la sala</strong>, no «no hay nadie». El
-          orbe cambia a <code>searching</code>: literalmente está buscando gente.</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="marco">
-      <div class="rotulo">cargando · conectando</div>
-      <div class="tela v">
-        <div class="esp">
-          <div class="esp-izq">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
-              <button class="app-volver">← Menú</button>
-              <div class="app-rotulo-juego">
-                <span class="rot">Juego:</span>
-                <span class="nom">Completar el versículo</span>
-              </div>
-            </div>
-            <div class="esp-centro">
-              <div class="app-aviso espera">Estás en sala de espera</div>
-              <div class="esp-yo">
-                <div class="nom">Ana Pérez</div>
-                <div class="dice">Este es tu nombre/alias en esta partida</div>
-              </div>
-              <p class="esp-ayuda">Conectando con la sala…</p>
-            </div>
-            <div class="orbe-espera">
-              <div style="width:64px;height:64px;border-radius:50%;
-                   background:radial-gradient(circle at 40% 35%, rgba(191,234,242,.85), rgba(191,234,242,.12) 70%);
-                   border:1px solid rgba(191,234,242,.35)"></div>
-              <span class="orbe-txt">Conectando…</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div style="max-width:390px;margin-top:.6rem">
-        <div class="nota bien" style="margin:0">
-          <h3>Dice con qué conecta, y se puede salir</h3>
-          <p>«Conectando con la sala…», no solo «conectando». Y <strong>«← Menú» ya es la
-          salida</strong>: Christian lo señaló y tiene razón, no hace falta un botón aparte.</p>
+        <div class="nota duda">
+          <h3>Una pregunta abierta</h3>
+          <p>El rótulo del juego se añadió en un commit de hoy. Con el rótulo, la columna suma cuatro
+          bloques y en acostado queda justa. ¿Se deja, o se oculta el rótulo acostado?</p>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="h2">Los errores, repartidos
-    <small>Uno por placa. El único sin orbe es «la sala ya cerró»: ahí la app no está trabajando.</small>
+  <div class="h2">Los demás estados del participante
+    <small>Los que existen en el marcado, con su texto real.</small>
   </div>
 
   <div class="fila">
     <div class="marco">
-      <div class="rotulo">error · la sala ya cerró (sin orbe)</div>
+      <div class="rotulo">no está en la partida</div>
       <div class="tela v">
-        <div class="esp">
-          <div class="esp-izq">
-            <button class="app-volver">← Menú</button>
-            <div class="esp-centro">
-              <div class="app-aviso err">La sala B73WS ya cerró</div>
-              <p class="esp-ayuda">El presentador terminó la partida. Pídele un código nuevo si van a
-              jugar otra.</p>
-              <button class="boton-grande contorno">Probar con otro código</button>
-              <button class="boton-grande contorno">← Menú</button>
-            </div>
-            <div style="flex:0 0 auto;height:64px"></div>
+        <div style="display:flex;flex-direction:column;height:100%">
+          <div style="padding:16px 16px 0">
+            <button class="app-volver">← Volver</button>
+          </div>
+          <div class="esp-main">
+            <div class="app-aviso espera">Estás en sala de espera</div>
+            <p class="esp-puntos" style="max-width:30ch;align-self:center;margin:0">
+              La partida ya había empezado. El presentador puede admitirte para que juegues desde la
+              próxima pregunta.
+            </p>
+            <p class="esp-puntos">Ana Pérez</p>
           </div>
         </div>
       </div>
       <div style="max-width:390px;margin-top:.6rem">
         <div class="nota bien" style="margin:0">
-          <h3>Sin orbe: aquí no se espera nada</h3>
-          <p>La app no está trabajando, la partida terminó. Un orbe prometería algo que no ocurre. Se
-          reserva su espacio para que el contenido no salte.</p>
+          <h3>Este sí lleva el aviso</h3>
+          <p>Aquí el aviso «Estás en sala de espera» es real: se usa cuando la partida ya empezó y el
+          presentador puede admitirte. Es un estado distinto del de esperar en el lobby.</p>
         </div>
       </div>
     </div>
 
     <div class="marco">
-      <div class="rotulo">error · te expulsaron</div>
+      <div class="rotulo">conectando</div>
       <div class="tela v">
-        <div class="esp">
-          <div class="esp-izq">
-            <button class="app-volver">← Menú</button>
-            <div class="esp-centro">
-              <div class="app-aviso err">El presentador te sacó de la partida</div>
-              <p class="esp-ayuda">Si crees que fue un error, pídele que te deje volver a entrar.</p>
-              <button class="boton-grande contorno">← Menú</button>
-            </div>
-            <div class="orbe-espera">
-              <div style="width:64px;height:64px;border-radius:50%;
-                   background:radial-gradient(circle at 40% 35%, rgba(191,234,242,.85), rgba(191,234,242,.12) 70%);
-                   border:1px solid rgba(191,234,242,.35)"></div>
-              <span class="orbe-txt">No formas parte de esta partida</span>
-            </div>
+        <div style="display:flex;flex-direction:column;height:100%">
+          <div style="padding:16px 16px 0">
+            <button class="app-volver">← Volver</button>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="marco">
-      <div class="rotulo">error · sin conexión</div>
-      <div class="tela v">
-        <div class="esp">
-          <div class="esp-izq">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
-              <button class="app-volver">← Menú</button>
-              <div class="app-rotulo-juego">
-                <span class="rot">Juego:</span>
-                <span class="nom">Completar el versículo</span>
-              </div>
-            </div>
-            <div class="esp-centro">
-              <div class="app-aviso err">No hay conexión</div>
-              <p class="esp-ayuda">Tu lugar sigue guardado. En cuanto vuelva la señal, entras sin
-              escribir nada.</p>
-            </div>
-            <div class="orbe-espera">
-              <div style="width:64px;height:64px;border-radius:50%;
-                   background:radial-gradient(circle at 40% 35%, rgba(191,234,242,.85), rgba(191,234,242,.12) 70%);
-                   border:1px solid rgba(191,234,242,.35)"></div>
-              <span class="orbe-txt">Reintentando…</span>
-            </div>
+          <div class="esp-main">
+            <p class="esp-titulo">Conectando…</p>
           </div>
         </div>
       </div>
       <div style="max-width:390px;margin-top:.6rem">
         <div class="nota bien" style="margin:0">
-          <h3>Aquí el orbe sí es honesto</h3>
-          <p>La app <strong>está</strong> reintentando cada pocos segundos. Es la diferencia con «la
-          sala ya cerró», donde no hay nada que esperar.</p>
+          <h3>El texto real</h3>
+          <p>La app muestra <code>Conectando…</code> en un párrafo con la clase <code>pulso</code>.
+          «← Volver» sigue visible desde el primer segundo, así que ya hay salida.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="marco">
+      <div class="rotulo">sin conexión</div>
+      <div class="tela v">
+        <div style="display:flex;flex-direction:column;height:100%">
+          <div style="padding:16px 16px 0">
+            <button class="app-volver">← Volver</button>
+          </div>
+          <div class="esp-main">
+            <div class="app-aviso err">No hay conexión. Tu lugar sigue guardado.</div>
+            <p class="esp-puntos" style="max-width:30ch;align-self:center;margin:0">
+              Tu sesión terminó. Vuelve a entrar con tu nombre.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div style="max-width:390px;margin-top:.6rem">
+        <div class="nota bien" style="margin:0">
+          <h3>El aviso de <code>lib/liberar.js</code></h3>
+          <p>Los textos de este estado salen de la decisión del módulo, con sus pruebas: solo tres
+          errores significan que la sesión murió, el resto se reintenta sin borrar nada.</p>
         </div>
       </div>
     </div>
@@ -364,24 +239,18 @@
     <div class="marco">
       <div class="rotulo">parcial</div>
       <div class="tela v" style="opacity:.5;border-style:dashed">
-        <div class="esp">
-          <button class="app-volver">← Menú</button>
-          <div class="esp-centro">
-            <div class="app-aviso espera">Estás en sala de espera</div>
-            <p class="esp-ayuda">Llegó una parte y la otra no. Sin decidir cómo se muestra.</p>
-          </div>
+        <div class="esp-main">
+          <p class="esp-titulo">Parcial</p>
+          <p class="esp-puntos">Llegó una parte y la otra no. Sin decidir cómo se muestra.</p>
         </div>
       </div>
     </div>
     <div class="marco">
       <div class="rotulo">éxito-vacío</div>
       <div class="tela v" style="opacity:.5;border-style:dashed">
-        <div class="esp">
-          <button class="app-volver">← Menú</button>
-          <div class="esp-centro">
-            <div class="app-aviso espera">Estás en sala de espera</div>
-            <p class="esp-ayuda">La partida terminó y no anotó nadie. No es un error.</p>
-          </div>
+        <div class="esp-main">
+          <p class="esp-titulo">Éxito-vacío</p>
+          <p class="esp-puntos">La partida terminó y no anotó nadie. No es un error.</p>
         </div>
       </div>
     </div>

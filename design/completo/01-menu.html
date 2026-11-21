@@ -6,7 +6,6 @@
 <title>Menú — la app real</title>
 <link rel="stylesheet" href="base-app.css">
 <style>
-  /* solo lo que NO es app: la placa, los rotulos y las notas */
   html,body{margin:0}
   .placa{max-width:1400px;margin:0 auto;padding:2rem 1.5rem 4rem;background:#0b1a1d;
     color:#fff;font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
@@ -28,6 +27,22 @@
   .nota.duda{border-left:4px solid #f0a33a}
   code{font-family:ui-monospace,monospace;font-size:.9em;background:rgba(111,227,238,.12);
     padding:.08em .35em;border-radius:5px;color:#6fe3ee}
+
+  /* .menu-juego-actual y .menu-seccion, como en la app */
+  .menu-juego-actual{
+    display:flex;align-items:baseline;justify-content:center;gap:.4em;
+    margin:0;font-size:var(--app-texto);line-height:var(--app-lh);
+  }
+  .menu-juego-actual .rotulo{
+    font-size:var(--app-insignia);line-height:var(--app-insignia-lh);
+    font-weight:800;letter-spacing:.06em;color:var(--tu-100);
+    font-family:inherit;margin:0;text-transform:none;
+  }
+  .menu-juego-actual .valor{font-weight:800;color:var(--amarillo)}
+  .menu-seccion{
+    margin:8px 0 0;font-size:var(--app-insignia);line-height:var(--app-insignia-lh);
+    font-weight:800;letter-spacing:.08em;color:#a9c6ca;text-transform:none;
+  }
 </style>
 </head>
 <body>
@@ -35,19 +50,19 @@
 
   <header>
     <h1>Menú — la app real</h1>
-    <p>Reconstruido con los valores MEDIDOS de la app en el dispositivo
-    (<code>getComputedStyle</code> sobre 390×844 y 844×390), no copiados a ojo. Texto a
-    21.3333 px, título a 25.3333 px, rellenos y radios exactos.</p>
+    <p>Reconstruido con los valores MEDIDOS en el dispositivo y con el <strong>orden real</strong>
+    del marcado: título, lema, «Juego:», botones, sección y tarjetas. La versión anterior tenía los
+    botones después de las tarjetas: estaban mal colocados.</p>
   </header>
 
-  <div class="h2">Vertical — 390 × 844
-    <small>Lo que se ve al abrir, sin deslizar.</small>
+  <div class="h2">Vertical — 390 × 844, lo que se ve al abrir
+    <small>Orden real: la portada, el título y los botones. Las tarjetas quedan más abajo.</small>
   </div>
 
   <div class="fila">
     <div class="marco">
-      <div class="rotulo">390×844 · juego elegido: Completar el versículo</div>
-      <div class="tela v placa-app">
+      <div class="rotulo">390×844 · primer pantallazo</div>
+      <div class="tela v">
         <div class="app-lienzo">
           <div class="app-portada">
             <div class="arte">DESAFÍO BÍBLICO 2026 · 2 CORINTIOS</div>
@@ -55,61 +70,30 @@
           <div class="app-cuerpo">
             <div class="app-titulo">🏆 DESAFÍO BÍBLICO ⭐</div>
             <div style="text-align:center;color:#a9c6ca">2 Corintios · Concurso de preguntas</div>
-            <div class="app-juegos">
-              <button class="app-tarjeta elegido">
-                <span class="ico">📖</span>
-                <span class="txt">
-                  <span class="nom">Completar el versículo</span>
-                  <span class="des">Un versículo con palabras tapadas. Pulsa para tomar el turno.</span>
-                </span>
-                <span class="app-insignia sel">Seleccionado</span>
-              </button>
-            </div>
+            <p class="menu-juego-actual">
+              <span class="rotulo">JUEGO:</span>
+              <span class="valor">Completar el versículo</span>
+            </p>
             <div class="app-acciones">
-              <button class="boton-grande contorno">🎤 Soy presentador</button>
+              <button class="boton-grande oro">🎤 Soy presentador</button>
               <button class="boton-grande contorno">🙋 Jugar como participante</button>
             </div>
           </div>
         </div>
       </div>
-    </div>
-
-    <div style="flex:1 1 340px;min-width:280px">
-      <div class="notas">
-        <div class="nota bien">
-          <h3>Texto a 16 pt</h3>
-          <p><code>21.3333px</code> con interlineado <code>32px</code>. Antes la escala del teléfono
-          arrancaba en 12 pt y esta pantalla llegaba a 8 pt en la descripción.</p>
-        </div>
-        <div class="nota bien">
-          <h3>La tarjeta crece de alto</h3>
-          <p>Nombre y descripción pueden ocupar 2 y 3 renglones. Cuando la insignia no cabe al lado,
-          baja a su propia línea: no aplasta el texto.</p>
-        </div>
-        <div class="nota bien">
-          <h3>Se desliza desde cualquier parte</h3>
-          <p>El menú no tiene scroll propio: crece la página y el gesto funciona en toda la pantalla.
-          Antes <code>.menu-cuerpo</code> tenía <code>overflow-y:auto</code> con
-          <code>overscroll-behavior:contain</code>, y como su contenido cabía justo, solo se podía
-          deslizar empezando sobre la portada.</p>
-        </div>
-        <div class="nota mal">
-          <h3>Lo que sigue abierto</h3>
-          <p>La portada mide 188 px con el lema debajo. Con las tres tarjetas y los cuatro botones,
-          el menú pide 1457 px: hay que deslizar. ¿Se acepta, o se recorta la portada?</p>
+      <div style="max-width:390px;margin-top:.6rem">
+        <div class="nota bien" style="margin:0">
+          <h3>Así se ve en el teléfono</h3>
+          <p>Es la captura real: la portada, el título, el lema, «JUEGO: Completar el versículo» y
+          los dos primeros botones. «Pantalla para el televisor» y «Configuraciones» quedan por
+          debajo del borde, y se llega deslizando.</p>
         </div>
       </div>
     </div>
-  </div>
 
-  <div class="h2">Vertical — el menú completo
-    <small>Con las tres tarjetas, para ver cuánto ocupa de verdad.</small>
-  </div>
-
-  <div class="fila">
     <div class="marco">
-      <div class="rotulo">390×844 · las tres tarjetas y los cuatro botones</div>
-      <div class="tela v placa-app">
+      <div class="rotulo">390×844 · completo, con las tres tarjetas</div>
+      <div class="tela v">
         <div class="app-lienzo">
           <div class="app-portada">
             <div class="arte">DESAFÍO BÍBLICO 2026 · 2 CORINTIOS</div>
@@ -117,6 +101,17 @@
           <div class="app-cuerpo">
             <div class="app-titulo">🏆 DESAFÍO BÍBLICO ⭐</div>
             <div style="text-align:center;color:#a9c6ca">2 Corintios · Concurso de preguntas</div>
+            <p class="menu-juego-actual">
+              <span class="rotulo">JUEGO:</span>
+              <span class="valor">Completar el versículo</span>
+            </p>
+            <div class="app-acciones">
+              <button class="boton-grande oro">🎤 Soy presentador</button>
+              <button class="boton-grande contorno">🙋 Jugar como participante</button>
+              <button class="boton-grande contorno">📺 Pantalla para el televisor</button>
+              <button class="boton-grande contorno">⚙️ Configuraciones</button>
+            </div>
+            <h2 class="menu-seccion">2 JUEGOS DISPONIBLES</h2>
             <div class="app-juegos">
               <button class="app-tarjeta">
                 <span class="ico">🎯</span>
@@ -143,13 +138,7 @@
                 <span class="app-insignia pronto">Pronto</span>
               </button>
             </div>
-            <div class="app-acciones">
-              <button class="boton-grande contorno">🎤 Soy presentador</button>
-              <button class="boton-grande contorno">🙋 Jugar como participante</button>
-              <button class="boton-grande contorno">📺 Pantalla para el televisor</button>
-              <button class="boton-grande contorno">⚙️ Configuraciones</button>
-            </div>
-            <div class="app-pie"><span>v1.0</span><span><span class="punto-vivo"></span>Modo local</span></div>
+            <div class="app-pie"><span>v1.0</span><span><span class="punto-vivo"></span>Con conexión</span></div>
           </div>
         </div>
       </div>
@@ -157,41 +146,65 @@
 
     <div style="flex:1 1 340px;min-width:280px">
       <div class="notas">
+        <div class="nota mal">
+          <h3>El error que corregí aquí</h3>
+          <p>En la versión anterior de este artboard los botones estaban <strong>después</strong> de
+          las tarjetas. En la app van <strong>antes</strong>: el orden del marcado es título → lema →
+          «Juego:» → <code>.menu-acciones</code> → sección → <code>.menu-juegos</code>. Christian lo
+          vio en el canvas.</p>
+        </div>
         <div class="nota bien">
-          <h3>Números reales de esta pantalla</h3>
-          <p>Portada 188 px · título 28 px de alto · tres tarjetas de 203 px cada una · cuatro
-          botones de 70 px · pie 41 px. Total <strong>1457 px</strong> en una ventana de 844.</p>
+          <h3>Texto a 16 pt</h3>
+          <p><code>21.3333px</code> con interlineado <code>32px</code>, medidos. El título del menú a
+          <code>25.3333px</code> con espaciado de letra de <code>1.52px</code>.</p>
+        </div>
+        <div class="nota bien">
+          <h3>La tarjeta crece de alto</h3>
+          <p>Nombre con 2 renglones y descripción con 3. Cuando la insignia no cabe al lado, baja a su
+          propia línea: no aplasta el texto.</p>
+        </div>
+        <div class="nota bien">
+          <h3>Se desliza desde cualquier parte</h3>
+          <p>El menú no tiene scroll propio: crece la página y el gesto funciona en toda la pantalla.
+          Antes <code>.menu-cuerpo</code> tenía <code>overflow-y:auto</code> con
+          <code>overscroll-behavior:contain</code> y su contenido cabía justo, así que solo se podía
+          deslizar empezando sobre la portada.</p>
         </div>
         <div class="nota duda">
-          <h3>Decisión: qué se recorta primero</h3>
-          <p>Si hay que ganar alto sin deslizar, el candidato es la portada (188 px). Con 30 % menos
-          se ahorran ~56 px, y aún así el menú no cabe: los cuatro botones ya son 306 px por sí
-          solos.</p>
-        </div>
-        <div class="nota bien">
-          <h3>Deslizar es lo correcto aquí</h3>
-          <p>Cuatro botones y tres tarjetas es contenido real. El criterio de Christian: aprovechar
-          el espacio primero, pero no bloquear el desplazamiento cuando hace falta. Este es un caso
-          donde hace falta.</p>
+          <h3>Números reales</h3>
+          <p>Portada 188 px · título 28 px · lema · «Juego:» · cuatro botones de 70 px (306 en total) ·
+          tres tarjetas de 203 px (594) · pie 41 px. El documento mide <strong>1457 px</strong> en una
+          ventana de 844: hay que deslizar, y es correcto porque es contenido real.</p>
         </div>
       </div>
     </div>
   </div>
 
   <div class="h2">Acostado — 844 × 390
-    <small>Portada a la izquierda, tarjetas en fila, con letterboxing si la foto es ancha.</small>
+    <small>Portada a la izquierda; el cuerpo a la derecha, con el mismo orden.</small>
   </div>
 
   <div class="fila">
     <div class="marco">
-      <div class="rotulo">844×390 · las tres tarjetas</div>
-      <div class="tela h placa-app">
+      <div class="rotulo">844×390 · completo</div>
+      <div class="tela h">
         <div class="app-lienzo">
           <div class="app-portada">
             <div class="arte">DESAFÍO BÍBLICO<br>2026<br>2 CORINTIOS</div>
           </div>
           <div class="app-cuerpo">
             <div class="app-titulo">🏆 DESAFÍO BÍBLICO ⭐</div>
+            <p class="menu-juego-actual">
+              <span class="rotulo">JUEGO:</span>
+              <span class="valor">Completar el versículo</span>
+            </p>
+            <div class="app-acciones">
+              <button class="boton-grande oro">🎤 Soy presentador</button>
+              <button class="boton-grande contorno">🙋 Jugar como participante</button>
+              <button class="boton-grande contorno">📺 Pantalla para el televisor</button>
+              <button class="boton-grande contorno">⚙️ Configuraciones</button>
+            </div>
+            <h2 class="menu-seccion">2 JUEGOS DISPONIBLES</h2>
             <div class="app-juegos">
               <button class="app-tarjeta">
                 <span class="ico">🎯</span>
@@ -217,12 +230,6 @@
                 </span>
                 <span class="app-insignia pronto">Pronto</span>
               </button>
-            </div>
-            <div class="app-acciones">
-              <button class="boton-grande contorno">🎤 Soy presentador</button>
-              <button class="boton-grande contorno">🙋 Jugar como participante</button>
-              <button class="boton-grande contorno">📺 Pantalla para el televisor</button>
-              <button class="boton-grande contorno">⚙️ Configuraciones</button>
             </div>
           </div>
         </div>
@@ -233,13 +240,13 @@
       <div class="notas">
         <div class="nota bien">
           <h3>Letterboxing transparente</h3>
-          <p>Si la portada es una foto ancha, se ve entera (<code>object-fit: contain</code>) y el aire
-          alrededor es el fondo del menú a través de una tarjeta con borde. Ni degradado ni negro.</p>
+          <p>Si la portada es una foto ancha se ve entera (<code>object-fit: contain</code>) y el aire
+          alrededor es el fondo del menú a través de una tarjeta con borde.</p>
         </div>
         <div class="nota bien">
           <h3>Medido acostado</h3>
-          <p>Portada 240 × 969 · tarjeta 242 × 257 · total <strong>1039 px</strong> en 390 de ventana.
-          También desliza, y es correcto: es contenido real.</p>
+          <p>Portada 240 × 969 · tarjeta 242 × 257 · documento de <strong>1039 px</strong> en 390 de
+          ventana. Desliza, y es correcto.</p>
         </div>
       </div>
     </div>
@@ -252,28 +259,23 @@
   <div class="fila">
     <div class="marco">
       <div class="rotulo">390×844 · sin red, con lo guardado</div>
-      <div class="tela v placa-app">
+      <div class="tela v">
         <div class="app-lienzo">
           <div class="app-portada">
             <div class="arte">DESAFÍO BÍBLICO 2026 · 2 CORINTIOS</div>
           </div>
           <div class="app-cuerpo">
             <div class="app-titulo">🏆 DESAFÍO BÍBLICO ⭐</div>
-            <div class="app-juegos">
-              <button class="app-tarjeta elegido">
-                <span class="ico">🎯</span>
-                <span class="txt">
-                  <span class="nom">Selección simple</span>
-                  <span class="des">Una pregunta, 4 opciones y una sola correcta.</span>
-                </span>
-                <span class="app-insignia sel">Seleccionado</span>
-              </button>
-            </div>
+            <p class="menu-juego-actual">
+              <span class="rotulo">JUEGO:</span>
+              <span class="valor">Selección simple</span>
+            </p>
             <div class="app-aviso info">
               Sin conexión. Puedes jugar con lo que hay guardado: 1 juego y 25 preguntas.
             </div>
             <div class="app-acciones">
               <button class="boton-grande oro">🎤 Soy presentador</button>
+              <button class="boton-grande contorno">🙋 Jugar como participante</button>
             </div>
             <div class="app-pie"><span>v1.0</span><span>Sin conexión</span></div>
           </div>
@@ -303,9 +305,9 @@
   </div>
 
   <p style="margin-top:2rem;color:#a9c6ca;font-size:.9rem">
-    Los valores de esta placa salen de <code>base-app.css</code>, medidos con
-    <code>getComputedStyle</code> sobre la app servida en el dispositivo. Si la app cambia, se
-    vuelve a medir y se actualiza ese archivo: los cinco artboards lo comparten.
+    Los valores salen de <code>base-app.css</code>, medidos con <code>getComputedStyle</code> sobre
+    la app servida en el dispositivo. El orden de los bloques sale del marcado de
+    <code>src/app.js</code>, no de una reconstrucción de memoria.
   </p>
 
 </div>
