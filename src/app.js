@@ -18,6 +18,7 @@ import {
   SESION_MUERTA, decidirSesionJugador, decidirSalaHost, avisoSesionJugador
 } from './lib/liberar.js';
 import { animar, estadoDeSala } from './lib/orbe.js';
+import { estadoConexion, resumenSinConexion, avisoSinConexion } from './lib/conexion.js';
 import {
   selectorTema, modalClave, modalCambiarClave, modalTemas,
   modalPreguntas, modalFormPregunta, vistaConfig, validarPregunta,
@@ -705,6 +706,24 @@ function vistaMenu() {
   const juegos = JUEGOS;
   const disponibles = juegos.filter(j => j.listo).length;
 
+  /* «Sin modo local» medía `esLocalDisponible()`, que comprueba si el navegador
+     soporta BroadcastChannel: NO mide la conexion. El aviso hablaba de otra
+     cosa. Ahora se pregunta lo que de verdad importa y se dice QUE se puede
+     jugar igual. */
+  const hayRed = estadoConexion() === 'con';
+  /* `sinRed`: lo que el modo local puede servir de verdad. Solo
+     `seleccion-simple`, porque `crearHostLocal({ preguntas })` recibe
+     preguntas y nada más; los versículos de «Completar el versículo» viven en
+     Supabase. Prometer ese juego sin red mandaría al presentador a una sala
+     vacía. */
+  const resumen = resumenSinConexion({
+    banco: BANCO, juegos, sinRed: ['seleccion-simple']
+  });
+  const textoRed = hayRed ? null : avisoSinConexion(resumen);
+  const avisoRed = textoRed
+    ? `<div class="aviso info" style="margin-top:.4rem">${esc(textoRed)}</div>`
+    : '';
+
   return `
     <div class="menu-lienzo">
     <header class="menu-cabecera">
@@ -782,12 +801,11 @@ function vistaMenu() {
       <footer class="menu-pie">
         <span>v1.0</span>
         <span class="fila" style="gap:.35rem">
-          <span class="punto-vivo${esLocalDisponible() ? '' : ' apagado'}"></span>
-          ${/* «Sin modo local» no lo entiende nadie: es jerga tecnica. Lo que
-               importa es si hay conexion y QUE se puede jugar igual. */}
-          ${esLocalDisponible() ? 'Con conexión' : 'Sin conexión'}
+          <span class="punto-vivo${hayRed ? '' : ' apagado'}"></span>
+          ${hayRed ? 'Con conexión' : 'Sin conexión'}
         </span>
       </footer>
+      ${avisoRed}
     </main>
     </div>`;
 }
