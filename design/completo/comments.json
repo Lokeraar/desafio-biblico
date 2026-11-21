@@ -372,6 +372,63 @@
       "sentAt": "2026-11-21T16:14:46.146Z",
       "resolvedAt": "2026-11-21T18:01:13.361Z",
       "resolution": "Rótulo del juego a 2+1: declarado en ROLES de src/lib/ajuste.js, no en el CSS. Con 1 renglón el ajuste lo bajaba al suelo de 8 pt. Dos pruebas nuevas comprueban la excepción."
+    },
+    {
+      "id": "qrqiuiai",
+      "file": "03-sala-espera.html",
+      "selector": "body > div > div:nth-of-type(4) > div:nth-of-type(1) > div:nth-of-type(2) > div > div:nth-of-type(2) > div:nth-of-type(1)",
+      "excerpt": "Juego: Completar el versículo",
+      "comment": "Alínealo al centro",
+      "createdAt": "2026-11-21T18:09:04.537Z",
+      "status": "resolved",
+      "sentAt": "2026-11-21T18:09:04.613Z",
+      "resolvedAt": "2026-11-21T18:09:36.590Z",
+      "resolution": "Rótulo del juego centrado en el artboard acostado: align-self y align-items a center, text-align center, y margin-left:0 para anular el auto. Ahora comparte eje con el orbe de abajo."
+    },
+    {
+      "id": "l2pfqonk",
+      "file": "03-sala-espera.html",
+      "selector": "body > div > div:nth-of-type(6) > div:nth-of-type(2) > div:nth-of-type(2) > div > div:nth-of-type(2) > div",
+      "excerpt": "",
+      "comment": "que sean todos un mismo modelo de entre los varios aleatorios que hay para escoger de thinking-orbs",
+      "createdAt": "2026-11-21T18:10:14.940Z",
+      "status": "resolved",
+      "sentAt": "2026-11-21T18:10:15.009Z",
+      "resolvedAt": "2026-11-21T18:16:41.319Z",
+      "resolution": "Los seis orbes ahora comparten un mismo modelo, sorteado una vez por carga entre los cuatro que lib/orbe.js dibuja de verdad (órbitas, globo, onda, cinta). Seis canvas reales con animar(), no degradados inventados."
+    },
+    {
+      "id": "9ba2yp1m",
+      "file": "03-sala-espera.html",
+      "selector": "body > div > div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(2) > div > div:nth-of-type(1) > div > span:nth-of-type(2)",
+      "excerpt": "Completar el versículo",
+      "comment": "Usa text-fitting, que quepa en 1 sola fila.",
+      "createdAt": "2026-11-21T18:15:45.468Z",
+      "status": "open",
+      "sentAt": "2026-11-21T18:15:45.513Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "p6mnzmyk",
+      "file": "05-presentador.html",
+      "selector": "body > div > div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(2) > div > div:nth-of-type(1) > span",
+      "excerpt": "En línea",
+      "comment": "Usa text-fitting, que quepa en una sola línea",
+      "createdAt": "2026-11-21T18:16:39.161Z",
+      "status": "open",
+      "sentAt": "2026-11-21T18:16:39.222Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "z6m47cs1",
+      "file": "05-presentador.html",
+      "selector": "body > div > div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(2) > div > div:nth-of-type(1) > div > span:nth-of-type(2)",
+      "excerpt": "Completar el versículo",
+      "comment": "Usa text-fitting, que quepa en una sola línea",
+      "createdAt": "2026-11-21T18:16:42.851Z",
+      "status": "open",
+      "sentAt": "2026-11-21T18:16:42.916Z",
+      "resolvedAt": null
     }
   ]
 }

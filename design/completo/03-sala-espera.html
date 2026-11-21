@@ -47,11 +47,15 @@
     border:1px solid rgba(191,234,242,.35)}
   .orbe-pie{flex:0 0 auto;border-top:1px solid rgba(110,227,238,.18);
     padding-top:.5rem;font-size:13px;line-height:1.3;color:#a9c6ca;text-align:center}
-  /* orbes pequenos en fila: los seis estados, sorteados */
+  /* orbes pequenos en fila: UN SOLO modelo, sorteado entre los que dibujan.
+     Christian: «que sean todos un mismo modelo de entre los varios aleatorios
+     que hay para escoger de thinking-orbs».
+     Antes eran seis circulos pintados con un degradado: eso no es un orbe, es
+     un adorno, y no se parecia a lo que dibuja `lib/orbe.js`. Ahora cada uno es
+     un `<canvas>` real que dibuja con el mismo `lib/orbe.js` que la app, con
+     el MISMO modelo para los seis. */
   .orbes-fila{display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap}
-  .orbes-fila .o{width:34px;height:34px;border-radius:50%;
-    background:radial-gradient(circle at 40% 35%, rgba(191,234,242,.85), rgba(191,234,242,.12) 70%);
-    border:1px solid rgba(191,234,242,.3)}
+  .orbes-fila canvas{display:block;width:34px;height:34px}
 </style>
 </head>
 <body>
@@ -168,13 +172,16 @@
             </div>
           </div>
 
-          <!-- columna 2: arriba el rotulo del juego —la esquina superior
-               derecha de la PANTALLA— y debajo el orbe, en grande y centrado.
-               Christian: «van en la parte superior derecha de la pantalla, no
-               de la caja». -->
+          <!-- columna 2: el rotulo del juego y debajo el orbe, en grande.
+               Christian: «Alinealo al centro». El orbe de abajo ya esta
+               centrado en la columna, y el rotulo quedaba descolgado a la
+               derecha; centrado, el rotulo y el orbe comparten eje. Se anula
+               tambien `margin-left:auto` de `.rotulo-juego`, que empujaria a
+               la derecha aunque el bloque se centre. -->
           <div style="flex:0 0 34%;display:flex;flex-direction:column;
                border-left:1px solid rgba(110,227,238,.18);padding:10px 16px">
-            <div class="rotulo-juego" style="margin-left:0;align-self:flex-end">
+            <div class="rotulo-juego" style="margin-left:0;align-self:center;
+                 align-items:center;text-align:center">
               <span class="rotulo">Juego:</span>
               <span class="nombre-juego">Completar el versículo</span>
             </div>
@@ -251,16 +258,23 @@
             <button class="boton-salir">← Volver</button>
           </div>
           <div class="esp-main">
-            <!-- ORBES ALEATORIOS ENCIMA DEL TEXTO.
-                 Christian: «Agregale encima thinking-orbs aleatorios».
+            <!-- ORBES ENCIMA DEL TEXTO, UN MISMO MODELO SORTEADO.
+                 Christian: «Agregale encima thinking-orbs aleatorios» y luego
+                 «que sean todos un mismo modelo de entre los varios aleatorios
+                 que hay para escoger de thinking-orbs».
                  Mientras conecta no hay nada que mirar: los orbes son la senal
-                 de que la app esta trabajando. Se sortean entre los seis
-                 estados reales de `lib/orbe.js` (working, searching, solving,
-                 listening, composing, shaping), asi que dos partidas no se ven
-                 iguales. -->
-            <div class="orbes-fila" aria-hidden="true">
-              <span class="o"></span><span class="o"></span><span class="o"></span>
-              <span class="o"></span><span class="o"></span><span class="o"></span>
+                 de que la app esta trabajando. Los seis comparten modo, para
+                 que se lean como un grupo y no como seis cosas distintas; el
+                 modo se sortea al cargar, asi que dos visitas no se ven
+                 iguales. El dibujo sale de `lib/orbe.js`, no de un degradado
+                 inventado aqui. -->
+            <div class="orbes-fila" id="orbes-conectando" aria-hidden="true">
+              <canvas width="34" height="34"></canvas>
+              <canvas width="34" height="34"></canvas>
+              <canvas width="34" height="34"></canvas>
+              <canvas width="34" height="34"></canvas>
+              <canvas width="34" height="34"></canvas>
+              <canvas width="34" height="34"></canvas>
             </div>
             <p class="esp-titulo">Conectando…</p>
           </div>
@@ -270,8 +284,9 @@
         <div class="nota bien" style="margin:0">
           <h3>El texto real</h3>
           <p>La app muestra <code>Conectando…</code> en un párrafo con la clase <code>pulso</code>.
-          Encima van los <strong>orbes sorteados</strong>: los seis estados de <code>lib/orbe.js</code>,
-          elegidos al azar, para que el primer segundo no sea una pantalla vacía.
+          Encima van <strong>seis orbes del mismo modelo</strong>: el modelo se sortea al cargar y los
+          seis lo comparten, para leerse como un grupo y no como seis cosas distintas. Se sortea entre
+          los cuatro que <code>lib/orbe.js</code> dibuja de verdad (órbitas, globo, onda, cinta).
           «← Volver» sigue visible desde el primer segundo, así que ya hay salida.</p>
         </div>
       </div>
@@ -328,5 +343,61 @@
   </div>
 
 </div>
+<script type="module">
+  /* UN SOLO MODELO PARA LOS SEIS, SORTEADO UNA VEZ.
+
+     Christian: «que sean todos un mismo modelo de entre los varios aleatorios
+     que hay para escoger de thinking-orbs».
+
+     El dibujo NO se copia aqui: se usa `animar` del mismo `lib/orbe.js` que la
+     app, que es quien resuelve el `devicePixelRatio` y fija el tamano en
+     PIXELES DEL CANVAS (pintar a mano sobre un canvas de 34 px deja el orbe
+     borroso en una pantalla densa).
+
+     SE SORTEA ENTRE LOS MODOS QUE DIBUJAN DISTINTO, no entre los seis
+     declarados: en `lib/orbe.js`, `MODOS` declara seis (`orbits`, `globe`,
+     `rubik`, `wave`, `ribbon`, `morph`) pero `pintarFotograma` solo implementa
+     cuatro. `rubik` y `morph` caen al dibujo por defecto, asi que sortear entre
+     los seis haria que dos de cada tres elecciones se vieran igual sin decirlo.
+     Es un defecto del modulo, no del artboard; queda anotado abajo. */
+
+  /* Los que de verdad tienen pintor propio. */
+  const CON_DIBUJO_PROPIO = ['working', 'searching', 'listening', 'composing'];
+
+  const fila = document.getElementById('orbes-conectando');
+  const estado = CON_DIBUJO_PROPIO[
+    Math.floor(Math.random() * CON_DIBUJO_PROPIO.length)
+  ];
+
+  /* RED DE SEGURIDAD. El canvas sirve los archivos del diseno, pero no hay
+     forma de comprobar desde aqui que deje subir dos niveles hasta `src/`. Si
+     el import falla, seis canvas de 34 px quedarian transparentes: un hueco
+     invisible es peor que un dibujo simple. Con esto, el peor caso se ve. */
+  const simple = () => {
+    for (const cv of fila.querySelectorAll('canvas')) {
+      const ctx = cv.getContext && cv.getContext('2d');
+      if (!ctx) continue;
+      ctx.fillStyle = '#bfeaf2';
+      for (const [dx, dy, r] of [[0, -9, 2.4], [8, 5, 2.0], [-8, 6, 1.7]]) {
+        ctx.beginPath();
+        ctx.arc(17 + dx, 17 + dy, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  };
+
+  try {
+    const { animar, MODOS } = await import('../../src/lib/orbe.js');
+    for (const cv of fila.querySelectorAll('canvas')) {
+      animar(cv, { estado, tamano: 34 });
+    }
+    fila.dataset.modelo = MODOS[estado];
+    fila.title = 'thinking-orbs · ' + MODOS[estado];
+  } catch {
+    simple();
+    fila.dataset.modelo = 'orbits (respaldo: no cargo lib/orbe.js)';
+    fila.title = 'thinking-orbs · orbits (respaldo)';
+  }
+</script>
 </body>
 </html>
