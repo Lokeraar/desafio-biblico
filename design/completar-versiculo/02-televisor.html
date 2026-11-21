@@ -309,7 +309,7 @@
 
   <section class="estado">
     <h2>6. Ceremonia — 3.º</h2>
-    <p class="nota">Se revela por toques, igual que en selección simple. Tercer clic: el bronce.</p>
+    <p class="nota">Se revela por toques, igual que en selección simple. Primer clic: el bronce.</p>
     <div class="tv ceremonia">
       <div class="marco-oro">
         <p class="titulo-cer">Tabla de clasificación</p>
@@ -330,9 +330,16 @@
       <div class="marco-oro">
         <p class="titulo-cer">Tabla de clasificación</p>
         <ul class="lista-cer">
-          <li class="fila-rev podio"><span class="rev-num">🥇</span>
-            <span class="rev-datos"><span class="rev-nombre">Beto Ruiz</span><span class="rev-sub">9.4 s · 3 aciertos</span></span>
-            <span class="rev-pts">40<span class="u"> pts</span></span></li>
+          <!-- EL PRIMERO OCULTO, como dice la nota de arriba.
+               "Segundo clic: la plata se suma arriba. El primero sigue
+               oculto". Pero aqui aparecia Beto Ruiz con su medalla y sus 40
+               puntos: el artboard enseñaba lo que la nota decia que no se veia.
+               Un artboard que se contradice a si mismo no sirve para revisar.
+               Se deja la fila en su sitio (el orden de ranking no cambia) con
+               los datos tapados, igual que hace la app. -->
+          <li class="fila-rev podio"><span class="rev-num">?</span>
+            <span class="rev-datos"><span class="rev-nombre">· · · · ·</span><span class="rev-sub">· · · · ·</span></span>
+            <span class="rev-pts">—</span></li>
           <li class="fila-rev podio"><span class="rev-num">🥈</span>
             <span class="rev-datos"><span class="rev-nombre">Ana Pérez</span><span class="rev-sub">12.7 s · 3 aciertos</span></span>
             <span class="rev-pts">30<span class="u"> pts</span></span></li>

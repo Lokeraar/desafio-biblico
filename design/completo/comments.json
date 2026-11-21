@@ -596,8 +596,20 @@
       "excerpt": "🥇",
       "comment": "Todas las medallas de oro cámbialas por el emoji de Corona.",
       "createdAt": "2026-11-21T18:50:53.578Z",
-      "status": "open",
+      "status": "resolved",
       "sentAt": "2026-11-21T18:50:53.678Z",
+      "resolvedAt": "2026-11-21T18:54:26.552Z",
+      "resolution": "Las 4 medallas de oro cambiadas a 👑 en 06-ceremonia. Y de paso encontré otro 🥇 suelto en completar-versiculo/02-televisor.html, que ya también es 👑. Coincide con la app: EMOJI = { 1: '👑', 2: '🥈', 3: '🥉' } en util.js:109."
+    },
+    {
+      "id": "v14l7g7j",
+      "file": "06-ceremonia.html",
+      "selector": "body > div > div:nth-of-type(4) > div:nth-of-type(1) > div:nth-of-type(2) > div > div",
+      "excerpt": "🏆 Clasificación 🎉 ¡Felicitaciones, Ana Pérez! 🥇 Ana Pérez 5 pts 🥈 Carlos Ruiz 3 pts 🥉 María López 2 pts 4 José Martínez 1 pt Toca para ver el resto de la tabla Nueva partida Terminar juego",
+      "comment": "La animación de confeti va para cuando ya se revela el primer lugar en adelante hasta el final de la partida y se cierre de la sala o se salgan de la tabla de clasificaciones en las pantallas de televisor, participante y presentador.",
+      "createdAt": "2026-11-21T18:55:13.699Z",
+      "status": "open",
+      "sentAt": "2026-11-21T18:55:13.770Z",
       "resolvedAt": null
     }
   ]
