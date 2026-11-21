@@ -334,7 +334,8 @@ export function pantallaParticipante(estado, {
     return `
       <div class="pantalla jugador-versiculo centro">
         <div class="barra-jugador">
-          <span>${esc(yo?.name ?? '')}</span>
+          ${botonSalir('← Menú')}
+          <span class="nombre-barra">${esc(yo?.name ?? '')}</span>
           <span class="puntos">${yo?.score ?? 0} pts</span>
         </div>
         <div class="grande-exito">
@@ -375,7 +376,8 @@ export function pantallaParticipante(estado, {
     return `
       <div class="pantalla jugador-versiculo centro">
         <div class="barra-jugador">
-          <span>${esc(yo?.name ?? '')}</span>
+          ${botonSalir('← Menú')}
+          <span class="nombre-barra">${esc(yo?.name ?? '')}</span>
           <span class="puntos">${yo?.score ?? 0} pts</span>
         </div>
         <div class="grande-exito">
@@ -392,7 +394,8 @@ export function pantallaParticipante(estado, {
   return `
     <div class="pantalla jugador-versiculo">
       <div class="barra-jugador">
-        <span>${esc(yo?.name ?? '')}</span>
+        ${botonSalir('← Menú')}
+        <span class="nombre-barra">${esc(yo?.name ?? '')}</span>
         <span class="puntos">${yo?.score ?? 0} pts</span>
       </div>
       ${r.reference ? `<span class="ref">${esc(r.reference)}</span>` : ''}
@@ -409,6 +412,22 @@ export function pantallaParticipante(estado, {
           : `<button class="boton-ok bloqueado" type="button" disabled>${esc(boton.texto)}</button>`}
       </div>
     </div>`;
+}
+
+/**
+ * El botón de salir, arriba a la izquierda, para participante y televisor.
+ *
+ * Vive en una función porque son dos pantallas y la etiqueta cambia: el
+ * participante lee «← Menú» y el televisor «Salir de esta partida», que es lo
+ * que de verdad hace (suelta la sala en este aparato).
+ *
+ * Va por `salir-host` a propósito: ese es el ÚNICO camino de salida, el que
+ * cierra la sala si este aparato es el presentador y suelta la sesión si es
+ * participante o televisor. Un `data-ir="menu"` a secas dejaría la sesión
+ * viva y al volver al menú el teléfono seguiría metido en la partida.
+ */
+export function botonSalir(texto = '← Menú') {
+  return `<button class="boton-salir" type="button" data-accion="salir-host">${texto}</button>`;
 }
 
 /** El último participante sentenciado en esta ronda, si se puede saber. */
@@ -439,6 +458,7 @@ export function pantallaTV(estado, { qr = '', restanteMs = null, totalMs = null 
     const cuantos = (estado?.players ?? []).length;
     return `
       <div class="pantalla pantalla-tv tv-lobby centro">
+        ${botonSalir('Salir de esta partida')}
         <div class="espera-caja">
           ${qr ? `<div class="qr-tv-grande">${qr}</div>` : ''}
           <div class="espera-datos">
@@ -479,6 +499,7 @@ export function pantallaTV(estado, { qr = '', restanteMs = null, totalMs = null 
   return `
     <div class="pantalla pantalla-tv">
       <div class="tv-top">
+        ${botonSalir('Salir de esta partida')}
         ${r.reference ? `<span class="ref">${esc(r.reference)}</span>` : '<span></span>'}
         <span class="sala">${esc(estado.code ?? '')}</span>
       </div>

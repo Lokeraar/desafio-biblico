@@ -8,7 +8,7 @@ import {
   felicitacion, todasLasFelicitaciones, versiculoDesdeServidor,
   versiculoHTML, versiculoHostHTML, avisoParticipante, miTurnoTexto, estadoBoton,
   pantallaParticipante, pantallaTV, listaTurnosHTML, modalJuicioHTML,
-  sinReferenciaAlFinal, relojHTML
+  sinReferenciaAlFinal, relojHTML, botonSalir
 } from './versiculo.js';
 
 let ok = 0, fail = 0;
@@ -692,6 +692,66 @@ for (const tipo of ['info', 'ok', 'error', 'espera', 'neutro', 'turno', 'exito']
 // Y la fila de turnos no puede volver a llamarse como la utilidad de animacion.
 t(!clasesEmitidas.has('pulso'),
   'la fila de turnos no vuelve a usar `.pulso` (es la utilidad de animacion)');
+
+
+/* ------------------------------------------------------------------ */
+console.log('=== Salir de la partida: los dos botones que faltaban ===');
+
+t(botonSalir().includes('← Menú'), 'el boton por omision dice el menu');
+t(botonSalir('Salir de esta partida').includes('Salir de esta partida'),
+  'y se le puede poner otra etiqueta');
+
+// Va por salir-host y NO por data-ir: es el unico camino que suelta la sesion.
+const btn = botonSalir();
+t(btn.includes('data-accion="salir-host"'), 'sale por salir-host, el camino unico');
+t(!btn.includes('data-ir="menu"'), 'y no por data-ir, que no suelta la sesion');
+
+const partidaJug = pantallaParticipante(estadoDe(), { miId: 'p1' });
+t(partidaJug.includes('boton-salir'), 'el participante tiene su boton de salir');
+
+const sinRonda = pantallaParticipante(estadoDe({ state: 'prepared' }), { miId: 'p1' });
+t(sinRonda.includes('boton-salir'), 'y tambien mientras espera en la sala');
+
+const tvLobby = pantallaTV({ roomId: 'r1', code: '4K7M2', status: 'lobby', players: [] }, { qr: '<svg></svg>' });
+t(tvLobby.includes('Salir de esta partida'), 'el televisor dice «Salir de esta partida»');
+
+const tvJugando = pantallaTV(estadoDe(), {});
+t(tvJugando.includes('Salir de esta partida'), 'el televisor jugando tambien puede salir');
+
+/* ------------------------------------------------------------------ */
+console.log('=== El versiculo ocupa el alto y el boton el resto ===');
+
+const cssVers = readFileSync(new URL('../../styles.css', import.meta.url), 'utf8');
+
+const reglaVers = (cssVers.match(/\.jugador-versiculo \.versiculo \{[^}]*\}/)?.[0] ?? '')
+  .replace(/\/\*[\s\S]*?\*\//g, ' ');
+t(reglaVers.includes('flex: 1 1 auto'),
+  'el versiculo crece: se queda con el espacio de arriba');
+
+/* Sin los comentarios: el texto que explica POR QUE no lleva `height: 100%`
+   menciona esa propiedad, y la prueba se confundiria con la declaracion. */
+const reglaBoton = (cssVers.match(/\.boton-ok \{[^}]*\}/)?.[0] ?? '')
+  .replace(/\/\*[\s\S]*?\*\//g, ' ');
+t(reglaBoton.includes('aspect-ratio: 1'), 'el boton sigue siendo circular');
+t(reglaBoton.includes('flex: 1 1 auto'), 'y crece con el alto disponible');
+t(!/width:\s*clamp\(11rem/.test(reglaBoton),
+  'ya no tiene ancho fijo: era lo que lo dejaba chico en una pantalla alta');
+t(reglaBoton.includes('max-width: 100%'),
+  'pero nunca se sale de lo ancho de la pantalla');
+t(!/height:\s*100%/.test(reglaBoton),
+  'sin height 100%: en una columna flex el alto lo pone flex');
+
+const reglaPie = (cssVers.match(/\.pie-jugador \{[^}]*\}/)?.[0] ?? '')
+  .replace(/\/\*[\s\S]*?\*\//g, ' ');
+t(reglaPie.includes('flex: 1 1 auto'), 'el pie crece para darle sitio al boton');
+t(reglaPie.includes('min-height: 0'),
+  'y puede encogerse: con el teclado abierto o en apaisado no debe desbordar');
+
+const reglaSalir = (cssVers.match(/\.boton-salir \{[^}]*\}/)?.[0] ?? '')
+  .replace(/\/\*[\s\S]*?\*\//g, ' ');
+t(reglaSalir.includes('min-height'), 'el boton de salir conserva un alto pulsable');
+t(reglaSalir.includes('white-space: nowrap'),
+  'y su etiqueta no se parte en dos renglones');
 
 /* ------------------------------------------------------------------ */
 console.log(`\n${ok} correctas, ${fail} fallas`);

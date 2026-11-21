@@ -613,6 +613,8 @@ export function modalFormPregunta({ temaId, pregunta = null, error = null } = {}
           ${error ? `<p class="chico" style="color:var(--peligro); margin:.5rem 0 0">${esc(error)}</p>` : ''}
 
           <div class="fila" style="gap:.6rem; margin-top:1rem">
+            <button class="boton boton-secundario" data-ir="menu" type="button"
+                    style="flex:0 0 auto; padding:.7em .8em">← Menú</button>
             <button type="button" class="boton boton-secundario" data-accion="ver-preguntas"
                     data-tema="${esc(temaId ?? '')}" style="flex:1">Cancelar</button>
             <button type="submit" class="boton boton-oro" style="flex:1">Guardar</button>

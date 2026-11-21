@@ -92,7 +92,28 @@ function rutaActual() {
   return { vista: vista || 'menu', params: resto, consulta: consulta ?? '' };
 }
 
+/*
+ * Navega a una vista y CIERRA lo que haya encima.
+ *
+ * Sin esto, «← Menú» no hacía nada visible: cambiaba el hash, `render()`
+ * dibujaba la vista nueva DEBAJO, y el modal seguía encima tapándola. El
+ * usuario veía el mismo formulario y el botón parecía muerto. Paso en el
+ * formulario de preguntas de Temas.
+ *
+ * También se sueltan los estados que pertenecen al modal o a la vista que se
+ * abandona: el error de administración, la confirmación pendiente y el editor
+ * de versículo. Si viajaran a la vista siguiente, aparecerían encima de una
+ * pantalla que no tiene nada que ver.
+ */
 function ir(vista) {
+  app.modal = null;
+  app.adminError = null;
+  app.editarPregunta = null;
+  app.editarVersiculo = null;
+  app.editor = null;
+  app.modoOcultar = false;
+  app.ayudaOcultar = false;
+  app.confirmar = null;
   location.hash = '#/' + vista;
 }
 
@@ -302,6 +323,11 @@ const CLAVE_JUEGO = 'desafio-biblico-juego';
 // La sala del presentador se guarda aparte: si refresca, debe volver a SU
 // sala con sus participantes, no encontrarse el panel vacío.
 const CLAVE_HOST = 'desafio-biblico-host';
+/* La sala que este aparato está mirando como televisor. Sin esto, recargar la
+   pantalla del televisor devolvía al formulario de código, que es justo lo que
+   no debe pasar: la tele está colgada mostrando la partida y nadie va a
+   caminar hasta ella a escribir el código otra vez. */
+const CLAVE_TV = 'desafio-biblico-tv';
 
 function guardarSesion() {
   try {
@@ -2350,6 +2376,10 @@ async function cerrarYSalir({ aMenu = true } = {}) {
 
   // Sala cerrada (o no había sala que cerrar): se suelta todo.
   try { localStorage.removeItem(CLAVE_HOST); } catch { /* modo privado */ }
+  /* Y la sala que este aparato miraba como televisor. Sin esto, «Salir de
+     esta partida» dejaba el id guardado y recargar volvía a entrar en la
+     partida que se acababa de abandonar. */
+  try { localStorage.removeItem(CLAVE_TV); } catch { /* modo privado */ }
 
   app.cliente?.cerrar?.();
   app.cliente = null;
@@ -2957,6 +2987,14 @@ document.addEventListener('click', async ev => {
         };
         app.formJoin = { codigo: null, nombre: '' };
         guardarSesion();
+        /* A #/play, no dejar la URL en #/join.
+         *
+         * Al recargar, el arranque reengancha la sesión solo en las vistas
+         * `join` y `play`. Quedarse en `join` funcionaba por casualidad, pero
+         * la dirección seguía diciendo «entrar» mientras el teléfono ya
+         * estaba jugando: recargar volvía al formulario con el código vacío.
+         * `play` es la vista de verdad a partir de aquí. */
+        if (rutaActual().vista !== 'play') { ir('play'); return; }
         render();
         break;
       }
@@ -3048,6 +3086,11 @@ document.addEventListener('click', async ev => {
         }
       });
       app.tv = tv;
+      /* Se recuerda la sala para sobrevivir a una recarga, igual que el
+         presentador con CLAVE_HOST. */
+      try {
+        localStorage.setItem(CLAVE_TV, JSON.stringify({ roomId: sala.roomId }));
+      } catch { /* modo privado */ }
 
       await tv.primero;
 
@@ -3270,6 +3313,46 @@ addEventListener('pagehide', () => {
           return;
         }
         app.host = host;
+        render();
+      });
+    }
+  }
+
+  /* El TELEVISOR también sobrevive a una recarga.
+   *
+   * Sin esto, refrescar la pantalla grande volvía al formulario del código y
+   * había que ir hasta la tele a escribirlo de nuevo, con la partida en
+   * marcha. Se guarda solo el id de la sala: el televisor no tiene token ni
+   * ocupa puesto de jugador, solo mira el estado público.
+   *
+   * Si la sala murió o se cerró, se olvida y queda el formulario, que es lo
+   * correcto: no hay nada que transmitir. */
+  if (vista === 'tv' && hayNube) {
+    let guardada = null;
+    try { guardada = JSON.parse(localStorage.getItem(CLAVE_TV) || 'null'); } catch { guardada = null; }
+
+    if (guardada?.roomId) {
+      const tv = mirarSala(guardada.roomId, {
+        onEstado: est => {
+          if (!est) return;
+          app.estado = est;
+          if (est.status === 'closed') {
+            try { localStorage.removeItem(CLAVE_TV); } catch { /* modo privado */ }
+          }
+          render();
+        }
+      });
+      app.tv = tv;
+      tv.primero.then(() => {
+        // El sondeo se soltó mientras se esperaba (otra sala, o se salió):
+        // no hay nada que decidir.
+        if (app.tv !== tv) return;
+        if (tv.ultimoError()) {
+          tv.parar();
+          app.tv = null;
+          app.estado = null;
+          try { localStorage.removeItem(CLAVE_TV); } catch { /* modo privado */ }
+        }
         render();
       });
     }

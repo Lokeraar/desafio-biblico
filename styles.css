@@ -1847,8 +1847,20 @@ body.tv .opciones { grid-template-columns: 1fr; }
 
 /* ---------- pantalla del participante ---------- */
 .jugador-versiculo {
-  gap: clamp(.7rem, 2vh, 1.2rem);
-  justify-content: space-between;
+  gap: clamp(.5rem, 1.6vh, 1rem);
+  /* El versiculo se queda con TODO el espacio de arriba y el boton con el de
+     abajo. Antes cada pieza medía lo suyo y sobraba aire repartido entre
+     todas: el boton quedaba chico en el centro de una pantalla vacia. Lo
+     pidio Christian: el versiculo ocupa el espacio superior y el boton abarca
+     la mayor cantidad de ancho y alto posible sin dejar de ser un circulo.
+     No lleva `height: 100%`: `.pantalla` ya es columna flex con
+     `min-height: 100dvh`, y un alto fijo ahí pelearía con el teclado abierto. */
+}
+
+/* El texto crece: es lo que hay que leer. */
+.jugador-versiculo .versiculo {
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .barra-jugador {
@@ -1901,16 +1913,90 @@ body.tv .opciones { grid-template-columns: 1fr; }
 }
 
 .pie-jugador {
-  flex: 0 0 auto;
+  /* Crece para que el boton tenga sitio. `min-height: 0` deja que encoja
+     cuando la pantalla es baja (teclado abierto, telefono apaisado) en vez de
+     desbordar. */
+  flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: .6rem;
+  gap: .5rem;
+}
+
+/* Los avisos del pie no se estiran: el que crece es el boton. */
+.pie-jugador > .aviso,
+.pie-jugador > .reconectando {
+  flex: 0 0 auto;
+}
+
+/*
+ * «← Menú» del participante y «Salir de esta partida» del televisor.
+ *
+ * Van ARRIBA A LA IZQUIERDA, en la barra de la pantalla, y son el único
+ * camino de salida visible: sin ellos el participante quedaba encerrado en la
+ * partida (había que recargar) y el televisor no tenía forma de soltar la
+ * sala.
+ *
+ * Se ven discretos a propósito: son una salida, no la acción de la pantalla.
+ * Pero tienen que poder pulsarse con el dedo, así que conservan un mínimo de
+ * 2.25rem de alto (36 px) y un relleno lateral suficiente.
+ */
+.boton-salir {
+  flex: 0 0 auto;
+  align-self: flex-start;
+  font: inherit;
+  font-size: var(--t-xs);
+  font-weight: 700;
+  padding: .4em .7em;
+  min-height: 2.25rem;
+  border-radius: var(--radio-sm);
+  border: 1px solid rgba(110, 227, 238, .35);
+  background: transparent;
+  color: var(--tu-100);
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: none;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.boton-salir:hover:not(:disabled) {
+  background: rgba(46, 196, 212, .14);
+  border-color: var(--tu-300);
+}
+.boton-salir:focus-visible {
+  outline: 3px solid var(--tu-100);
+  outline-offset: 2px;
+}
+
+/* La barra del participante ya era una fila con nombre y puntos: el botón de
+   salir entra como primera pieza sin empujar a las demás. */
+.barra-jugador .nombre-barra {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ---------- el botón negro: la tecla del mando ---------- */
 .boton-ok {
-  /* Circular y grande: es la tecla de un mando, se pulsa sin mirar. */
-  width: clamp(11rem, 42vw, 15rem);
+  /* Circular y lo mas GRANDE que entre: es la tecla de un mando, se pulsa sin
+     mirar.
+     Antes el ancho estaba fijo (`clamp(11rem, 42vw, 15rem)`), asi que en una
+     pantalla alta sobraba medio panel vacio y en una baja el boton no cabia.
+     Ahora crece con el ALTO disponible (`flex: 1 1 auto` + `aspect-ratio: 1`)
+     y se corta solo en dos casos: cuando toca el ancho de la pantalla
+     (`max-width`) o cuando llega a su tope comodo (`max-height`).
+     `aspect-ratio` mantiene el circulo: por eso no lleva ancho fijo. */
+  flex: 1 1 auto;
+  min-height: 0;
+  align-self: center;
+  width: auto;
+  /* Sin `height: 100%`: en una columna flex el alto lo pone `flex`, y un
+     `100%` ahí se resuelve contra un padre de alto automatico. El circulo lo
+     mantiene `aspect-ratio`; el ancho sale del alto. */
+  max-width: 100%;
+  max-height: min(58vh, 22rem);
   aspect-ratio: 1;
   border-radius: 50%;
   margin-inline: auto;

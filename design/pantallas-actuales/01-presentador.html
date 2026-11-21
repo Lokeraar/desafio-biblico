@@ -323,7 +323,7 @@
   </header>
 
   <div class="hallazgo" style="background:rgba(31,191,117,.12);border-color:var(--ok)">
-    <strong style="color:var(--ok)">Estado de esta placa: los siete avisos huérfanos ya están cerrados.</strong> Cuando se dibujó esta placa el código emitía siete clases sin regla en <code>styles.css</code>. Hoy las reglas existen y las pruebas lo comprueban barriendo las 58 clases del módulo.
+    <strong style="color:var(--ok)">Estado de esta placa: los siete avisos huérfanos ya están cerrados.</strong> Cuando se dibujó esta placa el código emitía siete clases sin regla en <code>styles.css</code>. Hoy las reglas existen y las pruebas lo comprueban barriendo todas las clases del módulo (60 al 20/11/2026).
     <ul>
       <li><code>.aviso.neutro</code>, <code>.aviso.turno</code> y <code>.aviso.exito</code> tienen caja propia: gris para lo neutro, cian para el turno, verde para el acierto. El aviso de turno pesa más que los otros porque es lo que hay que encontrar de un vistazo.</li>
       <li><code>.lista</code>, <code>.vacio</code> y <code>.marca.ok</code> / <code>.mal</code> / <code>.par</code> ya tienen tipografía y color.</li>
@@ -744,7 +744,7 @@
           <div class="aviso ok">Versículo cambiado.</div>
           <div class="aviso espera">Sin conexión: reintentando…</div>
           <div class="aviso info">Lista para empezar: 12 versículos preparados.</div>
-          <p class="nota" style="margin-top:.6rem">Cuatro tipos con caja. Los otros tres (<code>neutro</code>, <code>turno</code>, <code>exito</code>) se emiten sin regla y salen como texto suelto.</p>
+          <p class="nota" style="margin-top:.6rem">Los siete tipos tienen caja propia: <code>info</code>, <code>ok</code>, <code>error</code>, <code>espera</code>, <code>neutro</code>, <code>turno</code> y <code>exito</code>. Una prueba recorre las clases que emite el módulo y falla si alguna se queda sin regla en <code>styles.css</code>.</p>
         </div>
       </div>
       <p class="nota">Los avisos se apilan arriba del panel y se van solos a los 4 s; el de error de marcado vacío no se va solo.</p>

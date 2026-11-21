@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "chosen": "03-televisor.html",
+  "handoffs": {
+    "01-presentador.html": {
+      "status": "in_progress",
+      "queued": false,
+      "sentAt": "2026-11-20T23:21:28.970Z",
+      "startedAt": "2026-11-20T23:21:41.684Z",
+      "implementedAt": null,
+      "note": "Encontré la causa del desajuste, medida: el canvas usa 16px y la app un techo de 16pt, que son 21.33px (ptARem divide entre 12 con raíz de 16px). Los botones heredan ese tamaño, por eso también crecen. La corrección es bajar el techo de contenido a 12pt (=16px) en ESCALA de ajuste.js, pero deja 4 pruebas en rojo que fijan los valores viejos y se revirtió para no entregar el árbol roto. Corregí además una nota del artboard que decía que tres avisos «salen sin regla», cuando las 7 familias tienen regla y una prueba barre las 60 clases del módulo."
+    },
+    "02-participante.html": {
+      "status": "sent",
+      "queued": true,
+      "sentAt": "2026-11-20T23:21:31.834Z",
+      "startedAt": null,
+      "implementedAt": null
+    },
+    "03-televisor.html": {
+      "status": "sent",
+      "queued": true,
+      "sentAt": "2026-11-20T23:21:34.591Z",
+      "startedAt": null,
+      "implementedAt": null
+    }
+  }
+}
