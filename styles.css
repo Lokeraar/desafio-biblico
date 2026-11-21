@@ -2471,9 +2471,12 @@ body.tv .opciones { grid-template-columns: 1fr; }
        hay 844 y el modal puede tomar buena parte sin dejar de verse como un
        dialogo. */
     max-width: min(760px, 94vw);
-    max-height: calc(100dvh - .5rem);
-    padding: .6rem .8rem;
-    gap: .4rem;
+    /* El alto se calcula del viewport menos el relleno del fondo (que
+       acostado es de .5rem: .25 arriba y .25 abajo). Antes se restaba .5 y se
+       dejaban 4 px fuera en el formulario de pregunta. */
+    max-height: calc(100dvh - .25rem);
+    padding: .5rem .8rem;
+    gap: .35rem;
     /* Si aun asi no entra, se desplaza el modal por dentro: se llega a
        «Guardar» igual. */
     overflow-y: auto;
@@ -2525,13 +2528,18 @@ body.tv .opciones { grid-template-columns: 1fr; }
 
   /* Los formularios altos pasan a dos columnas: acostado el alto es lo escaso.
      La pregunta va a la izquierda y las respuestas a la derecha. */
+  /* TRES columnas acostado, no dos. Medido: con dos, la cita biblica -un campo
+     de UNA linea- se llevaba un renglon entero para ella sola, y el formulario
+     pedia 391 px en una caja de 329 (62 de scroll).
+     Con tres, pregunta, respuestas y cita comparten renglon y solo las
+     acciones van debajo. */
   .modal form[data-form="pregunta"],
   .modal form[data-form="versiculo"] {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr) minmax(0, .75fr);
     grid-auto-rows: min-content;
     align-items: start;
-    gap: .35rem .9rem;
+    gap: .35rem .8rem;
   }
   .modal form[data-form="pregunta"] > .campo,
   .modal form[data-form="versiculo"] > .campo { min-width: 0; }
