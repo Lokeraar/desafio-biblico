@@ -560,8 +560,32 @@
       "excerpt": "🥉",
       "comment": "En este ejemplo estás colocando la medalla de bronce por encima de la de plata y Debería ser al contrario",
       "createdAt": "2026-11-21T18:43:34.707Z",
-      "status": "open",
+      "status": "resolved",
       "sentAt": "2026-11-21T18:43:34.812Z",
+      "resolvedAt": "2026-11-21T18:48:20.690Z",
+      "resolution": "Cierto, el bronce estaba encima de la plata. Ahora el orden es de ranking, como en la app: el 1.º oculto arriba, luego plata, luego bronce, luego el 4.º oculto (render.js:123 lo dice: se revela de abajo hacia arriba y se coloca en orden de ranking)."
+    },
+    {
+      "id": "tdgs2nju",
+      "file": "06-ceremonia.html",
+      "selector": "body > div > div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(2) > div > div > div > button",
+      "excerpt": "Seguir revelando",
+      "comment": "Este botón no debe existir, directamente para poder velar cada participante de los tres primeros de la persona el presentador dar un toque o clic o presiona una tecla desde cualquier lugar de la página para que se revele en su lugar que haya solo un texto simple que diga \"Toque la pantalla o una tecla para revelar\". no requiere de un botón.",
+      "createdAt": "2026-11-21T18:48:13.715Z",
+      "status": "resolved",
+      "sentAt": "2026-11-21T18:48:13.757Z",
+      "resolvedAt": "2026-11-21T18:50:10.100Z",
+      "resolution": "Quitado el botón «Seguir revelando» (que la app nunca tuvo: el canvas lo inventó). En su lugar, un texto simple: «Toque la pantalla o una tecla para revelar», sin caja de botón, con la línea fina del pie."
+    },
+    {
+      "id": "3xtgb5s0",
+      "file": "06-ceremonia.html",
+      "selector": "body > div > div:nth-of-type(4) > div:nth-of-type(3) > div > div:nth-of-type(3)",
+      "excerpt": "El confeti no puede tapar los nombres Es un defecto que ya ocurrió: el confeti se dibujaba encima de la lista y los nombres quedaban ilegibles justo en el momento que todos miran. Tiene que ir detrás o fuera del área de las filas.",
+      "comment": "Elimina esta regla y arregla la animación, el confeti estaba bien como estaba.",
+      "createdAt": "2026-11-21T18:49:18.290Z",
+      "status": "open",
+      "sentAt": "2026-11-21T18:49:18.321Z",
       "resolvedAt": null
     }
   ]

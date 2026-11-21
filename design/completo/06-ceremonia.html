@@ -27,6 +27,24 @@
   .nota.duda{border-left:4px solid #f0a33a}
   code{font-family:ui-monospace,monospace;font-size:.9em;background:rgba(111,227,238,.12);
     padding:.08em .35em;border-radius:5px;color:#6fe3ee}
+  /* EL TEXTO QUE SUSTITUYE AL BOTON «Seguir revelando».
+     Christian: «que haya solo un texto simple que diga "Toque la pantalla o
+     una tecla para revelar". no requiere de un boton».
+
+     Ocupa el sitio donde estaba el pie de la ceremonia, con el mismo
+     `margin-top:auto` para quedarse abajo, pero SIN caja de boton: ni borde, ni
+     fondo, ni relleno que lo haga parecer pulsable. Es una instruccion, no un
+     control.
+
+     Por que sigue visible aunque no sea un boton: sin el, la pantalla se ve
+     quieta y se lee como colgada. El texto es lo que dice que hay algo que
+     hacer, y que se puede hacer en cualquier parte. */
+  .toque-revelar{
+    margin: auto 0 0; padding-top: .6rem;
+    border-top: 1px solid rgba(245,201,59,.25);
+    font-size: var(--t-sm); line-height: 1.3;
+    color: var(--tinta-suave); text-align: center;
+  }
 </style>
 </head>
 <body>
@@ -52,20 +70,31 @@
           <div class="marco-oro">
             <h2 class="titulo-ceremonia">🏆 Clasificación</h2>
             <ul class="lista-ceremonia">
-              <li class="fila-clasif">
-                <span class="puesto">🥉</span>
-                <span class="datos"><span class="nombre">María López</span></span>
-                <span class="puntos">2 pts</span>
+              <!-- ORDEN DE RANKING, no de revelado.
+                   Christian: «En este ejemplo estas colocando la medalla de
+                   bronce por encima de la de plata y Deberia ser al contrario».
+                   Tenia razon: aqui el 3.º estaba arriba del 2.º.
+                   La app ordena por ranking —`ceremoniaHTML` filtra `tabla`, que
+                   ya viene ordenada— y `render.js:123` lo dice: «Se REVELA de
+                   abajo hacia arriba y se COLOCA en orden de ranking: el 1.º
+                   arriba del todo». Son dos cosas distintas: el orden en que
+                   aparecen y el orden en que se muestran.
+                   Asi que lo que ya se revelo (3.º y 2.º) va en su sitio de
+                   ranking, y el 1.º sigue oculto ARRIBA, que es donde caera. -->
+              <li class="fila-clasif oculto">
+                <span class="puesto">?</span>
+                <span class="datos"><span class="nombre">· · · · ·</span></span>
+                <span class="puntos">—</span>
               </li>
               <li class="fila-clasif">
                 <span class="puesto">🥈</span>
                 <span class="datos"><span class="nombre">Carlos Ruiz</span></span>
                 <span class="puntos">3 pts</span>
               </li>
-              <li class="fila-clasif oculto">
-                <span class="puesto">? </span>
-                <span class="datos"><span class="nombre">· · · · ·</span></span>
-                <span class="puntos">—</span>
+              <li class="fila-clasif">
+                <span class="puesto">🥉</span>
+                <span class="datos"><span class="nombre">María López</span></span>
+                <span class="puntos">2 pts</span>
               </li>
               <li class="fila-clasif oculto">
                 <span class="puesto">?</span>
@@ -73,9 +102,23 @@
                 <span class="puntos">—</span>
               </li>
             </ul>
-            <div class="ceremonia-footer">
-              <button class="boton boton-contorno">Seguir revelando</button>
-            </div>
+            <!-- SIN BOTON: UN TOQUE O UNA TECLA, EN CUALQUIER PARTE.
+                 Christian: «Este boton no debe existir, directamente para poder
+                 velar cada participante de los tres primeros de la persona el
+                 presentador dar un toque o clic o presiona una tecla desde
+                 cualquier lugar de la pagina para que se revele en su lugar que
+                 haya solo un texto simple que diga "Toque la pantalla o una
+                 tecla para revelar". no requiere de un boton».
+
+                 Por que es mejor: el presentador tiene el telefono en una mano y
+                 esta mirando la pantalla grande, no el telefono. Buscar un boton
+                 de 40 px cada vez que revela un puesto es trabajo que no deberia
+                 existir. La pantalla entera es el boton.
+
+                 Y el texto tiene que DECIR que se puede tocar: sin el boton no
+                 queda nada que invite a la accion, y una pantalla quieta se lee
+                 como colgada. -->
+            <p class="toque-revelar">Toque la pantalla o una tecla para revelar</p>
           </div>
         </div>
       </div>
