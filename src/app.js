@@ -787,7 +787,7 @@ function panelVersiculo(estado) {
   if (!r) {
     return `
       ${cabecera}
-      <main class="crecer columna panel-host" style="gap:1rem; margin-top:1rem">
+      <main class="crecer columna panel-host">
         ${entorno}
         ${avisoHTML()}
         <div class="columna" style="gap:.8rem; margin-top:.5rem">
@@ -844,7 +844,7 @@ function panelVersiculo(estado) {
 
   return `
     ${cabecera}
-    <main class="crecer columna panel-host" style="gap:1rem; margin-top:1rem">
+    <main class="crecer columna panel-host">
       ${entorno}
       ${avisoHTML()}
 
@@ -870,14 +870,19 @@ function panelVersiculo(estado) {
         que repita la respuesta. Las que ya se destaparon van sin subrayar,
         porque ya las ve todo el mundo.
       */''}
-      <p class="enunciado">${versiculoHostHTML(sinReferenciaAlFinal(r.prompt, r.reference), huecos)}</p>
-
-      ${listaTurnosHTML(v)}
-      ${controles}
-      ${lista}
-      <button class="boton boton-peligro" data-accion="pedir-terminar">
-        Terminar juego
-      </button>
+      <div class="cuerpo-host">
+        <div class="zona-enunciado">
+          <p class="enunciado">${versiculoHostHTML(sinReferenciaAlFinal(r.prompt, r.reference), huecos)}</p>
+        </div>
+        <div class="zona-controles">
+          ${listaTurnosHTML(v)}
+          ${controles}
+          ${lista}
+          <button class="boton boton-peligro" data-accion="pedir-terminar">
+            Terminar juego
+          </button>
+        </div>
+      </div>
 
     </main>`;
 }
@@ -925,26 +930,28 @@ function vistaHost() {
           Crea la sala. Los participantes entrarán con un código.
         </p>
 
-        ${selectorTema(app.temas, app.temaElegido)}
+        <div class="form-sala">
+          ${selectorTema(app.temas, app.temaElegido)}
 
-        <div class="campo" style="max-width:var(--ancho-form); width:100%">
-          <label for="cant">Preguntas en esta partida ${ayuda(
-            'Se eligen al azar empezando por las que hace más tiempo no se juegan. '
-            + (nPreguntas ? 'Este tema tiene ' + nPreguntas + '.' : ''))}</label>
-          <select id="cant" ${puedeCrear ? '' : 'disabled'}>
-            ${[5, 10, 15, 20, 25, 30, 40, 50].filter(n => n <= Math.max(nPreguntas, 5)).map(n =>
-              `<option value="${n}" ${n === app.cantidadPreguntas ? 'selected' : ''}>${n} preguntas</option>`).join('')}
-          </select>
-        </div>
+          <div class="campo" style="max-width:var(--ancho-form); width:100%">
+            <label for="cant">Preguntas en esta partida ${ayuda(
+              'Se eligen al azar empezando por las que hace más tiempo no se juegan. '
+              + (nPreguntas ? 'Este tema tiene ' + nPreguntas + '.' : ''))}</label>
+            <select id="cant" ${puedeCrear ? '' : 'disabled'}>
+              ${[5, 10, 15, 20, 25, 30, 40, 50].filter(n => n <= Math.max(nPreguntas, 5)).map(n =>
+                `<option value="${n}" ${n === app.cantidadPreguntas ? 'selected' : ''}>${n} preguntas</option>`).join('')}
+            </select>
+          </div>
 
-        <div class="campo" style="max-width:var(--ancho-form); width:100%">
-          <label for="seg">Segundos por pregunta ${ayuda(
-            'Cuánto tiempo tienen para responder. Son juegos de reacción rápida: '
-            + 'por encima de 30 segundos la espera se hace larga sin aportar nada.')}</label>
-          <select id="seg" ${puedeCrear ? '' : 'disabled'}>
-            ${[5, 10, 15, 20, 25, 30].map(n =>
-              `<option value="${n}" ${n === app.segundosRonda ? 'selected' : ''}>${n} segundos</option>`).join('')}
-          </select>
+          <div class="campo" style="max-width:var(--ancho-form); width:100%">
+            <label for="seg">Segundos por pregunta ${ayuda(
+              'Cuánto tiempo tienen para responder. Son juegos de reacción rápida: '
+              + 'por encima de 30 segundos la espera se hace larga sin aportar nada.')}</label>
+            <select id="seg" ${puedeCrear ? '' : 'disabled'}>
+              ${[5, 10, 15, 20, 25, 30].map(n =>
+                `<option value="${n}" ${n === app.segundosRonda ? 'selected' : ''}>${n} segundos</option>`).join('')}
+            </select>
+          </div>
         </div>
 
         ${avisoHTML()}
