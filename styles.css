@@ -2838,6 +2838,22 @@ body.tv .opciones { grid-template-columns: 1fr; }
 }
 
 /*
+ * LOS RÓTULOS DE LOS CAMPOS DEL PRESENTADOR, EN UNA SOLA LÍNEA.
+ *
+ * Christian: «ajústale el text-fitting para que quepan en una sola línea
+ * para que así sus Select puedan desplazarse hacia arriba un poco».
+ *
+ * `white-space: nowrap` es OBLIGATORIO aquí, y es la trampa que ya costó
+ * tiempo en este proyecto: con la etiqueta partida en dos renglones, el
+ * ajustador mira la altura, nunca ve que sobra ancho, declara «cabe» y el
+ * texto se sale. Con `nowrap` la altura no puede crecer, así que el ajuste
+ * se ve obligado a encoger la letra hasta que entra.
+ */
+.rotulo-campo {
+  white-space: nowrap;
+}
+
+/*
  * EL ORBE DE ESPERA.
  *
  * Christian: en la sala de espera, «que aparezca en grande y de manera

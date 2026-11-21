@@ -1061,7 +1061,10 @@ function vistaHost() {
           ${selectorTema(app.temas, app.temaElegido)}
 
           <div class="campo" style="max-width:var(--ancho-form); width:100%">
-            <label for="cant">Preguntas en esta partida ${ayuda(
+            ${/* El texto va en su propio span para que el ajuste lo mida SOLO,
+                 sin el «?» de ayuda: si el globo entra en la medida, el rótulo
+                 nunca cabe en una línea y se encoge de más. */''}
+            <label for="cant"><span class="rotulo-campo">Preguntas en esta partida</span> ${ayuda(
               'Se eligen al azar empezando por las que hace más tiempo no se juegan. '
               + (nPreguntas ? 'Este tema tiene ' + nPreguntas + '.' : ''))}</label>
             <select id="cant" ${puedeCrear ? '' : 'disabled'}>
@@ -1071,7 +1074,7 @@ function vistaHost() {
           </div>
 
           <div class="campo" style="max-width:var(--ancho-form); width:100%">
-            <label for="seg">Segundos por pregunta ${ayuda(
+            <label for="seg"><span class="rotulo-campo">Segundos por pregunta</span> ${ayuda(
               'Cuánto tiempo tienen para responder. Son juegos de reacción rápida: '
               + 'por encima de 30 segundos la espera se hace larga sin aportar nada.')}</label>
             <select id="seg" ${puedeCrear ? '' : 'disabled'}>

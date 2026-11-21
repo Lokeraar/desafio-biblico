@@ -675,6 +675,13 @@ export const ROLES = [
      etiqueta es la más larga de la fila: por eso el grupo incluye el `?` que
      va a su lado, para que los dos se ajusten a la vez y no queden de dos
      tamaños. */
+  /* LOS RÓTULOS DEL FORMULARIO DEL PRESENTADOR, A UNA LÍNEA.
+     Christian: «ajústale el text-fitting para que quepan en una sola línea
+     para que así sus Select puedan desplazarse hacia arriba un poco».
+     Con dos renglones, los dos rótulos empujaban los selects hacia abajo.
+     Ahora el ajuste encoge el texto hasta que entra en uno. */
+  { sel: '.rotulo-campo', categoria: 'contenido', renglones: 1 },
+
   { sel: '.modal [data-accion="alternar-modo-ocultar"], ' +
          '.modal [data-accion="ayuda-ocultar"]',
     categoria: 'contenido', renglones: 1 },
