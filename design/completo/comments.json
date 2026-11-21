@@ -272,9 +272,10 @@
       "excerpt": "",
       "comment": "Esto agrándalo de tamaño que abarque esa caja hasta encima del esperando al presentador y esperando al presentador ponlo como footer",
       "createdAt": "2026-11-21T16:00:41.572Z",
-      "status": "open",
+      "status": "resolved",
       "sentAt": "2026-11-21T16:00:41.653Z",
-      "resolvedAt": null
+      "resolvedAt": "2026-11-21T18:01:11.200Z",
+      "resolution": "El orbe llena su caja hasta justo encima del rótulo, y «Esperando al presentador» pasa a pie (footer) con línea fina encima. Antes era un círculo de 64 px con medio panel vacío alrededor."
     },
     {
       "id": "1fpq3lls",
@@ -283,9 +284,10 @@
       "excerpt": "Conectando…",
       "comment": "Agrégale encima thinking-orbs aleatorios",
       "createdAt": "2026-11-21T16:02:11.751Z",
-      "status": "open",
+      "status": "resolved",
       "sentAt": "2026-11-21T16:02:11.807Z",
-      "resolvedAt": null
+      "resolvedAt": "2026-11-21T18:01:13.184Z",
+      "resolution": "Seis orbes en fila encima de «Conectando…», sorteados entre los seis estados reales de lib/orbe.js (working, searching, solving, listening, composing, shaping)."
     },
     {
       "id": "b9mtnlyg",
@@ -294,9 +296,10 @@
       "excerpt": "Nuestras cartas sois, escritas en nuestro corazón , conocidas y leídas de todos los hombres.",
       "comment": "El texto debe comenzar de arriba hacia abajo, de izquierda a derecha.",
       "createdAt": "2026-11-21T16:03:25.814Z",
-      "status": "open",
+      "status": "resolved",
       "sentAt": "2026-11-21T16:03:25.903Z",
-      "resolvedAt": null
+      "resolvedAt": "2026-11-21T18:01:13.243Z",
+      "resolution": "Versículo arriba y a la izquierda en las tres telas (vertical, acostado y televisor). El canvas centraba por su propio <style> y por .cuerpo-tv; corregido en base-app.css y también en styles.css real, porque la app centraba igual."
     },
     {
       "id": "vbkta3lb",
@@ -305,9 +308,10 @@
       "excerpt": "PRESIONAR",
       "comment": "Me encanta el tamaño del botón, algo asi quiero que apliques en las verticales también pero en sus debidas cajas.",
       "createdAt": "2026-11-21T16:04:32.519Z",
-      "status": "open",
+      "status": "resolved",
       "sentAt": "2026-11-21T16:04:32.600Z",
-      "resolvedAt": null
+      "resolvedAt": "2026-11-21T18:01:13.213Z",
+      "resolution": "El botón grande también en vertical. El defecto era del canvas: su .pie-jugador tenía flex 0 0 auto, y la app real ya usa flex 1 1 auto (styles.css:2090). Copiado el valor real, la tecla ocupa su caja."
     },
     {
       "id": "hmqbcrm0",
@@ -316,9 +320,10 @@
       "excerpt": "Nuestras cartas sois, escritas en nuestro corazón , conocidas y leídas de todos los hombres.",
       "comment": "El texto debe comenzar de arriba hacia abajo, de izquierda a derecha, igualmente en las otras pantallas verticales.",
       "createdAt": "2026-11-21T16:05:48.889Z",
-      "status": "open",
+      "status": "resolved",
       "sentAt": "2026-11-21T16:05:48.972Z",
-      "resolvedAt": null
+      "resolvedAt": "2026-11-21T18:01:13.243Z",
+      "resolution": "Versículo arriba y a la izquierda en las tres telas (vertical, acostado y televisor). El canvas centraba por su propio <style> y por .cuerpo-tv; corregido en base-app.css y también en styles.css real, porque la app centraba igual."
     },
     {
       "id": "t71llwd7",
@@ -327,9 +332,10 @@
       "excerpt": "14 s",
       "comment": "Céntralo",
       "createdAt": "2026-11-21T16:07:24.882Z",
-      "status": "open",
+      "status": "resolved",
       "sentAt": "2026-11-21T16:07:24.939Z",
-      "resolvedAt": null
+      "resolvedAt": "2026-11-21T18:01:13.286Z",
+      "resolution": "Reloj centrado en acostado: barra y cifra se acotan a 22rem y se centran con margin-inline auto. Antes quedaban separadas por medio metro de ancho."
     },
     {
       "id": "or8m90sh",
@@ -338,9 +344,10 @@
       "excerpt": "Nuestras cartas sois, escritas en nuestro corazón , conocidas y leídas de todos los hombres.",
       "comment": "El texto debe comenzar de arriba hacia abajo, de izquierda a derecha.",
       "createdAt": "2026-11-21T16:08:02.147Z",
-      "status": "open",
+      "status": "resolved",
       "sentAt": "2026-11-21T16:08:02.226Z",
-      "resolvedAt": null
+      "resolvedAt": "2026-11-21T18:01:13.243Z",
+      "resolution": "Versículo arriba y a la izquierda en las tres telas (vertical, acostado y televisor). El canvas centraba por su propio <style> y por .cuerpo-tv; corregido en base-app.css y también en styles.css real, porque la app centraba igual."
     },
     {
       "id": "r0u9k41p",
@@ -349,9 +356,10 @@
       "excerpt": "9 s",
       "comment": "Agregale la barra temporizador",
       "createdAt": "2026-11-21T16:12:15.032Z",
-      "status": "open",
+      "status": "resolved",
       "sentAt": "2026-11-21T16:12:15.176Z",
-      "resolvedAt": null
+      "resolvedAt": "2026-11-21T18:01:13.310Z",
+      "resolution": "Barra temporizador añadida al televisor, en su propia fila entre el versículo y el pie, como la emite relojHTML en src/lib/versiculo.js:508."
     },
     {
       "id": "926gc0uz",
@@ -360,9 +368,10 @@
       "excerpt": "Juego: Completar el versículo",
       "comment": "Text-marketing a 2+1",
       "createdAt": "2026-11-21T16:14:46.077Z",
-      "status": "open",
+      "status": "resolved",
       "sentAt": "2026-11-21T16:14:46.146Z",
-      "resolvedAt": null
+      "resolvedAt": "2026-11-21T18:01:13.361Z",
+      "resolution": "Rótulo del juego a 2+1: declarado en ROLES de src/lib/ajuste.js, no en el CSS. Con 1 renglón el ajuste lo bajaba al suelo de 8 pt. Dos pruebas nuevas comprueban la excepción."
     }
   ]
 }

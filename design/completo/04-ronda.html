@@ -38,11 +38,22 @@
   /* cuerpo-jugador */
   .cuerpo-jugador{flex:1 1 auto;display:flex;flex-direction:column;min-height:0;gap:8px}
   .tela.h .cuerpo-jugador{flex-direction:row;align-items:stretch;gap:12px}
+  /* zona-versiculo: el texto ARRANCA ARRIBA.
+     Christian: «El texto debe comenzar de arriba hacia abajo, de izquierda a
+     derecha». Esta hoja redefinia la clase con `justify-content:center`, que
+     peleaba con base-app.css y centraba el bloque entero. Con el versiculo en
+     `flex:1 1 auto` no hay espacio libre, pero se deja explicito para que
+     nadie lo vuelva a centrar por descuido. */
   .zona-versiculo{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;
-    justify-content:center;gap:6px;overflow:hidden}
+    justify-content:flex-start;align-items:stretch;gap:6px;overflow:hidden}
   .tela.h .zona-versiculo{min-width:0}
-  .pie-jugador{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:8px;min-height:0}
-  .tela.h .pie-jugador{flex:0 0 34%;justify-content:center}
+  /* El pie CRECE para que la tecla tenga sitio, igual que la app real
+     (`styles.css:2090`: `flex: 1 1 auto`). Aqui decia `0 0 auto`, y por eso el
+     boton de las verticales salia chico: el defecto era del canvas. */
+  .pie-jugador{flex:1 1 auto;display:flex;flex-direction:column;align-items:center;gap:8px;min-height:0}
+  /* Acostado el pie tiene ancho propio y el boton no pide mas alto: es el
+     recurso escaso (`styles.css:2008`). */
+  .tela.h .pie-jugador{flex:0 0 auto;width:34%;justify-content:center}
   .aviso-neutro{
     border-radius:12px;padding:6px 14px;text-align:center;
     background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);
@@ -277,12 +288,17 @@
             <p class="tv-verso">Nuestras cartas sois, escritas en nuestro
             <span class="hueco">corazón</span>, conocidas y leídas de todos los hombres.</p>
           </div>
+          <!-- EL RELOJ VA EN SU PROPIA FILA, entre el versiculo y el pie.
+               Asi lo emite `relojHTML` en `src/lib/versiculo.js:508`: fuera de
+               `.cuerpo-tv` y antes de `.pie-tv`. Antes de este cambio el
+               televisor solo mostraba la cifra «9 s», sin barra: se veia el
+               tiempo pero no cuanto queda. -->
+          <div class="reloj-ronda">
+            <div class="barra-tiempo"><i style="width:60%"></i></div>
+            <span class="reloj">9 s</span>
+          </div>
           <div class="tv-pie">
             <span class="aviso-neutro">Turno de Carlos Ruiz</span>
-            <span class="reloj" style="width:auto">
-              <span class="barra-tiempo" style="max-width:160px"><i style="width:60%"></i></span>
-              <span class="t">9 s</span>
-            </span>
           </div>
         </div>
       </div>

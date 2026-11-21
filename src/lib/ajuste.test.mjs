@@ -134,10 +134,23 @@ const esDelMenu = (sel) => /menu|juego-tarjeta/.test(sel);
    porque son cuatro sitios que muestran lo mismo: el versículo en juego
    (participante y televisor), el enunciado de una pregunta, la vista previa
    del editor y el texto con huecos de la lista de un tema. */
-const pregunta = conCapacidadPropia.filter(r => !esDelMenu(r.sel) && r.renglones === 2);
+const pregunta = conCapacidadPropia.filter(r =>
+  !esDelMenu(r.sel) && !/rotulo-juego/.test(r.sel) && r.renglones === 2);
 t(pregunta.length === 5, 'todo texto de versiculo declara 2 renglones (+1 de gracia)');
 t(pregunta.every(r => /versiculo|enunciado|fila-entre/.test(r.sel)),
   'y todos son texto de un versiculo, su enunciado o su referencia');
+/* EXCEPCION DEL 21/11/2026, declarada por el usuario: el ROTULO DEL JUEGO va
+   en 2 + 1. Sus palabras, sobre «Juego: Completar el versiculo» en la cabecera
+   del presentador: «Text-fitting a 2+1».
+   NO es texto de versiculo, asi que no entra en el grupo de arriba: se cuenta y
+   se comprueba aparte. Asi la regla dura de los versiculos sigue exigiendo
+exactamente sus cinco selectores, y esta excepcion no puede crecer sin que
+   alguien la vea declarada aqui. */
+const rotuloJuego = conCapacidadPropia.filter(r => /rotulo-juego/.test(r.sel));
+t(rotuloJuego.length === 1,
+  'el rotulo del juego declara capacidad propia, y es uno solo');
+t(rotuloJuego.every(r => r.renglones === 2),
+  'y va en 2 + 1, como pidio el usuario');
 t(pregunta.every(r => r.renglones + PERFILES.ancho.gracia === 3),
   'los cuatro quedan en 2 + 1');
 t(conCapacidadPropia.filter(r => !esDelMenu(r.sel) && r.renglones !== 2)

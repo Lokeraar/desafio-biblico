@@ -288,7 +288,17 @@ input::placeholder { color: #6d8b90; }
   display: flex; flex-direction: column; gap: .35rem;
 }
 .tela.h .zona-versiculo { min-width: 0; }
-.pie-jugador { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: .5rem; min-height: 0; }
+/* EL PIE CRECE, como en la app real.
+   Christian: «Me encanta el tamano del boton, algo asi quiero que apliques en
+   las verticales tambien pero en sus debidas cajas».
+   El defecto era del CANVAS, no de la app: aqui el pie tenia `flex: 0 0 auto`,
+   asi que el boton se quedaba con las sobras; la app real (`styles.css:2090`)
+   lo tiene en `flex: 1 1 auto` y la tecla ocupa lo que sobra. Copiando el valor
+   real, la vertical se ve como se ve de verdad. */
+.pie-jugador {
+  flex: 1 1 auto; display: flex; flex-direction: column; align-items: center;
+  gap: .5rem; min-height: 0;
+}
 .tela.h .pie-jugador { flex: 0 0 clamp(9rem, 26%, 16rem); min-width: 0; justify-content: center; width: auto; }
 
 /* `.jugador-versiculo .ref`: `--t-xs`, peso 800, tenue, SIN mayusculas */
@@ -403,15 +413,26 @@ input::placeholder { color: #6d8b90; }
 .app-campo label { font-size: var(--t-sm); font-weight: 700; color: var(--tu-100); }
 
 /* el rotulo «Juego:» + nombre, arriba a la derecha */
-.app-rotulo-juego {
+.rotulo-juego {
   display: flex; flex-direction: column; align-items: flex-end;
   gap: .1em; margin-left: auto; min-width: 0; text-align: right;
 }
-.app-rotulo-juego .rot {
+.rotulo-juego .rotulo {
   font-size: var(--t-xs); font-weight: 600; color: var(--tinta-suave); line-height: 1.1;
+  /* La placa de este artboard define `.rotulo` para sus miniaturas (monoespaciado
+     y con margen inferior). En la app real esa regla no existe, asi que aqui se
+     neutraliza: si no, el rotulo «Juego:» salia en monoespaciado y empujado
+     hacia abajo. */
+  margin: 0; font-family: inherit;
 }
-.app-rotulo-juego .nom {
+.rotulo-juego .nombre-juego {
   font-size: var(--t-sm); font-weight: 800; line-height: 1.2;
+  /* 14ch es el valor de la app real (`styles.css:2985`), no un numero puesto
+     aqui. Con el, «Completar el versiculo» parte en DOS renglones.
+     La capacidad 2 + 1 la aplica el ajuste, porque esta declarada en `ROLES`
+     de `src/lib/ajuste.js`: si el nombre del juego no cabe en dos renglones,
+     el ajuste encoge la letra hasta que quepa. El CSS solo marca el limite de
+     ancho. */
   max-width: 14ch; white-space: normal; overflow-wrap: break-word;
 }
 
@@ -441,9 +462,17 @@ input::placeholder { color: #6d8b90; }
 /* ---------- piezas de la ronda y del televisor ---------- */
 
 /* el versiculo y sus huecos */
+/* ARRIBA Y A LA IZQUIERDA, no centrado.
+   Christian: «El texto debe comenzar de arriba hacia abajo, de izquierda a
+   derecha» (en las tres telas donde aparece un versiculo). Centrado
+   verticalmente el ojo no sabe donde empieza a leer, y con huecos el
+   renglon se descoloca solo.
+   Es `display:block`, no `flex`: en la app real `.jugador-versiculo
+   .versiculo` tambien es bloque. */
 .versiculo {
   flex: 1 1 auto; min-height: 0; margin: 0;
-  display: flex; align-items: center;
+  display: block;
+  text-align: left;
   font-size: 32px; line-height: 1.28; font-weight: 600;
 }
 .hueco {
@@ -456,6 +485,11 @@ input::placeholder { color: #6d8b90; }
   color: var(--amarillo); font-variant-numeric: tabular-nums;
 }
 .reloj { display: flex; align-items: center; gap: .6rem; width: 100%; }
+/* EL RELOJ CENTRADO EN ACOSTADO.
+   Christian: «Centralo». Acostado el reloj ocupa el ancho de la columna del
+   versiculo, que es ancha; con la barra pegada a la izquierda y la cifra al
+   extremo derecho quedaban separadas por medio metro. Se acota y se centra. */
+.tela.h .reloj { justify-content: center; max-width: 22rem; margin-inline: auto; }
 
 /* Aviso neutro: el turno de otro, sin gritar */
 .aviso-neutro {
@@ -470,12 +504,12 @@ input::placeholder { color: #6d8b90; }
   min-height: 0; padding: 14px 21px 16px; gap: .6rem; width: 100%;
 }
 .tv-cuerpo {
-  flex: 1 1 auto; display: flex; align-items: center; justify-content: center;
-  min-height: 0; text-align: center; overflow: hidden;
+  flex: 1 1 auto; display: flex; align-items: flex-start; justify-content: flex-start;
+  min-height: 0; text-align: left; overflow: hidden;
 }
 .tv-verso {
-  flex: 1 1 auto; margin: 0; display: flex; align-items: center; justify-content: center;
-  font-size: 44px; line-height: 1.24; font-weight: 700; text-align: center;
+  flex: 1 1 auto; margin: 0; display: block;
+  font-size: 44px; line-height: 1.24; font-weight: 700; text-align: left;
 }
 .tv-pie {
   flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between;

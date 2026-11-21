@@ -2078,8 +2078,16 @@ body.tv .opciones { grid-template-columns: 1fr; }
 .jugador-versiculo .versiculo {
   flex: 1 1 auto;
   display: block;
-  margin-block: auto;
+  /* ARRIBA Y A LA IZQUIERDA, no centrado.
+     Christian: «El texto debe comenzar de arriba hacia abajo, de izquierda a
+     derecha, igualmente en las otras pantallas verticales».
+     Estaba en `margin-block: auto`, que centra el bloque en el alto que sobra:
+     el ojo no sabe donde empieza a leer, y con huecos el renglon se descoloca
+     solo. `margin-block: 0` lo pega al borde superior de su caja y
+     `text-align: left` a la izquierda. */
+  margin-block: 0;
   margin-inline: 0;
+  text-align: left;
   font-size: var(--t-xl);
   line-height: 1.38;
   font-weight: 700;
@@ -2248,10 +2256,13 @@ body.tv .opciones { grid-template-columns: 1fr; }
 .cuerpo-tv {
   flex: 1 1 auto;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  /* Arriba y a la izquierda: el televisor tambien. Christian: «El texto debe
+     comenzar de arriba hacia abajo, de izquierda a derecha». Centrado, el
+     versiculo flotaba en medio de la pantalla y el ojo no tenia donde anclar. */
+  align-items: flex-start;
+  justify-content: flex-start;
   min-height: 0;
-  text-align: center;
+  text-align: left;
 }
 .cuerpo-tv .versiculo {
   margin: 0;

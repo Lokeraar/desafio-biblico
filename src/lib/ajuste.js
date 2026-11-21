@@ -682,6 +682,15 @@ export const ROLES = [
      Ahora el ajuste encoge el texto hasta que entra en uno. */
   { sel: '.rotulo-campo', categoria: 'contenido', renglones: 1 },
 
+  /* EL RÓTULO DEL JUEGO, 2 + 1.
+     Christian: «Text-marketing a 2+1» sobre «Juego: Completar el versículo».
+     El nombre de un juego puede ser largo y la cabecera es estrecha: con un
+     solo renglón el ajuste lo bajaba al suelo de 8 pt. Con capacidad 2 el
+     nombre parte en dos y se lee; el `+1` de gracia evita que el suelo se
+     alcance por un carácter de más. El `aria-label` del contenedor lleva el
+     texto completo, así que anunciarlo entero no depende de la capacidad. */
+  { sel: '.rotulo-juego .nombre-juego', categoria: 'contenido', renglones: 2 },
+
   { sel: '.modal [data-accion="alternar-modo-ocultar"], ' +
          '.modal [data-accion="ayuda-ocultar"]',
     categoria: 'contenido', renglones: 1 },
