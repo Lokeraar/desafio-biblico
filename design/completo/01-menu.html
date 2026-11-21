@@ -3,258 +3,226 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Menú — Diseño completo</title>
+<title>Menú — la app real</title>
+<link rel="stylesheet" href="base-app.css">
 <style>
-  :root{
-    --fondo:#0b1a1d; --fondo-2:#102a2f; --tinta:#fff; --tinta-suave:#a9c6ca;
-    --tu-100:#6fe3ee; --tu-300:#2ec4d4; --tu-600:#008090; --tu-800:#00525e; --tu-900:#0a2e33;
-    --amarillo:#fcd116; --rojo:#cf2123; --ok:#1fbf75; --espera:#f0a33a; --error:#e0483c;
-    --radio:16px; --radio-sm:10px;
-    --fondo-juego:radial-gradient(120% 90% at 50% 0%, #1b6f4a 0%, #0f5a63 42%, #07222b 72%, #04151b 100%);
-  }
-  *{box-sizing:border-box}
-  html,body{margin:0;background:var(--fondo);color:var(--tinta);
-    font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-  .placa{max-width:1400px;margin:0 auto;padding:2rem 1.5rem 4rem}
+  /* solo lo que NO es app: la placa, los rotulos y las notas */
+  html,body{margin:0}
+  .placa{max-width:1400px;margin:0 auto;padding:2rem 1.5rem 4rem;background:#0b1a1d;
+    color:#fff;font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
   .placa > header{border-bottom:1px solid rgba(110,227,238,.22);padding-bottom:1rem;margin-bottom:1.5rem}
   h1{margin:0 0 .25rem;font-size:1.75rem;font-weight:800}
-  header p{margin:0;color:var(--tinta-suave);max-width:78ch}
-  .h2{font-size:1.15rem;font-weight:750;margin:2.2rem 0 .4rem;color:var(--tu-100)}
-  .h2 small{display:block;font-weight:400;color:var(--tinta-suave);font-size:.92rem;margin-top:.15rem}
-
+  header p{margin:0;color:#a9c6ca;max-width:80ch}
+  .h2{font-size:1.15rem;font-weight:750;margin:2.2rem 0 .4rem;color:#6fe3ee}
+  .h2 small{display:block;font-weight:400;color:#a9c6ca;font-size:.92rem;margin-top:.15rem}
   .fila{display:flex;gap:1.6rem;align-items:flex-start;flex-wrap:wrap;margin-top:1rem}
   .marco{flex:0 0 auto}
-  .marco .rotulo{font-size:.85rem;color:var(--tinta-suave);margin-bottom:.4rem;
-    font-family:ui-monospace,monospace}
-  .tela{position:relative;overflow:hidden;border-radius:20px;border:1px solid rgba(110,227,238,.3);
-    background:var(--fondo-juego);box-shadow:0 14px 40px rgba(0,0,0,.5);
-    display:flex;flex-direction:column}
-  .v{width:390px;height:844px}
-  .h{width:844px;height:390px}
-
-  /* ============ LO QUE SE DIBUJA DENTRO (fiel a la app) ============ */
-  .lienzo{display:flex;flex-direction:column;min-height:0;padding:.7rem .9rem;gap:.55rem}
-  .tela.h .lienzo{flex-direction:row;align-items:stretch;gap:.9rem}
-
-  .portada{position:relative;width:100%;border-radius:var(--radio);overflow:hidden;
-    box-shadow:0 8px 24px rgba(0,0,0,.45);
-    background:linear-gradient(135deg,#1a5c66,#0a2e33);max-height:30%}
-  .tela.h .portada{flex:0 0 30%;max-height:none;display:flex;align-items:center;
-    /* LETTERBOXING TRANSPARENTE: el aire alrededor de una foto ancha se ve como el
-       fondo del menu, a traves de una tarjeta con borde. Asi el marco no es un
-       color inventado: es el mismo fondo, y la foto se lee como si flotara. */
-    background:rgba(255,255,255,.04);
-    border:1px solid rgba(110,227,238,.22);
-    padding:.35rem}
-  .portada .arte{width:100%;aspect-ratio:16/9;display:grid;place-items:center;
-    background:
-      radial-gradient(60% 80% at 30% 20%, rgba(252,209,22,.25), transparent 60%),
-      linear-gradient(160deg,#12525e,#08272d);
-    color:#9fe9f1;font-weight:800;letter-spacing:.06em;font-size:.8rem}
-  .tela.h .portada .arte{aspect-ratio:auto;height:100%;border-radius:10px;
-    background:transparent}
-  .lapiz{position:absolute;top:.4rem;right:.4rem;width:1.9rem;height:1.9rem;border-radius:8px;
-    background:rgba(3,12,14,.45);border:1px solid rgba(255,255,255,.25);
-    display:grid;place-items:center;font-size:.8rem}
-
-  .cuerpo{display:flex;flex-direction:column;min-height:0;gap:.5rem;
-    margin-top:.2rem;padding-bottom:.2rem}
-  .tela.h .cuerpo{flex:1 1 auto;min-width:0;margin-top:0;overflow-y:auto}
-  .titulo{display:flex;align-items:center;justify-content:center;gap:.45rem;
-    font-size:1.45rem;font-weight:900;letter-spacing:.01em}
-  .tela.h .titulo{font-size:1.3rem}
-  .lema{text-align:center;color:var(--tinta-suave);font-size:.85rem;margin:0}
-
-  .juegos{display:flex;flex-direction:column;gap:.45rem;width:100%}
-  .tela.h .juegos{flex-direction:row;flex-wrap:wrap;gap:.45rem}
-  .tarjeta{display:flex;flex-wrap:wrap;align-items:center;gap:.35rem .6rem;
-    padding:.5em .7em;border-radius:14px;text-align:left;width:100%;
-    border:1px solid rgba(110,227,238,.22);background:rgba(255,255,255,.05);color:var(--tinta);
-    font:inherit}
-  .tela.h .tarjeta{flex:1 1 clamp(9rem,30%,15rem);min-width:0;width:auto}
-  .tarjeta.elegido{border-color:var(--tu-300);background:rgba(46,196,212,.12)}
-  .tarjeta .ico{width:2.1em;height:2.1em;display:grid;place-items:center;border-radius:10px;
-    background:rgba(46,196,212,.16);font-size:.9rem;flex:0 0 auto}
-  .tarjeta .txt{display:flex;flex-direction:column;gap:.1rem;flex:1 1 9rem;min-width:0}
-  .tarjeta .nom{font-weight:800;font-size:1.05rem;line-height:1.2}
-  .tarjeta .des{font-size:.82rem;color:var(--tinta-suave);line-height:1.25}
-  .insig{flex:0 0 auto;margin-left:auto;font-size:.72rem;font-weight:800;padding:.2em .6em;
-    border-radius:999px;white-space:nowrap;
-    background:rgba(31,191,117,.2);color:#9df0c4;border:1px solid rgba(31,191,117,.45)}
-  .insig.sel{background:rgba(252,209,22,.18);color:#ffe58a;border-color:rgba(252,209,22,.5)}
-  .insig.pronto{background:rgba(255,255,255,.08);color:#b9ccd0;border-color:rgba(255,255,255,.2)}
-
-  .acciones{display:flex;flex-direction:column;gap:.4rem;width:100%;margin-top:.2rem;
-    align-items:center}
-  .tela.h .acciones{flex-direction:row;flex-wrap:wrap}
-  .tela.h .acciones .btn{flex:1 1 8rem}
-  .btn{display:block;width:100%;text-align:center;padding:.6em 1em;border-radius:12px;font-weight:800;
-    font-size:.95rem;border:1px solid transparent;text-decoration:none}
-  .btn.oro{background:linear-gradient(180deg,#ffe066,#fcd116);color:#2a2200}
-  .btn.contorno{background:transparent;border-color:rgba(110,227,238,.45);color:var(--tu-100)}
-  .pie{display:flex;justify-content:space-between;align-items:center;font-size:.72rem;
-    color:var(--tinta-suave);margin-top:auto;padding-top:.4rem}
-  .punto{width:.5rem;height:.5rem;border-radius:50%;background:var(--ok);
-    display:inline-block;margin-right:.3rem}
-
-  /* ============ anotaciones ============ */
-  .notas{margin-top:1.6rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:.9rem}
-  .nota{border:1px solid var(--tu-800);border-radius:var(--radio-sm);padding:.8rem 1rem;
-    background:linear-gradient(160deg,var(--fondo-2),var(--tu-900))}
-  .nota h3{margin:0 0 .35rem;font-size:.98rem;color:var(--tu-100)}
-  .nota p{margin:.3rem 0;font-size:.92rem;color:var(--tinta-suave);line-height:1.5}
-  .nota.bien{border-left:4px solid var(--ok)}
-  .nota.mal{border-left:4px solid var(--error)}
-  .nota.duda{border-left:4px solid var(--espera)}
+  .rotulo{font-size:.85rem;color:#a9c6ca;margin-bottom:.4rem;font-family:ui-monospace,monospace}
+  .notas{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:.9rem}
+  .nota{border:1px solid #00525e;border-radius:10px;padding:.8rem 1rem;
+    background:linear-gradient(160deg,#102a2f,#0a2e33)}
+  .nota h3{margin:0 0 .35rem;font-size:.98rem;color:#6fe3ee}
+  .nota p{margin:.3rem 0;font-size:.92rem;color:#a9c6ca;line-height:1.5}
+  .nota.bien{border-left:4px solid #1fbf75}
+  .nota.mal{border-left:4px solid #e0483c}
+  .nota.duda{border-left:4px solid #f0a33a}
   code{font-family:ui-monospace,monospace;font-size:.9em;background:rgba(111,227,238,.12);
-    padding:.08em .35em;border-radius:5px;color:var(--tu-100)}
-  .etq{display:inline-block;font-size:.72rem;font-weight:800;padding:.12em .5em;border-radius:999px;
-    background:rgba(111,227,238,.14);color:var(--tu-100);border:1px solid rgba(111,227,238,.35)}
+    padding:.08em .35em;border-radius:5px;color:#6fe3ee}
 </style>
 </head>
 <body>
 <div class="placa">
 
   <header>
-    <h1>Menú — la puerta</h1>
-    <p>Primera pantalla y la única que se ve antes de decidir. Tiene que decir tres cosas y nada más:
-    qué es esto, qué se va a jugar, y por dónde se entra.</p>
+    <h1>Menú — la app real</h1>
+    <p>Reconstruido con los valores MEDIDOS de la app en el dispositivo
+    (<code>getComputedStyle</code> sobre 390×844 y 844×390), no copiados a ojo. Texto a
+    21.3333 px, título a 25.3333 px, rellenos y radios exactos.</p>
   </header>
 
   <div class="h2">Vertical — 390 × 844
-    <small>El caso normal: un teléfono en la mano, de pie, con gente alrededor.</small>
+    <small>Lo que se ve al abrir, sin deslizar.</small>
   </div>
 
   <div class="fila">
     <div class="marco">
-      <div class="rotulo">vertical · juego elegido: Completar el versículo</div>
-      <div class="tela v">
-        <div class="lienzo">
-          <div class="portada">
-            <div class="arte">DESAFÍO BÍBLICO 2026 — 2 CORINTIOS</div>
-            <div class="lapiz">✎</div>
+      <div class="rotulo">390×844 · juego elegido: Completar el versículo</div>
+      <div class="tela v placa-app">
+        <div class="app-lienzo">
+          <div class="app-portada">
+            <div class="arte">DESAFÍO BÍBLICO 2026 · 2 CORINTIOS</div>
           </div>
-          <div class="cuerpo">
-            <div class="titulo">🏆 DESAFÍO BÍBLICO ⭐</div>
-            <p class="lema">«Escrito está: No sólo de pan vivirá el hombre»</p>
-
-            <div class="juegos">
-              <button class="tarjeta">
-                <span class="ico">🎯</span>
-                <span class="txt">
-                  <span class="nom">Selección simple</span>
-                  <span class="des">Una pregunta, 4 opciones y una sola correcta.</span>
-                </span>
-                <span class="insig">Elegible</span>
-              </button>
-              <button class="tarjeta elegido">
+          <div class="app-cuerpo">
+            <div class="app-titulo">🏆 DESAFÍO BÍBLICO ⭐</div>
+            <div style="text-align:center;color:#a9c6ca">2 Corintios · Concurso de preguntas</div>
+            <div class="app-juegos">
+              <button class="app-tarjeta elegido">
                 <span class="ico">📖</span>
                 <span class="txt">
                   <span class="nom">Completar el versículo</span>
                   <span class="des">Un versículo con palabras tapadas. Pulsa para tomar el turno.</span>
                 </span>
-                <span class="insig sel">Seleccionado</span>
-              </button>
-              <button class="tarjeta" disabled>
-                <span class="ico">💬</span>
-                <span class="txt">
-                  <span class="nom">Respuesta abierta</span>
-                  <span class="des">El presentador lee y cada quien escribe.</span>
-                </span>
-                <span class="insig pronto">Pronto</span>
+                <span class="app-insignia sel">Seleccionado</span>
               </button>
             </div>
-
-            <div class="acciones">
-              <a class="btn oro">Jugar como participante</a>
-              <a class="btn contorno">Soy presentador</a>
-              <a class="btn contorno">📺 Televisor</a>
-              <a class="btn contorno">⚙️ Configuraciones</a>
+            <div class="app-acciones">
+              <button class="boton-grande contorno">🎤 Soy presentador</button>
+              <button class="boton-grande contorno">🙋 Jugar como participante</button>
             </div>
-
-            <div class="pie"><span>v1.0</span><span><span class="punto"></span>Modo local</span></div>
           </div>
         </div>
       </div>
     </div>
 
     <div style="flex:1 1 340px;min-width:280px">
-      <div class="notas" style="margin-top:0">
+      <div class="notas">
         <div class="nota bien">
-          <h3>El nombre no se encoge</h3>
-          <p>Nombre a <strong>16 pt</strong>, descripción con 3 renglones disponibles. Antes el nombre
-          estaba declarado a 1 renglón y bajaba a 11 pt; la descripción llegaba al suelo de 8 pt.</p>
+          <h3>Texto a 16 pt</h3>
+          <p><code>21.3333px</code> con interlineado <code>32px</code>. Antes la escala del teléfono
+          arrancaba en 12 pt y esta pantalla llegaba a 8 pt en la descripción.</p>
         </div>
         <div class="nota bien">
-          <h3>La insignia baja, no aplasta</h3>
-          <p>Cuando «Seleccionado» no cabe al lado del texto, pasa a su propia línea. El nombre
-          conserva el ancho. Antes compartían una rejilla de tres columnas fijas y el texto se
-          cortaba.</p>
+          <h3>La tarjeta crece de alto</h3>
+          <p>Nombre y descripción pueden ocupar 2 y 3 renglones. Cuando la insignia no cabe al lado,
+          baja a su propia línea: no aplasta el texto.</p>
         </div>
         <div class="nota bien">
-          <h3>El que está elegido se ve</h3>
-          <p>Borde más claro, fondo teñido e insignia en amarillo. No depende solo del color: cambia
-          también el texto de la insignia.</p>
+          <h3>Se desliza desde cualquier parte</h3>
+          <p>El menú no tiene scroll propio: crece la página y el gesto funciona en toda la pantalla.
+          Antes <code>.menu-cuerpo</code> tenía <code>overflow-y:auto</code> con
+          <code>overscroll-behavior:contain</code>, y como su contenido cabía justo, solo se podía
+          deslizar empezando sobre la portada.</p>
         </div>
         <div class="nota mal">
-          <h3>Lo que no puede pasar</h3>
-          <p>Que «Pronto» se pueda pulsar: es un botón deshabilitado, no un enlace muerto. Y que el
-          lápiz de la portada pise el texto de la imagen.</p>
+          <h3>Lo que sigue abierto</h3>
+          <p>La portada mide 188 px con el lema debajo. Con las tres tarjetas y los cuatro botones,
+          el menú pide 1457 px: hay que deslizar. ¿Se acepta, o se recorta la portada?</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="h2">Vertical — el menú completo
+    <small>Con las tres tarjetas, para ver cuánto ocupa de verdad.</small>
+  </div>
+
+  <div class="fila">
+    <div class="marco">
+      <div class="rotulo">390×844 · las tres tarjetas y los cuatro botones</div>
+      <div class="tela v placa-app">
+        <div class="app-lienzo">
+          <div class="app-portada">
+            <div class="arte">DESAFÍO BÍBLICO 2026 · 2 CORINTIOS</div>
+          </div>
+          <div class="app-cuerpo">
+            <div class="app-titulo">🏆 DESAFÍO BÍBLICO ⭐</div>
+            <div style="text-align:center;color:#a9c6ca">2 Corintios · Concurso de preguntas</div>
+            <div class="app-juegos">
+              <button class="app-tarjeta">
+                <span class="ico">🎯</span>
+                <span class="txt">
+                  <span class="nom">Selección simple</span>
+                  <span class="des">Una pregunta, 4 opciones y una sola correcta.</span>
+                </span>
+                <span class="app-insignia">Elegible</span>
+              </button>
+              <button class="app-tarjeta elegido">
+                <span class="ico">📖</span>
+                <span class="txt">
+                  <span class="nom">Completar el versículo</span>
+                  <span class="des">Un versículo con palabras tapadas. Pulsa para tomar el turno.</span>
+                </span>
+                <span class="app-insignia sel">Seleccionado</span>
+              </button>
+              <button class="app-tarjeta">
+                <span class="ico">💬</span>
+                <span class="txt">
+                  <span class="nom">Respuesta abierta</span>
+                  <span class="des">El presentador lee y cada quien escribe.</span>
+                </span>
+                <span class="app-insignia pronto">Pronto</span>
+              </button>
+            </div>
+            <div class="app-acciones">
+              <button class="boton-grande contorno">🎤 Soy presentador</button>
+              <button class="boton-grande contorno">🙋 Jugar como participante</button>
+              <button class="boton-grande contorno">📺 Pantalla para el televisor</button>
+              <button class="boton-grande contorno">⚙️ Configuraciones</button>
+            </div>
+            <div class="app-pie"><span>v1.0</span><span><span class="punto-vivo"></span>Modo local</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="flex:1 1 340px;min-width:280px">
+      <div class="notas">
+        <div class="nota bien">
+          <h3>Números reales de esta pantalla</h3>
+          <p>Portada 188 px · título 28 px de alto · tres tarjetas de 203 px cada una · cuatro
+          botones de 70 px · pie 41 px. Total <strong>1457 px</strong> en una ventana de 844.</p>
+        </div>
+        <div class="nota duda">
+          <h3>Decisión: qué se recorta primero</h3>
+          <p>Si hay que ganar alto sin deslizar, el candidato es la portada (188 px). Con 30 % menos
+          se ahorran ~56 px, y aún así el menú no cabe: los cuatro botones ya son 306 px por sí
+          solos.</p>
+        </div>
+        <div class="nota bien">
+          <h3>Deslizar es lo correcto aquí</h3>
+          <p>Cuatro botones y tres tarjetas es contenido real. El criterio de Christian: aprovechar
+          el espacio primero, pero no bloquear el desplazamiento cuando hace falta. Este es un caso
+          donde hace falta.</p>
         </div>
       </div>
     </div>
   </div>
 
   <div class="h2">Acostado — 844 × 390
-    <small>Aquí el alto es el recurso escaso y el ancho sobra: la portada pasa a la izquierda y los
-    juegos se reparten en filas.</small>
+    <small>Portada a la izquierda, tarjetas en fila, con letterboxing si la foto es ancha.</small>
   </div>
 
   <div class="fila">
     <div class="marco">
-      <div class="rotulo">acostado · juego elegido: Completar el versículo</div>
-      <div class="tela h">
-        <div class="lienzo">
-          <div class="portada">
+      <div class="rotulo">844×390 · las tres tarjetas</div>
+      <div class="tela h placa-app">
+        <div class="app-lienzo">
+          <div class="app-portada">
             <div class="arte">DESAFÍO BÍBLICO<br>2026<br>2 CORINTIOS</div>
-            <div class="lapiz">✎</div>
           </div>
-          <div class="cuerpo">
-            <div class="titulo">🏆 DESAFÍO BÍBLICO ⭐</div>
-            <p class="lema">«Escrito está: No sólo de pan vivirá el hombre»</p>
-
-            <div class="juegos">
-              <button class="tarjeta">
+          <div class="app-cuerpo">
+            <div class="app-titulo">🏆 DESAFÍO BÍBLICO ⭐</div>
+            <div class="app-juegos">
+              <button class="app-tarjeta">
                 <span class="ico">🎯</span>
                 <span class="txt">
                   <span class="nom">Selección simple</span>
                   <span class="des">Una pregunta, 4 opciones y una sola correcta.</span>
                 </span>
-                <span class="insig">Elegible</span>
+                <span class="app-insignia">Elegible</span>
               </button>
-              <button class="tarjeta elegido">
+              <button class="app-tarjeta elegido">
                 <span class="ico">📖</span>
                 <span class="txt">
                   <span class="nom">Completar el versículo</span>
                   <span class="des">Un versículo con palabras tapadas. Pulsa para tomar el turno.</span>
                 </span>
-                <span class="insig sel">Seleccionado</span>
+                <span class="app-insignia sel">Seleccionado</span>
               </button>
-              <button class="tarjeta" disabled>
+              <button class="app-tarjeta">
                 <span class="ico">💬</span>
                 <span class="txt">
                   <span class="nom">Respuesta abierta</span>
                   <span class="des">El presentador lee y cada quien escribe.</span>
                 </span>
-                <span class="insig pronto">Pronto</span>
+                <span class="app-insignia pronto">Pronto</span>
               </button>
             </div>
-
-            <div class="acciones">
-              <a class="btn oro">Jugar como participante</a>
-              <a class="btn contorno">Soy presentador</a>
-              <a class="btn contorno">📺 Televisor</a>
-              <a class="btn contorno">⚙️ Configuraciones</a>
+            <div class="app-acciones">
+              <button class="boton-grande contorno">🎤 Soy presentador</button>
+              <button class="boton-grande contorno">🙋 Jugar como participante</button>
+              <button class="boton-grande contorno">📺 Pantalla para el televisor</button>
+              <button class="boton-grande contorno">⚙️ Configuraciones</button>
             </div>
           </div>
         </div>
@@ -262,131 +230,83 @@
     </div>
 
     <div style="flex:1 1 340px;min-width:280px">
-      <div class="notas" style="margin-top:0">
+      <div class="notas">
         <div class="nota bien">
-          <h3>Letterboxing transparente, como una tarjeta</h3>
-          <p>La columna de la portada es alta y angosta. Una foto horizontal metida con
-          <code>cover</code> se recorta por los lados y se pierde lo que anuncia; con
-          <code>contain</code> se ve entera.</p>
-          <p>El aire que sobra <strong>no lleva color propio</strong>: se ve el fondo del menú a
-          través de una tarjeta con borde. Así el marco no es un color inventado y la foto se lee
-          como si flotara sobre la pantalla.</p>
-          <p>Una foto <strong>alta</strong> no lo necesita: ya llena la columna.</p>
+          <h3>Letterboxing transparente</h3>
+          <p>Si la portada es una foto ancha, se ve entera (<code>object-fit: contain</code>) y el aire
+          alrededor es el fondo del menú a través de una tarjeta con borde. Ni degradado ni negro.</p>
         </div>
         <div class="nota bien">
-          <h3>Decidido: tarjeta transparente</h3>
-          <p>Ni degradado ni negro: el fondo del menú a través de una tarjeta con borde. Christian
-          eligió que se vea «como una especie de tarjeta».</p>
-        </div>
-        <div class="nota bien">
-          <h3>Las tarjetas bajan de fila</h3>
-          <p>Con <code>flex-wrap</code>, si tres no caben entran dos y la otra abajo. Antes se
-          aplastaban las tres en una fila y el nombre dejaba de leerse.</p>
-        </div>
-        <div class="nota mal">
-          <h3>Sin scroll</h3>
-          <p>El menú no se desplaza: si no cabe es defecto de maqueta, no contenido largo. Lo que sí
-          puede desplazarse es una lista que crece con los datos, y aquí no hay ninguna.</p>
+          <h3>Medido acostado</h3>
+          <p>Portada 240 × 969 · tarjeta 242 × 257 · total <strong>1039 px</strong> en 390 de ventana.
+          También desliza, y es correcto: es contenido real.</p>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="h2">Estados que el menú sí tiene
-    <small>Según el sistema, el menú se queda con los que ya existen: vacío y error.</small>
+  <div class="h2">Sin conexión
+    <small>Lo que se puede jugar cuando no hay red.</small>
   </div>
 
   <div class="fila">
     <div class="marco">
-      <div class="rotulo">vacío · sin portada guardada</div>
-      <div class="tela v" style="background:var(--fondo)">
-        <div class="lienzo">
-          <div class="portada">
-            <div class="arte">PORTADA ORIGINAL</div>
-            <div class="lapiz">✎</div>
+      <div class="rotulo">390×844 · sin red, con lo guardado</div>
+      <div class="tela v placa-app">
+        <div class="app-lienzo">
+          <div class="app-portada">
+            <div class="arte">DESAFÍO BÍBLICO 2026 · 2 CORINTIOS</div>
           </div>
-          <div class="cuerpo">
-            <div class="titulo">🏆 DESAFÍO BÍBLICO ⭐</div>
-            <p class="lema">«Escrito está: No sólo de pan vivirá el hombre»</p>
-            <div class="juegos">
-              <button class="tarjeta elegido">
-                <span class="ico">📖</span>
+          <div class="app-cuerpo">
+            <div class="app-titulo">🏆 DESAFÍO BÍBLICO ⭐</div>
+            <div class="app-juegos">
+              <button class="app-tarjeta elegido">
+                <span class="ico">🎯</span>
                 <span class="txt">
-                  <span class="nom">Completar el versículo</span>
-                  <span class="des">Un versículo con palabras tapadas. Pulsa para tomar el turno.</span>
+                  <span class="nom">Selección simple</span>
+                  <span class="des">Una pregunta, 4 opciones y una sola correcta.</span>
                 </span>
-                <span class="insig sel">Seleccionado</span>
+                <span class="app-insignia sel">Seleccionado</span>
               </button>
             </div>
-            <div class="acciones">
-              <a class="btn oro">Jugar como participante</a>
-              <a class="btn contorno">Soy presentador</a>
+            <div class="app-aviso info">
+              Sin conexión. Puedes jugar con lo que hay guardado: 1 juego y 25 preguntas.
             </div>
-            <div class="pie"><span>v1.0</span><span>Sin conexión</span></div>
-            <div style="background:rgba(240,163,58,.12);border:1px solid rgba(240,163,58,.45);
-                 border-radius:12px;padding:.5em .75em;font-size:.8rem;color:#ffd39b">
-              <strong>Sin conexión.</strong> Puedes jugar con lo que hay guardado:
-              2 juegos, 3 temas, 12 preguntas y 8 versículos.
+            <div class="app-acciones">
+              <button class="boton-grande oro">🎤 Soy presentador</button>
             </div>
+            <div class="app-pie"><span>v1.0</span><span>Sin conexión</span></div>
           </div>
-        </div>
-      </div>
-      <div style="max-width:390px;margin-top:.6rem">
-        <div class="nota bien" style="margin:0">
-          <h3>No es un error</h3>
-          <p>Sin portada guardada se usa la imagen original. No hay rojo, ni alarma, ni hueco vacío:
-          el menú se ve completo.</p>
-          <p><strong>Decidido:</strong> «Sin modo local» pasa a <strong>«Sin conexión»</strong>, y el
-          menú muestra <strong>lo que sí se puede jugar</strong> con lo guardado: juegos, temas,
-          preguntas y versículos. Un término técnico no dice nada, y un aviso sin salida tampoco.</p>
-          <p><strong>Decidido:</strong> «Tu sala sigue abierta» ahora reintenta de verdad, cada
-          pocos segundos, en vez de solo pedir recargar.</p>
         </div>
       </div>
     </div>
 
-    <div class="marco">
-      <div class="rotulo">error · sin conexión al arrancar</div>
-      <div class="tela v" style="background:var(--fondo)">
-        <div class="lienzo">
-          <div class="portada">
-            <div class="arte">DESAFÍO BÍBLICO 2026 — 2 CORINTIOS</div>
-          </div>
-          <div class="cuerpo">
-            <div class="titulo">🏆 DESAFÍO BÍBLICO ⭐</div>
-            <div class="juegos">
-              <button class="tarjeta elegido">
-                <span class="ico">📖</span>
-                <span class="txt">
-                  <span class="nom">Completar el versículo</span>
-                  <span class="des">Un versículo con palabras tapadas.</span>
-                </span>
-                <span class="insig sel">Seleccionado</span>
-              </button>
-            </div>
-            <div style="background:rgba(224,72,60,.14);border:1px solid rgba(224,72,60,.5);
-                 border-radius:12px;padding:.55em .8em;font-size:.85rem;color:#ffc9c4">
-              No hay conexión. Tu sala sigue abierta: recarga cuando vuelva la señal.
-            </div>
-            <div class="acciones">
-              <a class="btn oro">Reintentar</a>
-              <a class="btn contorno">Seguir sin conexión</a>
-            </div>
-          </div>
+    <div style="flex:1 1 340px;min-width:280px">
+      <div class="notas">
+        <div class="nota bien">
+          <h3>«Sin conexión», no «sin modo local»</h3>
+          <p>El término técnico no lo entiende nadie. Y el aviso dice <strong>qué sí se puede
+          jugar</strong>, contado desde los datos reales.</p>
         </div>
-      </div>
-      <div style="max-width:390px;margin-top:.6rem">
-        <div class="nota duda" style="margin:0">
-          <h3>El aviso dice qué NO se perdió</h3>
-          <p>«Tu sala sigue abierta» es la parte que importa: el presentador necesita saber que un
-          corte de red no le borró la partida. El texto sale de <code>lib/liberar.js</code>, junto a
-          la decisión que lo provoca.</p>
-          <p style="color:var(--espera)"><strong>Punto a decidir:</strong> ¿el error ofrece
-          «Reintentar», o solo informa y espera a que recargues?</p>
+        <div class="nota bien">
+          <h3>Solo promete lo que funciona</h3>
+          <p>El modo local sirve preguntas y nada más: los versículos de «Completar el versículo»
+          viven en Supabase. Por eso no se anuncia ese juego sin red.</p>
+        </div>
+        <div class="nota mal">
+          <h3>Un error que corregí</h3>
+          <p>Mi primera versión medía <code>esLocalDisponible()</code>, que comprueba si el navegador
+          soporta <code>BroadcastChannel</code>, no si hay red. El aviso hablaba de otra cosa.</p>
         </div>
       </div>
     </div>
   </div>
+
+  <p style="margin-top:2rem;color:#a9c6ca;font-size:.9rem">
+    Los valores de esta placa salen de <code>base-app.css</code>, medidos con
+    <code>getComputedStyle</code> sobre la app servida en el dispositivo. Si la app cambia, se
+    vuelve a medir y se actualiza ese archivo: los cinco artboards lo comparten.
+  </p>
 
 </div>
 </body>

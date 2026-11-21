@@ -1,0 +1,314 @@
+/* =====================================================================
+   Base de los artboards — VALORES MEDIDOS DE LA APP REAL
+   ---------------------------------------------------------------------
+   Christian: «las pantallas del canvas deberian ser lo que muestra la app
+   real, para poder asi detenerme a analizar la informacion que muestra».
+
+   Este archivo NO es una maqueta: son los valores que la app calcula de
+   verdad, leidos con `getComputedStyle` sobre http://127.0.0.1:8765 en
+   390x844 y 844x390. Si la app cambia, se vuelve a medir y se actualiza
+   aqui. Copiar a ojo es lo que hacia que canvas y dispositivo no
+   coincidieran.
+
+   MEDIDO (menu, #/join, #/host, #/tv, #/config):
+     raiz 16px · texto 21.3333px (16 pt) · interlineado 32px
+     titulo de pantalla 32px / 35.2px / 800
+     titulo del menu    25.3333px / 27.8667px / 800 / ls 1.52px
+     tarjeta            relleno 14.93px 19.2px · radio 14px
+     nombre de juego    21.3333px / 800
+     descripcion        21.3333px / 700 / #a9c6ca
+     insignia           16px / 800 / relleno 4.48px 9.6px / radio 999px
+     boton grande       21.3333px / 700 / relleno 21.3333px 34.1333px / radio 12px
+     campo              21.3333px / relleno 17.0662px 21.3328px / radio 12px
+     pie                16px / interlineado 24px / relleno arriba 16px
+     portada            radio 18px
+     lienzo del menu    relleno 16.88px 11.7px · hueco 13.5px
+   ===================================================================== */
+
+:root {
+  /* colores de la app */
+  --fondo:#0b1a1d; --fondo-2:#102a2f; --tinta:#fff; --tinta-suave:#a9c6ca; --raya:#d2ffff;
+  --tu-100:#6fe3ee; --tu-300:#2ec4d4; --tu-400:#00a0b0; --tu-600:#008090;
+  --tu-800:#00525e; --tu-900:#0a2e33;
+  --amarillo:#fcd116; --rojo:#cf2123; --ok:#1fbf75; --espera:#f0a33a; --error:#e0483c;
+  --fondo-juego:radial-gradient(120% 90% at 50% 0%, #1b6f4a 0%, #0f5a63 42%, #07222b 72%, #04151b 100%);
+
+  /* escala tipografica MEDIDA */
+  --app-texto: 21.3333px;      /* 16 pt */
+  --app-lh: 32px;
+  --app-titulo: 32px;
+  --app-titulo-lh: 35.2px;
+  --app-titulo-menu: 25.3333px;
+  --app-titulo-menu-lh: 27.8667px;
+  --app-insignia: 16px;
+  --app-insignia-lh: 24px;
+  --app-pie: 16px;
+  --app-pie-lh: 24px;
+}
+
+/* la placa: fondo y tipografia de la app */
+.placa-app {
+  background: var(--fondo);
+  color: var(--tinta);
+  font-family: "Nunito", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: var(--app-texto);
+  line-height: var(--app-lh);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* la pantalla: lo que se ve dentro del marco */
+.tela {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  border: 1px solid rgba(110,227,238,.3);
+  background: var(--fondo);
+  box-shadow: 0 14px 40px rgba(0,0,0,.5);
+  display: flex;
+  flex-direction: column;
+  font-size: var(--app-texto);
+  line-height: var(--app-lh);
+  color: var(--tinta);
+  font-family: "Nunito","Segoe UI",system-ui,-apple-system,sans-serif;
+}
+.tela.v { width: 390px; height: 844px; }
+.tela.h { width: 844px; height: 390px; }
+.tela.tv { width: 844px; height: 475px; }
+
+/* ---------- menu ---------- */
+.app-lienzo {
+  display: flex; flex-direction: column; min-height: 0;
+  padding: 16.88px 11.7px;
+  gap: 13.5px;
+}
+.tela.h .app-lienzo { flex-direction: row; align-items: stretch; gap: 13.5px; }
+
+.app-portada {
+  position: relative; width: 100%; border-radius: 18px; overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0,0,0,.45);
+  background: linear-gradient(135deg,#1a5c66,#0a2e33);
+}
+.tela.h .app-portada { flex: 0 0 32%; display: flex; align-items: center; }
+.app-portada .arte {
+  width: 100%; aspect-ratio: 16/9; display: grid; place-items: center;
+  color: #9fe9f1; font-weight: 800; font-size: 13px; letter-spacing: .06em;
+  text-align: center; padding: 8px;
+}
+.tela.h .app-portada .arte { aspect-ratio: auto; height: 100%; }
+
+.app-cuerpo { display: flex; flex-direction: column; min-height: 0; gap: 13.5px; }
+.tela.h .app-cuerpo { flex: 1 1 auto; min-width: 0; }
+
+.app-titulo {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  font-size: var(--app-titulo-menu);
+  line-height: var(--app-titulo-menu-lh);
+  font-weight: 800;
+  letter-spacing: 1.52px;
+  text-align: center;
+}
+
+.app-juegos { display: flex; flex-direction: column; gap: 8px; }
+.tela.h .app-juegos { flex-direction: row; flex-wrap: wrap; }
+
+.app-tarjeta {
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: 8px 13px;
+  padding: 14.93px 19.2px;
+  border-radius: 14px;
+  border: 1px solid rgba(110,227,238,.22);
+  background: rgba(255,255,255,.05);
+  color: var(--tinta);
+  width: 100%;
+  font: inherit;
+  text-align: left;
+}
+.tela.h .app-tarjeta { flex: 1 1 240px; min-width: 0; width: auto; padding: 10.67px 14.93px; }
+.app-tarjeta.elegido { border-color: var(--tu-300); background: rgba(46,196,212,.12); }
+.app-tarjeta .ico {
+  width: 44px; height: 44px; display: grid; place-items: center; border-radius: 12px;
+  background: rgba(46,196,212,.16); font-size: 20px; flex: 0 0 auto;
+}
+.app-tarjeta .txt { display: flex; flex-direction: column; flex: 1 1 200px; min-width: 0; }
+.app-tarjeta .nom {
+  font-size: var(--app-texto); font-weight: 800; line-height: var(--app-lh);
+  white-space: normal; overflow-wrap: break-word;
+}
+.app-tarjeta .des {
+  font-size: var(--app-texto); font-weight: 700; line-height: var(--app-lh);
+  color: var(--tinta-suave);
+  white-space: normal; overflow-wrap: break-word;
+}
+.app-insignia {
+  flex: 0 0 auto; margin-left: auto;
+  font-size: var(--app-insignia); font-weight: 800; line-height: var(--app-insignia-lh);
+  padding: 4.48px 9.6px; border-radius: 999px; white-space: nowrap;
+  background: rgba(31,191,117,.2); color: #9df0c4; border: 1px solid rgba(31,191,117,.45);
+}
+.app-insignia.sel { background: var(--amarillo); color: #3a2c00; border-color: rgba(252,209,22,.9); }
+.app-insignia.pronto {
+  background: rgba(255,255,255,.08); color: #b9ccd0; border-color: rgba(255,255,255,.2);
+}
+
+.app-acciones { display: flex; flex-direction: column; gap: 9px; }
+.tela.h .app-acciones { flex-direction: row; flex-wrap: wrap; }
+
+/* botones: MEDIDOS */
+.boton-grande {
+  display: block; width: 100%; text-align: center;
+  padding: 21.3333px 34.1333px;
+  border-radius: 12px; border: 0;
+  font-family: inherit; font-size: var(--app-texto); font-weight: 700; line-height: var(--app-lh);
+  cursor: pointer;
+}
+.tela.h .boton-grande { padding: 11.733px 34.1333px; }
+.boton-grande.oro { background: linear-gradient(180deg,#ffe066,#fcd116); color: #2a1f00; }
+.boton-grande.contorno {
+  background: transparent; border: 1px solid rgba(110,227,238,.45); color: var(--tu-100);
+}
+
+.app-pie {
+  display: flex; justify-content: space-between; align-items: center;
+  padding-top: 16px;
+  font-size: var(--app-pie); line-height: var(--app-pie-lh);
+  color: var(--tinta-suave);
+}
+.punto-vivo {
+  width: 8px; height: 8px; border-radius: 50%; background: var(--ok);
+  display: inline-block; margin-right: 5px;
+}
+
+/* ---------- formularios ---------- */
+.app-centro {
+  flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center;
+  gap: 16px; min-height: 0; min-width: 0;
+}
+.app-campo { display: flex; flex-direction: column; gap: 4px; min-width: 0; width: 100%; }
+.app-campo label {
+  font-size: var(--app-texto); line-height: var(--app-lh); font-weight: 700; color: var(--tu-100);
+}
+.app-campo input {
+  width: 100%;
+  padding: 17.0662px 21.3328px;
+  border-radius: 12px;
+  border: 2px solid rgba(110,227,238,.28);
+  background: rgba(0,0,0,.28);
+  color: var(--tinta);
+  font-family: inherit; font-size: var(--app-texto); line-height: var(--app-lh);
+}
+.tela.h .app-campo input { padding: 8.5331px 21.3328px; }
+.app-campo input::placeholder { color: #6d8b90; }
+
+.app-aviso {
+  border-radius: 12px; padding: 10px 16px;
+  font-size: var(--app-texto); line-height: var(--app-lh);
+  text-align: center;
+}
+.app-aviso.espera { background: rgba(240,163,58,.14); border: 1px solid rgba(240,163,58,.5); color: #ffd39b; }
+.app-aviso.err { background: rgba(224,72,60,.14); border: 1px solid rgba(224,72,60,.5); color: #ffc9c4; }
+.app-aviso.info { background: rgba(111,227,238,.12); border: 1px solid rgba(111,227,238,.4); color: var(--tu-100); }
+
+.app-volver {
+  align-self: flex-start;
+  font-size: var(--app-texto); font-weight: 700;
+  padding: 8px 16px; border-radius: 10px;
+  border: 1px solid rgba(110,227,238,.45); color: var(--tu-100); background: transparent;
+  font-family: inherit;
+}
+
+/* ---------- rotulo del juego ---------- */
+.app-rotulo-juego {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 2px; margin-left: auto;
+}
+.app-rotulo-juego .rot {
+  font-size: var(--app-insignia); line-height: var(--app-insignia-lh);
+  font-weight: 600; color: var(--tinta-suave);
+}
+.app-rotulo-juego .nom {
+  font-size: var(--app-texto); line-height: var(--app-lh);
+  font-weight: 800; text-align: right; max-width: 14ch;
+}
+
+/* ---------- sala de espera ---------- */
+.app-jugadores { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.tela.h .app-jugadores { justify-content: flex-start; align-content: flex-start; }
+.app-jug {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: 999px;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(110,227,238,.22);
+  font-size: var(--app-texto); line-height: var(--app-lh); font-weight: 700; white-space: nowrap;
+}
+.app-jug.yo { border-color: var(--tu-300); background: rgba(46,196,212,.15); }
+.app-jug .pt { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); flex: 0 0 auto; }
+
+.orbe-espera { display: flex; flex-direction: column; align-items: center; gap: 4px; padding-top: 5px; }
+@media (min-aspect-ratio: 1/1) { .orbe-espera { align-items: flex-start; } }
+.orbe-espera canvas { display: block; }
+.orbe-espera .orbe-txt {
+  font-size: var(--app-insignia); line-height: var(--app-insignia-lh);
+  color: var(--tinta-suave); text-align: center; max-width: 26ch;
+}
+
+/* ---------- ronda ---------- */
+.jug { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; padding: 10px 13px 11px; gap: 6px; }
+.barra { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex: 0 0 auto; }
+.barra .nom { font-weight: 800; font-size: var(--app-texto); line-height: var(--app-lh); }
+.barra .pts {
+  background: rgba(252,209,22,.18); border: 1px solid rgba(252,209,22,.45); color: #ffe58a;
+  border-radius: 999px; padding: 2px 10px; font-weight: 800;
+  font-size: var(--app-insignia); line-height: var(--app-insignia-lh);
+}
+.salir {
+  font-size: var(--app-insignia); line-height: var(--app-insignia-lh); font-weight: 700;
+  padding: 6px 11px; border-radius: 9px;
+  border: 1px solid rgba(110,227,238,.4); color: var(--tu-100); background: transparent;
+  font-family: inherit;
+}
+.cuerpo { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; gap: 5px; }
+.tela.h .cuerpo { flex-direction: row; align-items: stretch; gap: 11px; }
+.zona { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: 3px; overflow: hidden; }
+.tela.h .zona { min-width: 0; }
+.ref { font-size: var(--app-texto); line-height: var(--app-lh); font-weight: 800; color: var(--tinta-suave); flex: 0 0 auto; }
+.versiculo {
+  font-size: 32px; line-height: 41px; font-weight: 600; margin: 0;
+  flex: 1 1 auto; display: flex; align-items: center;
+}
+.hueco { color: var(--raya); border-bottom: 3px solid var(--raya); padding: 0 2px; }
+.pie-j { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 6px; min-height: 0; }
+.tela.h .pie-j { flex: 0 0 34%; justify-content: center; }
+
+.reloj { display: flex; align-items: center; gap: 10px; width: 100%; justify-content: center; }
+.reloj .t { font-family: ui-monospace,monospace; font-size: var(--app-texto); font-weight: 800; color: var(--amarillo); }
+.barra-t { flex: 1 1 auto; max-width: 144px; height: 7px; border-radius: 999px; background: rgba(255,255,255,.14); overflow: hidden; }
+.barra-t i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg,#ffe066,#fcd116); }
+
+.boton-ok {
+  display: grid; place-items: center; width: 100%;
+  max-width: min(100%, 248px); aspect-ratio: 1/1; margin-inline: auto; border-radius: 50%;
+  font-family: inherit; font-weight: 800; font-size: 26px; line-height: 27px; text-align: center; padding: 10px;
+  background: radial-gradient(circle at 35% 30%, rgba(255,224,102,.30), rgba(252,209,22,.18) 60%, rgba(217,169,0,.12));
+  color: #ffe9a3; border: 2px solid rgba(252,209,22,.55);
+  box-shadow: 0 8px 24px rgba(252,209,22,.18);
+}
+.tela.h .boton-ok { max-width: 100%; max-height: 100%; height: 100%; aspect-ratio: auto; border-radius: 22px; font-size: 24px; }
+.boton-ok.bloq {
+  background: rgba(255,255,255,.06); color: #9fb7bb;
+  border: 2px solid rgba(255,255,255,.16); box-shadow: none; font-size: 18px;
+}
+.turno { text-align: center; font-size: var(--app-insignia); line-height: var(--app-insignia-lh); color: #ffe58a; font-weight: 800; }
+
+/* ---------- televisor ---------- */
+.tv-in { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; padding: 14px 21px 16px; gap: 8px; }
+.tv-top { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex: 0 0 auto; }
+.tv-cuerpo { flex: 1 1 auto; display: flex; align-items: center; min-height: 0; overflow: hidden; }
+.tv-verso { font-size: 48px; line-height: 60px; font-weight: 700; margin: 0; flex: 1 1 auto; display: flex; align-items: center; }
+.tv-pie { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex: 0 0 auto; }
+.tv-codigo {
+  font-family: ui-monospace,monospace; font-size: 42px; font-weight: 900; letter-spacing: .2em;
+  color: var(--amarillo); text-align: center; line-height: 1;
+}
+.qr-caja {
+  width: 96px; height: 96px; background: #fff; border-radius: 8px; display: grid; place-items: center;
+  font-family: ui-monospace,monospace; font-weight: 800; color: #000; font-size: 9px;
+  text-align: center; line-height: 1.1; padding: 6px; margin: 0 auto;
+}

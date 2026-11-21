@@ -3,136 +3,48 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>La ronda — Diseño completo</title>
+<title>La ronda — la app real</title>
+<link rel="stylesheet" href="base-app.css">
 <style>
-  :root{
-    --fondo:#0b1a1d; --fondo-2:#102a2f; --tinta:#fff; --tinta-suave:#a9c6ca; --raya:#d2ffff;
-    --tu-100:#6fe3ee; --tu-300:#2ec4d4; --tu-600:#008090; --tu-800:#00525e; --tu-900:#0a2e33;
-    --amarillo:#fcd116; --rojo:#cf2123; --ok:#1fbf75; --espera:#f0a33a; --error:#e0483c;
-    --radio:16px; --radio-sm:10px;
-    --fondo-juego:radial-gradient(120% 90% at 50% 0%, #1b6f4a 0%, #0f5a63 42%, #07222b 72%, #04151b 100%);
-  }
-  *{box-sizing:border-box}
-  html,body{margin:0;background:var(--fondo);color:var(--tinta);
-    font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-  .placa{max-width:1400px;margin:0 auto;padding:2rem 1.5rem 4rem}
+  html,body{margin:0}
+  .placa{max-width:1400px;margin:0 auto;padding:2rem 1.5rem 4rem;background:#0b1a1d;
+    color:#fff;font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
   .placa > header{border-bottom:1px solid rgba(110,227,238,.22);padding-bottom:1rem;margin-bottom:1.5rem}
   h1{margin:0 0 .25rem;font-size:1.75rem;font-weight:800}
-  header p{margin:0;color:var(--tinta-suave);max-width:78ch}
-  .h2{font-size:1.15rem;font-weight:750;margin:2.2rem 0 .4rem;color:var(--tu-100)}
-  .h2 small{display:block;font-weight:400;color:var(--tinta-suave);font-size:.92rem;margin-top:.15rem}
-
+  header p{margin:0;color:#a9c6ca;max-width:80ch}
+  .h2{font-size:1.15rem;font-weight:750;margin:2.2rem 0 .4rem;color:#6fe3ee}
+  .h2 small{display:block;font-weight:400;color:#a9c6ca;font-size:.92rem;margin-top:.15rem}
   .fila{display:flex;gap:1.6rem;align-items:flex-start;flex-wrap:wrap;margin-top:1rem}
   .marco{flex:0 0 auto}
-  .marco .rotulo{font-size:.85rem;color:var(--tinta-suave);margin-bottom:.4rem;
-    font-family:ui-monospace,monospace}
-  .tela{position:relative;overflow:hidden;border-radius:20px;border:1px solid rgba(110,227,238,.3);
-    background:var(--fondo-juego);box-shadow:0 14px 40px rgba(0,0,0,.5);display:flex;flex-direction:column}
-  .v{width:390px;height:844px}
-  .h{width:844px;height:390px}
-  .tv{width:844px;height:475px}
-
-  /* ===== participante ===== */
-  .jug{flex:1 1 auto;display:flex;flex-direction:column;min-height:0;padding:.6rem .8rem .7rem;gap:.35rem}
-  .barra{display:flex;justify-content:space-between;align-items:center;gap:.5rem;flex:0 0 auto}
-  .barra .nom{font-weight:800;font-size:.9rem}
-  .barra .pts{background:rgba(252,209,22,.18);border:1px solid rgba(252,209,22,.45);
-    color:#ffe58a;border-radius:999px;padding:.12em .6em;font-weight:800;font-size:.78rem}
-  .salir{font-size:.78rem;padding:.35em .7em;border-radius:9px;
-    border:1px solid rgba(110,227,238,.4);color:var(--tu-100);background:transparent}
-
-  /* el cuerpo reparte: versiculo arriba (crece), pie abajo (fijo) */
-  .cuerpo{flex:1 1 auto;display:flex;flex-direction:column;min-height:0;gap:.3rem}
-  .tela.h .cuerpo{flex-direction:row;align-items:stretch;gap:.7rem}
-
-  .zona{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;
-    justify-content:center;gap:.2rem;overflow:hidden}
-  .tela.h .zona{flex:1 1 auto;min-width:0}
-  /* 16 pt exactos, por pedido de Christian (comentarios 8 y 9) */
-  .ref{font-size:1.3333rem;line-height:1.1;font-weight:800;color:var(--tinta-suave);flex:0 0 auto}
-  /* El versiculo ABARCA todo el alto libre: por eso crece y se centra.
-     En la app lo hace el ajuste con el techo calculado de la caja. */
-  .versiculo{font-size:2rem;line-height:1.28;font-weight:600;margin:0;
-    flex:1 1 auto;display:flex;align-items:center}
-  .hueco{color:var(--raya);border-bottom:.1em solid var(--raya);padding:0 .08em}
-
-  .pie{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:.35rem;min-height:0}
-  .tela.h .pie{flex:0 0 34%;justify-content:center;gap:.4rem}
-
-  .reloj{display:flex;align-items:center;gap:.5rem;width:100%;justify-content:center}
-  .reloj .t{font-family:ui-monospace,monospace;font-size:1rem;font-weight:900;color:var(--amarillo)}
-  .barra-t{flex:1 1 auto;max-width:9rem;height:.42rem;border-radius:999px;
-    background:rgba(255,255,255,.14);overflow:hidden}
-  .barra-t i{display:block;height:100%;border-radius:999px;
-    background:linear-gradient(90deg,#ffe066,#fcd116)}
-  .tela.h .reloj{width:100%}
-
-  /* EL BOTON: circulo lo mas grande que quepa, a un espacio del marco.
-     `container-type` permite que el texto se ajuste a su ancho real. */
-  .boton-ok{display:grid;place-items:center;width:100%;
-    max-width:min(100%, 15.5rem);aspect-ratio:1/1;margin-inline:auto;border-radius:50%;
-    font-weight:900;font-size:1.6rem;line-height:1.05;text-align:center;padding:.4em;
-    /* Color atenuado: antes era amarillo macizo y pesaba demasiado. */
-    background:radial-gradient(circle at 35% 30%, rgba(255,224,102,.30), rgba(252,209,22,.18) 60%, rgba(217,169,0,.12));
-    color:#ffe9a3;border:2px solid rgba(252,209,22,.55);
-    box-shadow:0 8px 24px rgba(252,209,22,.18)}
-  .tela.h .boton-ok{max-width:100%;max-height:100%;height:100%;aspect-ratio:auto;
-    border-radius:22px;font-size:1.5rem}
-  .boton-ok.bloq{background:rgba(255,255,255,.06);color:#9fb7bb;
-    border:2px solid rgba(255,255,255,.16);box-shadow:none;font-size:1.15rem}
-
-  .turno{text-align:center;font-size:.82rem;color:#ffe58a;font-weight:800}
-
-  /* ===== televisor ===== */
-  .tv-in{flex:1 1 auto;display:flex;flex-direction:column;min-height:0;padding:.9rem 1.3rem 1rem;gap:.5rem}
-  .tv-top{display:flex;justify-content:space-between;align-items:center;gap:1rem;flex:0 0 auto}
-  .tv-top .ref{font-size:1.3333rem}
-  .tv-cuerpo{flex:1 1 auto;display:flex;align-items:center;min-height:0;overflow:hidden}
-  .tv-verso{font-size:3rem;line-height:1.24;font-weight:700;margin:0;
-    flex:1 1 auto;display:flex;align-items:center}
-  .tv-pie{display:flex;justify-content:space-between;align-items:center;gap:1rem;flex:0 0 auto}
-  .tv-turno{font-size:1.05rem;font-weight:800;color:#ffe58a}
-  .tv-reloj{display:flex;align-items:center;gap:.6rem}
-  .tv-reloj .t{font-family:ui-monospace,monospace;font-size:1.4rem;font-weight:900;color:var(--amarillo)}
-  .tv-reloj .barra-t{max-width:10rem}
-  .tv-codigo{font-family:ui-monospace,monospace;font-size:2.6rem;font-weight:900;
-    letter-spacing:.2em;color:var(--amarillo);text-align:center;line-height:1}
-  .tv-jugadores{display:flex;flex-wrap:wrap;gap:.45rem;justify-content:center}
-  .tv-jug{padding:.32em .85em;border-radius:999px;background:rgba(255,255,255,.08);
-    border:1px solid rgba(110,227,238,.25);font-weight:700;font-size:1rem}
-  .qr-caja{width:96px;height:96px;background:#fff;border-radius:8px;display:grid;
-    place-items:center;font-family:ui-monospace,monospace;font-weight:800;color:#000;
-    font-size:.58rem;text-align:center;line-height:1.1;padding:.35rem;margin:0 auto}
-
-  .notas{margin-top:1.6rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:.9rem}
-  .nota{border:1px solid var(--tu-800);border-radius:var(--radio-sm);padding:.8rem 1rem;
-    background:linear-gradient(160deg,var(--fondo-2),var(--tu-900))}
-  .nota h3{margin:0 0 .35rem;font-size:.98rem;color:var(--tu-100)}
-  .nota p{margin:.3rem 0;font-size:.92rem;color:var(--tinta-suave);line-height:1.5}
-  .nota.bien{border-left:4px solid var(--ok)}
-  .nota.mal{border-left:4px solid var(--error)}
-  .nota.duda{border-left:4px solid var(--espera)}
+  .rotulo{font-size:.85rem;color:#a9c6ca;margin-bottom:.4rem;font-family:ui-monospace,monospace}
+  .notas{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:.9rem}
+  .nota{border:1px solid #00525e;border-radius:10px;padding:.8rem 1rem;
+    background:linear-gradient(160deg,#102a2f,#0a2e33)}
+  .nota h3{margin:0 0 .35rem;font-size:.98rem;color:#6fe3ee}
+  .nota p{margin:.3rem 0;font-size:.92rem;color:#a9c6ca;line-height:1.5}
+  .nota.bien{border-left:4px solid #1fbf75}
+  .nota.mal{border-left:4px solid #e0483c}
+  .nota.duda{border-left:4px solid #f0a33a}
   code{font-family:ui-monospace,monospace;font-size:.9em;background:rgba(111,227,238,.12);
-    padding:.08em .35em;border-radius:5px;color:var(--tu-100)}
+    padding:.08em .35em;border-radius:5px;color:#6fe3ee}
 </style>
 </head>
 <body>
 <div class="placa">
 
   <header>
-    <h1>La ronda</h1>
-    <p>Las dos pantallas de la ronda juntas, porque se miran a la vez: el participante en el teléfono
-    y el televisor en la pared. Un solo blanco principal en cada una.</p>
+    <h1>La ronda — la app real</h1>
+    <p>Las dos pantallas de la ronda juntas porque se miran a la vez: el teléfono y la pared. Referencia
+    a 16 pt medidos; el versículo crece con el ajuste, calculando su techo desde la caja.</p>
   </header>
 
   <div class="h2">Participante — vertical 390 × 844
-    <small>El versículo abarca todo el espacio bajo la referencia; el botón, círculo lo más grande
-    que quepa, a un espacio del marco.</small>
+    <small>El versículo abarca el alto bajo la referencia; el botón, círculo máximo a un espacio.</small>
   </div>
 
   <div class="fila">
     <div class="marco">
-      <div class="rotulo">vertical · ronda abierta, nadie pulsó</div>
+      <div class="rotulo">390×844 · ronda abierta</div>
       <div class="tela v">
         <div class="jug">
           <div class="barra">
@@ -144,10 +56,9 @@
             <div class="zona">
               <span class="ref">2 Corintios 3:2</span>
               <p class="versiculo">Nuestras <span class="hueco">cartas</span> sois, escritas en
-              nuestro <span class="hueco">corazón</span>, conocidas y leídas de todos los
-              hombres.</p>
+              nuestro <span class="hueco">corazón</span>, conocidas y leídas de todos los hombres.</p>
             </div>
-            <div class="pie">
+            <div class="pie-j">
               <div class="reloj"><span class="barra-t"><i style="width:93%"></i></span><span class="t">14 s</span></div>
               <button class="boton-ok">PULSAR</button>
               <p class="turno" style="visibility:hidden">—</p>
@@ -158,7 +69,7 @@
     </div>
 
     <div class="marco">
-      <div class="rotulo">vertical · ya hay turno tomado</div>
+      <div class="rotulo">390×844 · ya hay turno</div>
       <div class="tela v">
         <div class="jug">
           <div class="barra">
@@ -170,10 +81,9 @@
             <div class="zona">
               <span class="ref">2 Corintios 3:2</span>
               <p class="versiculo">Nuestras <span class="hueco">cartas</span> sois, escritas en
-              nuestro <span class="hueco">corazón</span>, conocidas y leídas de todos los
-              hombres.</p>
+              nuestro <span class="hueco">corazón</span>, conocidas y leídas de todos los hombres.</p>
             </div>
-            <div class="pie">
+            <div class="pie-j">
               <div class="reloj"><span class="barra-t"><i style="width:60%"></i></span><span class="t">9 s</span></div>
               <button class="boton-ok bloq">Carlos tiene el turno</button>
               <p class="turno">Carlos Ruiz está respondiendo</p>
@@ -184,48 +94,38 @@
     </div>
 
     <div style="flex:1 1 320px;min-width:280px">
-      <div class="notas" style="margin-top:0">
+      <div class="notas">
         <div class="nota bien">
-          <h3>El versículo abarca su espacio</h3>
-          <p>La zona del versículo es <code>flex: 1</code> y el texto se centra dentro: ocupa todo el
-          alto libre bajo la referencia. En la app el ajuste calcula el techo desde esa caja
-          —<code>alto / (interlineado × renglones)</code>— y crece hasta llenarla.</p>
+          <h3>La referencia a 16 pt</h3>
+          <p><code>21.3333px</code> medidos. En la app sale de <code>--t-xs</code>, que ahora es
+          16 pt en todas las pantallas.</p>
         </div>
         <div class="nota bien">
-          <h3>El botón, círculo máximo a un espacio</h3>
-          <p><code>aspect-ratio: 1/1</code> con <code>max-width</code> y el relleno del pie: el
-          círculo toma el mayor cuadrado que cabe. Su texto va a 1 fila y se ajusta a su ancho real,
-          sin desbordar el borde curvo.</p>
+          <h3>Barra y segundos</h3>
+          <p>La barra primero y el número al lado, como los dibuja <code>relojHTML</code> en la app.
+          El número dice cuánto queda; la barra se lee de reojo.</p>
+        </div>
+        <div class="nota bien">
+          <h3>El botón, círculo máximo</h3>
+          <p><code>aspect-ratio: 1/1</code> con <code>max-width</code>: toma el mayor cuadrado que
+          cabe. Su texto va a una fila y se ajusta a su ancho real.</p>
         </div>
         <div class="nota bien">
           <h3>Color atenuado</h3>
-          <p>Era amarillo macizo y pesaba demasiado. Ahora es un radial translúcido con borde
-          amarillo: se lee como el blanco principal sin gritar. El mismo color en vertical y en
-          acostado.</p>
-        </div>
-        <div class="nota bien">
-          <h3>Barra de temporizador</h3>
-          <p>Ya existía en la app (<code>relojHTML</code>): la barra primero y los segundos al lado,
-          como «14 s». El número dice cuánto queda de verdad; la barra se lee de reojo sin leer
-          nada. Faltaba en el canvas, no en el juego.</p>
-        </div>
-        <div class="nota bien">
-          <h3>La referencia a 16 pt</h3>
-          <p><code>1.3333rem</code> exactos, en las dos orientaciones y en el televisor. Antes iba a
-          <code>.78rem</code>, unos 12 pt.</p>
+          <p>Radial translúcido con borde amarillo: se lee como el blanco principal sin gritar. El
+          mismo color en vertical y acostado.</p>
         </div>
       </div>
     </div>
   </div>
 
   <div class="h2">Participante — acostado 844 × 390
-    <small>El versículo a la izquierda con todo el alto; el botón a la derecha, cuadrado grande con
-    el mismo color atenuado que en vertical.</small>
+    <small>El versículo a la izquierda con todo el alto; el botón a la derecha.</small>
   </div>
 
   <div class="fila">
     <div class="marco">
-      <div class="rotulo">acostado · ronda abierta</div>
+      <div class="rotulo">844×390 · ronda abierta</div>
       <div class="tela h">
         <div class="jug">
           <div class="barra">
@@ -236,14 +136,12 @@
           <div class="cuerpo">
             <div class="zona">
               <span class="ref">2 Corintios 3:2</span>
-              <p class="versiculo">Nuestras <span class="hueco">cartas</span> sois, escritas
-              en nuestro <span class="hueco">corazón</span>, conocidas y leídas de todos los
-              hombres.</p>
+              <p class="versiculo">Nuestras <span class="hueco">cartas</span> sois, escritas en
+              nuestro <span class="hueco">corazón</span>, conocidas y leídas de todos los hombres.</p>
             </div>
-            <div class="pie">
+            <div class="pie-j">
               <div class="reloj"><span class="barra-t"><i style="width:93%"></i></span><span class="t">14 s</span></div>
               <button class="boton-ok">PULSAR</button>
-              <p class="turno" style="visibility:hidden">—</p>
             </div>
           </div>
         </div>
@@ -251,51 +149,48 @@
     </div>
 
     <div style="flex:1 1 340px;min-width:280px">
-      <div class="notas" style="margin-top:0">
+      <div class="notas">
         <div class="nota bien">
-          <h3>La caja del versículo pasó de 30 px a 251</h3>
-          <p>Medido antes: en acostado la caja tenía <strong>30 px</strong> de alto con un texto de
-          <strong>47</strong>: se cortaba. Con dos columnas llegó a <strong>251 px</strong> y la letra
-          subió de 32 a 34.67 px.</p>
+          <h3>La caja del versículo pasó de 30 a 251 px</h3>
+          <p>Medido antes de las dos columnas: 30 px de caja con un texto de 47. Con el reparto en dos
+          columnas llegó a 251 px y la letra subió de 32 a 34.67 px.</p>
         </div>
         <div class="nota bien">
-          <h3>El texto crece hasta el pie</h3>
-          <p>En acostado la columna izquierda toma todo el alto; el texto se centra y se ajusta al
-          ancho y alto reales. Sin huecos vacíos entre el versículo y el temporizador.</p>
+          <h3>Se puede deslizar si hace falta</h3>
+          <p>Las pantallas de juego conservan alto fijo —el ajuste lo necesita para calcular— pero con
+          <code>overflow-y: auto</code>: si algo no entra (un teléfono muy bajito, el teclado
+          abierto), se desplaza en vez de cortarse.</p>
         </div>
         <div class="nota mal">
-          <h3>Lo que no puede pasar</h3>
-          <p>Que el botón se coma el versículo, o que el versículo empuje el botón fuera. Si no caben
-          los dos, se encoge la letra del versículo: el botón es lo que se toca.</p>
+          <h3>Antes cortaba</h3>
+          <p>Estaba en <code>overflow: hidden</code>. Lo que no cabía desaparecía sin forma de
+          llegar a ello.</p>
         </div>
       </div>
     </div>
   </div>
 
   <div class="h2">Televisor — 844 × 475
-    <small>Sin controles de juego: el televisor no concursa. Lleva el botón de salir de la partida,
-    que es lo único que se toca.</small>
+    <small>Sin controles de juego: no concursa. Lleva «Salir de esta partida», que es lo único que se toca.</small>
   </div>
 
   <div class="fila">
     <div class="marco">
-      <div class="rotulo">televisor · en espera, con QR y código</div>
+      <div class="rotulo">844×475 · en espera, con QR y código</div>
       <div class="tela tv">
         <div class="tv-in">
           <div class="tv-top">
             <button class="salir">Salir de esta partida</button>
             <span class="ref">Completar el versículo</span>
           </div>
-          <div class="tv-cuerpo" style="flex-direction:column;justify-content:center;gap:.55rem">
+          <div class="tv-cuerpo" style="flex-direction:column;justify-content:center;gap:8px">
             <div class="qr-caja">QR de la sala<br>#/join?c=B73WS</div>
-            <p style="text-align:center;margin:0;font-size:1.05rem;color:var(--tinta-suave)">
-              Entra con este código</p>
+            <p style="text-align:center;margin:0;color:var(--tinta-suave)">Entra con este código</p>
             <div class="tv-codigo">B73WS</div>
-            <p style="text-align:center;margin:.2rem 0 0;font-size:.98rem;color:var(--tinta-suave)">
-              Participantes entrantes:</p>
-            <div class="tv-jugadores">
-              <span class="tv-jug">Ana Pérez</span>
-              <span class="tv-jug">Carlos Ruiz</span>
+            <p style="text-align:center;margin:4px 0 0;color:var(--tinta-suave)">Participantes entrantes:</p>
+            <div class="app-jugadores">
+              <span class="app-jug">Ana Pérez</span>
+              <span class="app-jug">Carlos Ruiz</span>
             </div>
           </div>
         </div>
@@ -303,21 +198,21 @@
     </div>
 
     <div style="flex:1 1 300px;min-width:260px">
-      <div class="notas" style="margin-top:0">
+      <div class="notas">
         <div class="nota bien">
           <h3>El QR encima del código</h3>
-          <p>Primero lo que no hay que escribir: se apunta la cámara. El código va debajo, en el
-          tamaño más grande, para quien prefiera teclearlo o no tenga cámara.</p>
+          <p>Primero lo que no hay que escribir: se apunta la cámara. El código debajo, en grande,
+          para quien prefiera teclearlo.</p>
         </div>
         <div class="nota bien">
-          <h3>«Participantes entrantes:» con su rótulo</h3>
-          <p>Antes los nombres flotaban sin decir qué eran. Con el rótulo se leen como una lista de
-          los que ya están dentro, que es lo que son.</p>
+          <h3>«Participantes entrantes:»</h3>
+          <p>Antes los nombres flotaban sin decir qué eran. Con el rótulo se leen como la lista de los
+          que ya están dentro.</p>
         </div>
         <div class="nota bien">
           <h3>«Salir de esta partida», no un nombre</h3>
-          <p>El televisor no es un concursante: no tiene nombre ni puntos. Arriba a la izquierda va
-          lo único que se puede hacer desde esa pantalla, salir y soltar la sala.</p>
+          <p>El televisor no es un concursante: no tiene nombre ni puntos. Arriba a la izquierda va lo
+          único que se puede hacer desde esa pantalla.</p>
         </div>
       </div>
     </div>
@@ -325,7 +220,7 @@
 
   <div class="fila">
     <div class="marco">
-      <div class="rotulo">televisor · ronda en curso</div>
+      <div class="rotulo">844×475 · ronda en curso</div>
       <div class="tela tv">
         <div class="tv-in">
           <div class="tv-top">
@@ -337,22 +232,25 @@
             <span class="hueco">corazón</span>, conocidas y leídas de todos los hombres.</p>
           </div>
           <div class="tv-pie">
-            <span class="tv-turno">Turno de Carlos Ruiz</span>
-            <span class="tv-reloj"><span class="barra-t"><i style="width:60%"></i></span><span class="t">9 s</span></span>
+            <span style="font-weight:800;color:#ffe58a">Turno de Carlos Ruiz</span>
+            <span class="reloj" style="width:auto">
+              <span class="barra-t" style="max-width:160px"><i style="width:60%"></i></span>
+              <span class="t">9 s</span>
+            </span>
           </div>
         </div>
       </div>
     </div>
 
     <div style="flex:1 1 300px;min-width:260px">
-      <div class="notas" style="margin-top:0">
+      <div class="notas">
         <div class="nota bien">
           <h3>El texto llena el espacio hasta el pie</h3>
-          <p>La zona del versículo toma todo el alto entre la cabecera y el pie, y el texto crece
-          hasta llenarla. Nada de aire muerto entre el versículo y el turno.</p>
+          <p>La zona toma todo el alto entre la cabecera y el pie, y el texto crece hasta llenarla.
+          Sin aire muerto entre el versículo y el turno.</p>
         </div>
         <div class="nota bien">
-          <h3>El turno y el reloj, abajo</h3>
+          <h3>El turno, sin mover el texto</h3>
           <p>Cuando alguien pulsa, el nombre aparece en el pie y el versículo no se mueve: moverlo en
           cada turno obliga a todos a releerlo.</p>
         </div>
@@ -364,6 +262,12 @@
       </div>
     </div>
   </div>
+
+  <p style="margin-top:2rem;color:#a9c6ca;font-size:.9rem">
+    Los tamaños de texto, rellenos y radios salen de <code>base-app.css</code>, medidos con
+    <code>getComputedStyle</code>. Los tamaños del versículo <strong>no</strong> están fijados a mano
+    en la app: los calcula el ajuste desde la caja, así que aquí se dibuja el resultado típico.
+  </p>
 
 </div>
 </body>
