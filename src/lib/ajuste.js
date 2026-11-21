@@ -544,11 +544,23 @@ export const ROLES = [
      Solo cambia el teléfono: en tableta y PC el perfil ya era 1 + 1. */
   { sel: '.menu-acciones > button', categoria: 'contenido', renglones: 1 },
   { sel: '.juego-tarjeta .insignia', categoria: 'etiqueta', renglones: 1 },
-  /* Nombres y descripciones son contenido: techo de 16 pt. En el menú, 1 + 1:
-     una tarjeta que ocupa dos renglones de nombre empuja al hermano y la
-     rejilla deja de leerse como una lista. */
-  { sel: '.juego-tarjeta .nombre', categoria: 'contenido', renglones: 1 },
-  { sel: '.juego-tarjeta .desc', categoria: 'contenido', renglones: 1 },
+  /* NOMBRES Y DESCRIPCIONES DEL MENÚ: 2 + 1, no 1 + 1.
+   *
+   * Christian lo declaró el 21/11/2026: «en menu horizontal en la parte de
+   * escoger el juego no se lee el nombre del juego, usa varias filas para
+   * distintos juegos si hace falta».
+   *
+   * Por qué estaba mal en 1 + 1: con UNA sola línea, «Completar el versículo»
+   * y su descripción no caben en el ancho de una tarjeta, así que el ajuste
+   * las encogía hasta el SUELO de 8 pt. No era un problema de maqueta: era la
+   * capacidad declarada la que no daba margen. Medido antes del cambio, en
+   * 390x844: descripción a 10.67 px = 8 pt, el último recurso de la escala.
+   *
+   * Con dos líneas el texto entra sin bajar del techo, y la tarjeta puede
+   * crecer en alto, que es lo que él pidió. La excepción a «el resto de la
+   * interfaz va en 1 + 1» es suya y está aquí, visible, no escondida. */
+  { sel: '.juego-tarjeta .nombre', categoria: 'contenido', renglones: 2 },
+  { sel: '.juego-tarjeta .desc', categoria: 'contenido', renglones: 2 },
   /* Títulos: techo de 24 pt. Entran todos los encabezados, incluido el h1
      de la portada, que antes se quedaba con el tamaño de la hoja y partía en
      dos renglones sin que nadie comprobara si encogiendo cabía en uno. */

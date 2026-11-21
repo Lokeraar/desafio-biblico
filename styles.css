@@ -1391,9 +1391,18 @@ body.tv .qr-tv { max-width: clamp(220px, 34vmin, 380px); }
   flex-direction: column;
   gap: .1rem;
   min-width: 0;
-  /* El texto pide el ancho que necesita; si la insignia no cabe al lado, baja
-     a su propia linea en vez de comprimir el nombre. */
-  flex: 1 1 8rem;
+  /* EL TEXTO PIDE MAS ANCHO QUE EL QUE LE DEJARIA LA INSIGNIA AL LADO.
+   *
+   * Medido en 390x844 con el telefono de verdad: la tarjeta mide 335 px, el
+   * icono 35 y la insignia 120. Al pedir el texto solo 8rem, los tres cabian
+   * en una fila, y al texto le quedaban 162 px. Ahi la descripcion necesita
+   * 3 renglones a 10 pt, o sea que el ajuste la bajaba al suelo y aun asi se
+   * pasaba de su capacidad de 2.
+   *
+   * Con 12rem de base, texto e insignia ya no caben juntos y la insignia baja
+   * a su propia linea: el texto se queda con 266 px y la descripcion entra a
+   * 16 pt en dos renglones. */
+  flex: 1 1 12rem;
 }
 .juego-tarjeta .nombre {
   font-weight: 800;
@@ -2750,6 +2759,33 @@ body.tv .opciones { grid-template-columns: 1fr; }
     max-height: none;
     height: 100%;
     object-fit: cover;
+  }
+
+  /* LETTERBOXING PARA LA PORTADA ANCHA.
+   *
+   * Christian: «en menu horizontal si la imagen de portada es una imagen
+   * horizontal permite que haya letterboxing a fin de que se pueda ver
+   * completa, si es vertical no hace falta».
+   *
+   * Acostado la portada ocupa una columna alta y angosta. Una imagen ancha
+   * metida ahi con `cover` se recorta por los lados y se pierde justo lo que
+   * anuncia. Con `contain` se ve ENTERA y el aire que sobra arriba y abajo es
+   * el letterboxing que el pidio.
+   *
+   * Una imagen ALTA no lo necesita: ya llena la columna, y con `contain`
+   * quedaria una franja a los lados sin ganar nada.
+   *
+   * `data-forma` lo pone `marcarFormaPortada` en app.js al cargar la imagen,
+   * porque el CSS solo no puede saber la proporcion de una foto.
+   */
+  .menu-cabecera .portada img[data-forma="ancha"] {
+    object-fit: contain;
+  }
+  .menu-cabecera .portada:has(img[data-forma="ancha"]) {
+    /* El fondo del letterboxing: el mismo degradado del tema, para que el aire
+       se lea como marco y no como un hueco roto. */
+    background: linear-gradient(160deg, var(--fondo-2), var(--tu-900));
+    align-items: center;
   }
 
   .menu-lienzo .menu-cuerpo {

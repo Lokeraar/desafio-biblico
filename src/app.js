@@ -320,6 +320,40 @@ function portadaMostrada() {
   return guardada ? prefijoData(guardada) : PORTADA_ORIGINAL;
 }
 
+/*
+ * SI LA PORTADA ES ANCHA O ALTA, MARCADO EN EL PROPIO ELEMENTO.
+ *
+ * Christian: «en menu horizontal si la imagen de portada es una imagen
+ * horizontal permite que haya letterboxing a fin de que se pueda ver completa,
+ * si es vertical no hace falta».
+ *
+ * El CSS no puede mirar la proporcion de una imagen: `object-fit: contain` y
+ * `cover` son decisiones fijas. Hay que preguntarle a la imagen ya cargada
+ * cual es su forma, y eso se marca aqui, en `data-forma`.
+ *
+ * Se corre cada vez que se pinta porque la portada se puede cambiar desde el
+ * lapiz, y la nueva puede tener otra forma. Es idempotente: siempre reescribe
+ * el atributo a partir de la imagen que este cargada.
+ */
+function marcarFormaPortada(raiz) {
+  const img = (raiz || document).querySelector('.portada img');
+  if (!img) return;
+  const marcar = () => {
+    // Hasta que la imagen no tiene medidas no se sabe nada: no se marca.
+    if (!img.naturalWidth || !img.naturalHeight) return;
+    img.dataset.forma = img.naturalWidth >= img.naturalHeight ? 'ancha' : 'alta';
+  };
+  marcar();
+  // Si aun no cargo, se marca cuando cargue (una sola vez por elemento).
+  if (!img.dataset.forma && !img.dataset.esperandoForma) {
+    img.dataset.esperandoForma = '1';
+    img.addEventListener('load', () => {
+      delete img.dataset.esperandoForma;
+      marcar();
+    }, { once: true });
+  }
+}
+
 const CLAVE_SESION = 'desafio-biblico-sesion';
 // El juego elegido en el menú sobrevive a entrar a cualquier vista y a
 // recargar la página. Sin esto, volver al menú devolvía siempre a selección
@@ -2299,6 +2333,7 @@ function render() {
      crecer otra vez si ahora entra. */
   if (typeof requestAnimationFrame === 'function') {
     requestAnimationFrame(() => ajustarTextos($app));
+    requestAnimationFrame(() => marcarFormaPortada($app));
   }
 
   // Al salir de la pantalla del televisor se suelta su sondeo: una consulta

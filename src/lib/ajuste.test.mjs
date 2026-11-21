@@ -143,8 +143,27 @@ t(pregunta.every(r => r.renglones + PERFILES.ancho.gracia === 3),
 t(conCapacidadPropia.filter(r => !esDelMenu(r.sel) && r.renglones !== 2)
    .every(r => r.renglones === 1),
   'el resto declara 1, como el menu');
-t(conCapacidadPropia.filter(r => esDelMenu(r.sel)).every(r => r.renglones === 1),
-  'y el menu entero va en 1 renglon');
+/* EXCEPCION DEL 21/11/2026, declarada por el usuario: los NOMBRES y
+   DESCRIPCIONES de las tarjetas de juego van en 2 + 1, no en 1 + 1.
+   Sus palabras: «en menu horizontal en la parte de escoger el juego no se lee
+   el nombre del juego, usa varias filas para distintos juegos si hace falta»
+   y «en menu vertical cuando selecciono uno y aparece que esta seleccionado se
+   corta el texto y no se lee completo».
+   Con una sola linea, «Completar el versiculo» y su descripcion no caben en el
+   ancho de una tarjeta y el ajuste las bajaba al SUELO de 8 pt: medido en
+   390x844, la descripcion quedaba en 10.67 px. La capacidad es lo que decide;
+   la maqueta no puede arreglar una capacidad que no da margen.
+   El resto del menu SIGUE en 1: la excepcion es de las tarjetas, no del menu. */
+/* OJO: la insignia tambien vive dentro de `.juego-tarjeta` y SIGUE en 1
+   renglon: es una etiqueta de estado («Elegible», «Seleccionado»), no contenido
+   que haya que leer entero. Se excluye por su clase. */
+const tarjetasJuego = (sel) => /juego-tarjeta/.test(sel) && !/insignia/.test(sel);
+t(conCapacidadPropia.filter(r => esDelMenu(r.sel) && tarjetasJuego(r.sel))
+   .every(r => r.renglones === 2),
+  'el nombre y la descripcion del juego van en 2 renglones, por pedido explicito');
+t(conCapacidadPropia.filter(r => esDelMenu(r.sel) && !tarjetasJuego(r.sel))
+   .every(r => r.renglones === 1),
+  'y el resto del menu sigue en 1 renglon');
 t(PERFILES.ancho.gracia === 1, 'y la gracia del perfil le suma el +1');
 // La prosa SI entra (la capacidad 1+1 es para todo el texto), pero heredando
 // el perfil: sin capacidad propia inventada.
