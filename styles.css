@@ -2838,6 +2838,52 @@ body.tv .opciones { grid-template-columns: 1fr; }
 }
 
 /*
+ * «JUEGO» Y SU NOMBRE, ARRIBA A LA DERECHA DEL PANEL DEL PRESENTADOR.
+ *
+ * Christian: «en presentador horizontal y vertical ponle arriba a la derecha
+ * de la pantalla la palabra Juego y debajo de el en una segunda fila el nombre
+ * del juego».
+ *
+ * Dos filas de verdad: la etiqueta arriba (letra chica, color tenue) y el
+ * nombre debajo (letra de contenido, en blanco). La jerarquia sale del color y
+ * el peso, no de que uno sea ilegible.
+ */
+.rotulo-juego {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: .1em;
+  min-width: 0;
+  /* A la derecha del todo de la cabecera: `margin-left: auto` lo empuja aunque
+     «En línea» ocupe su espacio. */
+  margin-left: auto;
+  text-align: right;
+}
+
+.rotulo-juego .rotulo {
+  /* Es una ETIQUETA de interfaz, no contenido: 12 pt y no 16. Su unica
+     funcion es decir «lo de abajo es el juego». */
+  font-size: var(--t-xs);
+  font-weight: 600;
+  color: var(--tinta-suave);
+  line-height: 1.1;
+  text-transform: none;
+}
+
+.rotulo-juego .nombre-juego {
+  font-size: var(--t-sm);
+  font-weight: 800;
+  color: var(--tinta);
+  line-height: 1.2;
+  /* El nombre de un juego puede ser largo («Completar el versículo»): se parte
+     en dos renglones antes que salirse de la pantalla o empujar el botón. */
+  white-space: normal;
+  overflow-wrap: break-word;
+  max-width: 14ch;
+}
+
+/*
  * EL FORMULARIO DE CREAR SALA, ACOSTADO: LOS CAMPOS EN FILA.
  *
  * Medido: en 844x390 el panel pedia 727 px de alto en una ventana de 390, es

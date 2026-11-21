@@ -624,15 +624,53 @@ function lemaHTML() {
     </p>`;
 }
 
+/* LA LISTA DE JUEGOS VIVE AQUI, no dentro de `vistaMenu`.
+ *
+ * La usa el menu para dibujar las tarjetas, y la cabecera del presentador para
+ * decir QUE juego se esta jugando. Duplicarla seria dos listas que se separan
+ * en cuanto se agregue un juego.
+ */
+/*
+ * «JUEGO» Y SU NOMBRE, ARRIBA A LA DERECHA DEL PANEL DEL PRESENTADOR.
+ *
+ * Christian: «en presentador horizontal y vertical ponle arriba a la derecha
+ * de la pantalla la palabra Juego y debajo de el en una segunda fila el nombre
+ * del juego».
+ *
+ * Son DOS filas de verdad, no un texto con un separador: la palabra es la
+ * etiqueta, el nombre es el dato, y se leen en jerarquia. `aria-label` en el
+ * contenedor para que un lector de pantalla lo diga de corrido en vez de leer
+ * dos fragmentos sueltos.
+ */
+function rotuloJuego() {
+  const nombre = nombreDelJuegoElegido();
+  if (!nombre) return '';
+  return `
+    <div class="rotulo-juego" aria-label="${esc('Juego: ' + nombre)}">
+      <span class="rotulo">Juego</span>
+      <span class="nombre-juego">${esc(nombre)}</span>
+    </div>`;
+}
+
+const JUEGOS = [
+  { slug: 'seleccion-simple', icono: '🎯', nombre: 'Selección simple',
+    desc: 'Una pregunta, 4 opciones y una sola correcta.', listo: true },
+  { slug: 'completar-versiculo', icono: '📖', nombre: 'Completar el versículo',
+    desc: 'Un versículo con palabras tapadas. Pulsa para tomar el turno.', listo: true },
+  { slug: 'respuesta-abierta', icono: '💬', nombre: 'Respuesta abierta',
+    desc: 'El presentador lee y cada quien escribe.', listo: false }
+];
+
+/* El nombre visible del juego elegido. Si el slug guardado ya no existe (una
+   partida vieja, un juego retirado), devuelve null y la cabecera no dibuja el
+   bloque: mejor sin dato que con uno inventado. */
+function nombreDelJuegoElegido() {
+  const j = JUEGOS.find(x => x.slug === app.juegoElegido);
+  return j ? j.nombre : null;
+}
+
 function vistaMenu() {
-  const juegos = [
-    { slug: 'seleccion-simple', icono: '🎯', nombre: 'Selección simple',
-      desc: 'Una pregunta, 4 opciones y una sola correcta.', listo: true },
-    { slug: 'completar-versiculo', icono: '📖', nombre: 'Completar el versículo',
-      desc: 'Un versículo con palabras tapadas. Pulsa para tomar el turno.', listo: true },
-    { slug: 'respuesta-abierta', icono: '💬', nombre: 'Respuesta abierta',
-      desc: 'El presentador lee y cada quien escribe.', listo: false }
-  ];
+  const juegos = JUEGOS;
   const disponibles = juegos.filter(j => j.listo).length;
 
   return `
@@ -773,6 +811,7 @@ function panelVersiculo(estado) {
       <span class="fila chico">
         <span class="punto-vivo"></span> En línea
       </span>
+      ${rotuloJuego()}
     </div>`;
 
   const entorno = `
@@ -1026,6 +1065,7 @@ function vistaHost() {
       <span class="fila chico">
         <span class="punto-vivo"></span> En línea
       </span>
+      ${rotuloJuego()}
     </div>
 
     <main class="crecer columna" style="gap:1rem; margin-top:1rem">
