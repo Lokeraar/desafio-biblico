@@ -612,6 +612,17 @@
       "sentAt": "2026-11-21T18:55:13.770Z",
       "resolvedAt": "2026-11-21T19:02:52.558Z",
       "resolution": "El confeti está en los cuatro marcos con el primer puesto ya revelado, y añadí el marco del presentador (que no existía): participante, acostada, televisor y presentador. El de «a medio revelar» sigue sin confeti porque el primero aún no se ve."
+    },
+    {
+      "id": "iahbuy30",
+      "file": "07-modales.html",
+      "selector": "body > div",
+      "excerpt": "Modales — la app real Los nueve diálogos, sacados de src/lib/admin-ui.js y modalJuicioHTML. Todos comparten el mismo armazón: un fondo que oscurece y un .modal que se centra si cabe y arranca desde arriba si no. El armazón, una sola vez Fondo y modal. Lo demás es contenido. 390×844 · fondo y modal d",
+      "comment": "A todas las pantallas hay que mejorarle el text fitting ya que algunas se desbordan, déjale únicamente un espacio de margen izquierdo un espacio de margen derecho un espacio de margen Superior y un espacio de margen inferior a cada tarjeta / contenedor/ caja / elemento / tabla / botón de las dimensiones actuales.",
+      "createdAt": "2026-11-21T20:36:19.852Z",
+      "status": "open",
+      "sentAt": "2026-11-21T20:36:19.920Z",
+      "resolvedAt": null
     }
   ]
 }

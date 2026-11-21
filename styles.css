@@ -2988,11 +2988,46 @@ body.tv .opciones { grid-template-columns: 1fr; }
   font-weight: 800;
   color: var(--tinta);
   line-height: 1.2;
-  /* El nombre de un juego puede ser largo («Completar el versículo»): se parte
-     en dos renglones antes que salirse de la pantalla o empujar el botón. */
-  white-space: normal;
-  overflow-wrap: break-word;
-  max-width: 14ch;
+  /* UNA SOLA FILA, con el ajuste encogiendo la letra.
+     Christian, sobre la sala de espera: «Usa text-fitting, que quepa en 1 sola
+     fila». La capacidad esta declarada en `ROLES` de `lib/ajuste.js` con
+     `renglones: 1`.
+
+     `white-space: nowrap` NO es opcional: es la trampa ya pagada en este
+     proyecto. Con la etiqueta partida en dos renglones, el ajustador mira la
+     ALTURA, nunca ve que sobra ancho, declara «cabe» y el texto se sale de su
+     caja. Con `nowrap` el texto no parte solo y el ajuste mide el ancho real.
+
+     `max-width: 14ch` se retira: era lo que lo obligaba a dos renglones. El
+     ancho util lo pone su contenedor. */
+  white-space: nowrap;
+}
+
+/* TRES PIEZAS NO CABEN EN UN TELEFONO DE PIE.
+   Medido en 390x844 a 16 pt: «← Menú» 134 px + «En línea» 106 px + dos `gap`
+   de 1rem 32 px dejan 86 px para el rotulo, y el nombre pide 244. Faltan
+   158 px. Encoger hasta que entre lo dejaria en 5.7 pt, por debajo del suelo de
+   8 pt del proyecto: no se lee, se adivina.
+
+   Asi que en vertical el rotulo baja a su propia fila, alineado a la derecha,
+   donde tiene los 358 px enteros. Acostado sobran 578 px y las tres siguen en
+   la misma fila. Es el mismo criterio que muestra el canvas (03-sala-espera). */
+@media (max-aspect-ratio: 1/1) {
+  .fila-entre:has(> .rotulo-juego) {
+    flex-wrap: wrap;
+    row-gap: .35rem;
+  }
+  .fila-entre:has(> .rotulo-juego) > .rotulo-juego {
+    flex: 0 0 100%;
+    margin-left: 0;
+    align-items: flex-end;
+    text-align: right;
+  }
+  /* «En línea» es una etiqueta de estado, no una frase: tampoco parte. */
+  .fila-entre:has(> .rotulo-juego) > .fila.chico {
+    white-space: nowrap;
+    flex: 0 0 auto;
+  }
 }
 
 /*

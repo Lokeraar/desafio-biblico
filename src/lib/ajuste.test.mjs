@@ -139,18 +139,27 @@ const pregunta = conCapacidadPropia.filter(r =>
 t(pregunta.length === 5, 'todo texto de versiculo declara 2 renglones (+1 de gracia)');
 t(pregunta.every(r => /versiculo|enunciado|fila-entre/.test(r.sel)),
   'y todos son texto de un versiculo, su enunciado o su referencia');
-/* EXCEPCION DEL 21/11/2026, declarada por el usuario: el ROTULO DEL JUEGO va
-   en 2 + 1. Sus palabras, sobre «Juego: Completar el versiculo» en la cabecera
-   del presentador: «Text-fitting a 2+1».
+/* EXCEPCION DEL 21/11/2026, declarada por el usuario: el ROTULO DEL JUEGO
+   declara capacidad propia.
    NO es texto de versiculo, asi que no entra en el grupo de arriba: se cuenta y
    se comprueba aparte. Asi la regla dura de los versiculos sigue exigiendo
-exactamente sus cinco selectores, y esta excepcion no puede crecer sin que
-   alguien la vea declarada aqui. */
+   exactamente sus cinco selectores, y esta excepcion no puede crecer sin que
+   alguien la vea declarada aqui.
+
+   DECISION VIGENTE: 1 RENGLON. Christian, sobre la sala de espera: «Usa
+   text-fitting, que quepa en 1 sola fila».
+   SUPERA la decision anterior del mismo dia, que pedia 2 + 1 («Text-marketing a
+   2+1»). Se cambia porque el usuario cambio el criterio, no porque la prueba
+   estorbara: queda escrito cual manda y por que.
+
+   Por que 1 y no 2: en vertical el rotulo ya no comparte fila con «Menu» y «En
+   linea» —medido, no caben: sobran 158 px—, asi que tiene los 358 px enteros y
+   entra a tamano completo. */
 const rotuloJuego = conCapacidadPropia.filter(r => /rotulo-juego/.test(r.sel));
 t(rotuloJuego.length === 1,
   'el rotulo del juego declara capacidad propia, y es uno solo');
-t(rotuloJuego.every(r => r.renglones === 2),
-  'y va en 2 + 1, como pidio el usuario');
+t(rotuloJuego.every(r => r.renglones === 1),
+  'y va en 1 renglon, como pidio el usuario al cambiar el criterio');
 t(pregunta.every(r => r.renglones + PERFILES.ancho.gracia === 3),
   'los cuatro quedan en 2 + 1');
 t(conCapacidadPropia.filter(r => !esDelMenu(r.sel) && r.renglones !== 2)

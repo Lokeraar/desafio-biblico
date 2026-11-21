@@ -682,14 +682,17 @@ export const ROLES = [
      Ahora el ajuste encoge el texto hasta que entra en uno. */
   { sel: '.rotulo-campo', categoria: 'contenido', renglones: 1 },
 
-  /* EL RÓTULO DEL JUEGO, 2 + 1.
-     Christian: «Text-marketing a 2+1» sobre «Juego: Completar el versículo».
-     El nombre de un juego puede ser largo y la cabecera es estrecha: con un
-     solo renglón el ajuste lo bajaba al suelo de 8 pt. Con capacidad 2 el
-     nombre parte en dos y se lee; el `+1` de gracia evita que el suelo se
-     alcance por un carácter de más. El `aria-label` del contenedor lleva el
-     texto completo, así que anunciarlo entero no depende de la capacidad. */
-  { sel: '.rotulo-juego .nombre-juego', categoria: 'contenido', renglones: 2 },
+  /* EL RÓTULO DEL JUEGO, 1 RENGLÓN.
+     Christian, sobre la sala de espera: «Usa text-fitting, que quepa en 1 sola
+     fila». Esta decisión SUPERA la anterior del mismo día, que pedía 2 + 1
+     («Text-marketing a 2+1»): se cambia porque el usuario cambió el criterio,
+     no porque la prueba estorbara.
+
+     En vertical el rótulo ya no comparte fila con «← Menú» y «En línea» (no
+     caben: sobran 158 px), así que tiene los 358 px enteros y entra a tamaño
+     completo. Acostado también cabe. El `nowrap` del CSS es lo que permite que
+     el ajuste mida el ancho real en vez de mirar la altura. */
+  { sel: '.rotulo-juego .nombre-juego', categoria: 'contenido', renglones: 1 },
 
   { sel: '.modal [data-accion="alternar-modo-ocultar"], ' +
          '.modal [data-accion="ayuda-ocultar"]',
