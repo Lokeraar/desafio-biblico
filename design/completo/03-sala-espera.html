@@ -55,7 +55,7 @@
       <div class="tela v">
         <div style="display:flex;flex-direction:column;height:100%">
           <div style="padding:16px 16px 0">
-            <button class="app-volver">← Volver</button>
+            <button class="boton-salir">← Volver</button>
           </div>
           <div class="esp-main">
             <h2 class="esp-titulo">Ya estás dentro</h2>
@@ -69,7 +69,7 @@
             <p class="esp-puntos">0 puntos</p>
             <div class="app-rotulo-juego" style="align-self:flex-end;margin-left:0">
               <span class="rot">Juego:</span>
-              <span class="nom">Completar el versículo</span>
+              <span class="nombre">Completar el versículo</span>
             </div>
             <div class="orbe-espera" style="align-self:center">
               <div style="width:64px;height:64px;border-radius:50%;
@@ -110,29 +110,51 @@
   </div>
 
   <div class="h2">Acostado — 844 × 390
-    <small>La misma columna, centrada. Sin columnas: aquí no hay lista que repartir.</small>
+    <small>Dos columnas: a la izquierda el nombre y los datos, a la derecha solo el orbe, en
+    grande.</small>
   </div>
 
   <div class="fila">
     <div class="marco">
       <div class="rotulo">844×390 · esperando</div>
+      <!-- DOS COLUMNAS: a la izquierda todo lo demas, a la derecha SOLO el orbe.
+           Christian: «Muevelo a una segunda columna, en la primera estaria lo
+           demas, en la segunda solo el thinking-orb en grande».
+
+           Acostado el ancho sobra y el alto es lo escaso: el orbe deja de
+           competir por el alto con el nombre y los puntos, y pasa a ser el
+           protagonista de su propia columna. -->
       <div class="tela h">
-        <div style="display:flex;flex-direction:column;height:100%">
-          <div style="padding:10px 16px 0">
-            <button class="app-volver">← Volver</button>
-          </div>
-          <div class="esp-main" style="gap:8px">
-            <h2 class="esp-titulo" style="font-size:24px;line-height:27px">Ya estás dentro</h2>
-            <p class="esp-nombre" style="font-size:32px;line-height:35px">Ana Pérez</p>
-            <p class="esp-puntos" style="margin:0">Este es tu nombre/alias en esta partida</p>
-            <p class="esp-puntos">0 puntos</p>
-            <div class="orbe-espera" style="align-self:center;flex-direction:row;gap:10px">
-              <div style="width:40px;height:40px;border-radius:50%;
-                   background:radial-gradient(circle at 40% 35%, rgba(191,234,242,.85), rgba(191,234,242,.12) 70%);
-                   border:1px solid rgba(191,234,242,.35)"></div>
-              <span class="orbe-txt" style="text-align:left">Esperando al presentador</span>
+        <div style="display:flex;flex-direction:row;height:100%">
+
+          <!-- columna 1: todo lo demas -->
+          <div style="display:flex;flex-direction:column;min-width:0;flex:1 1 auto">
+            <div style="padding:10px 0 0 16px">
+              <button class="boton-salir">← Volver</button>
+            </div>
+            <div class="esp-main" style="gap:8px;padding-right:8px">
+              <h2 class="esp-titulo" style="font-size:24px;line-height:27px">Ya estás dentro</h2>
+              <p class="esp-nombre" style="font-size:32px;line-height:35px">Ana Pérez</p>
+              <p class="esp-puntos" style="margin:0">Este es tu nombre/alias en esta partida</p>
+              <p class="esp-puntos">0 puntos</p>
+              <div class="app-rotulo-juego" style="align-self:flex-end;margin-left:0">
+                <span class="rot">Juego:</span>
+                <span class="nombre">Completar el versículo</span>
+              </div>
             </div>
           </div>
+
+          <!-- columna 2: solo el orbe, en grande y centrado -->
+          <div style="flex:0 0 34%;display:flex;align-items:center;justify-content:center;
+               border-left:1px solid rgba(110,227,238,.18);padding:8px 16px">
+            <div class="orbe-espera" style="align-items:center">
+              <div style="width:96px;height:96px;border-radius:50%;
+                   background:radial-gradient(circle at 40% 35%, rgba(191,234,242,.92), rgba(191,234,242,.10) 72%);
+                   border:1px solid rgba(191,234,242,.4)"></div>
+              <span class="orbe-txt" style="text-align:center">Esperando al presentador</span>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
@@ -140,15 +162,21 @@
     <div style="flex:1 1 340px;min-width:280px">
       <div class="notas">
         <div class="nota bien">
-          <h3>Sin scroll propio</h3>
-          <p>La columna es <code>flex: 1</code> con <code>min-height: 0</code>. Si el contenido crece,
-          desliza la página: un contenedor con scroll propio que no puede desplazarse es justo lo que
-          rompía el gesto en el menú.</p>
+          <h3>El orbe tiene su propia columna</h3>
+          <p>Acostado, el ancho sobra y el alto es lo escaso. Con el orbe al pie de la misma columna
+          competía por el alto con el nombre y los puntos. En su columna va a <strong>96 px</strong> y
+          se lee como lo que es: la señal de que la app sigue trabajando.</p>
         </div>
-        <div class="nota duda">
-          <h3>Una pregunta abierta</h3>
-          <p>El rótulo del juego se añadió en un commit de hoy. Con el rótulo, la columna suma cuatro
-          bloques y en acostado queda justa. ¿Se deja, o se oculta el rótulo acostado?</p>
+        <div class="nota bien">
+          <h3>La división es una línea fina</h3>
+          <p><code>border-left</code> de <code>rgba(110,227,238,.18)</code>: separa sin competir con
+          el contenido. Ni tarjeta ni fondo distinto.</p>
+        </div>
+        <div class="nota bien">
+          <h3>Sin scroll propio</h3>
+          <p>Las dos columnas son <code>flex</code> con <code>min-height: 0</code>. Si el contenido
+          crece, desliza la página: un contenedor con scroll propio que no puede desplazarse es justo
+          lo que rompía el gesto en el menú.</p>
         </div>
       </div>
     </div>
@@ -164,10 +192,10 @@
       <div class="tela v">
         <div style="display:flex;flex-direction:column;height:100%">
           <div style="padding:16px 16px 0">
-            <button class="app-volver">← Volver</button>
+            <button class="boton-salir">← Volver</button>
           </div>
           <div class="esp-main">
-            <div class="app-aviso espera">Estás en sala de espera</div>
+            <div class="aviso espera">Estás en sala de espera</div>
             <p class="esp-puntos" style="max-width:30ch;align-self:center;margin:0">
               La partida ya había empezado. El presentador puede admitirte para que juegues desde la
               próxima pregunta.
@@ -190,7 +218,7 @@
       <div class="tela v">
         <div style="display:flex;flex-direction:column;height:100%">
           <div style="padding:16px 16px 0">
-            <button class="app-volver">← Volver</button>
+            <button class="boton-salir">← Volver</button>
           </div>
           <div class="esp-main">
             <p class="esp-titulo">Conectando…</p>
@@ -211,10 +239,10 @@
       <div class="tela v">
         <div style="display:flex;flex-direction:column;height:100%">
           <div style="padding:16px 16px 0">
-            <button class="app-volver">← Volver</button>
+            <button class="boton-salir">← Volver</button>
           </div>
           <div class="esp-main">
-            <div class="app-aviso err">No hay conexión. Tu lugar sigue guardado.</div>
+            <div class="aviso err">No hay conexión. Tu lugar sigue guardado.</div>
             <p class="esp-puntos" style="max-width:30ch;align-self:center;margin:0">
               Tu sesión terminó. Vuelve a entrar con tu nombre.
             </p>

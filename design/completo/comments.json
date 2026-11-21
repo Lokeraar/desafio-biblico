@@ -228,6 +228,29 @@
       "sentAt": "2026-11-21T08:42:53.300Z",
       "resolvedAt": "2026-11-21T08:58:42.115Z",
       "resolution": "Botones centrados, nombre/alias, versículo y botón ajustados con temporizador, televisor sin nombre de jugador, QR sobre el código y participantes entrantes"
+    },
+    {
+      "id": "i4ino3jd",
+      "file": "01-menu.html",
+      "selector": "body > div > div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(2)",
+      "excerpt": "DESAFÍO BÍBLICO 2026 · 2 CORINTIOS 🏆 DESAFÍO BÍBLICO ⭐ 2 Corintios · Concurso de preguntas JUEGO: Completar el versículo 🎤 Soy presentador 🙋 Jugar como participante",
+      "comment": "que se hizo el botón de pantalla para el televisor?",
+      "createdAt": "2026-11-21T14:14:13.531Z",
+      "status": "resolved",
+      "sentAt": "2026-11-21T14:14:13.641Z",
+      "resolvedAt": "2026-11-21T14:32:49.516Z",
+      "resolution": "Cuatro botones en la página cargada; eliminado el «primer pantallazo» inventado, el marco muestra la página entera"
+    },
+    {
+      "id": "7cg72uhv",
+      "file": "03-sala-espera.html",
+      "selector": "body > div > div:nth-of-type(4) > div:nth-of-type(1) > div:nth-of-type(2) > div > div:nth-of-type(2) > div",
+      "excerpt": "Esperando al presentador",
+      "comment": "Muévelo a una segunda columna, en la primera estaría lo demás, en la segunda solo el thinking-oro en grande.",
+      "createdAt": "2026-11-21T14:22:25.373Z",
+      "status": "open",
+      "sentAt": "2026-11-21T14:22:25.422Z",
+      "resolvedAt": null
     }
   ]
 }

@@ -1,314 +1,501 @@
 /* =====================================================================
-   Base de los artboards — VALORES MEDIDOS DE LA APP REAL
+   Base de los artboards — COPIADA DE styles.css
    ---------------------------------------------------------------------
    Christian: «las pantallas del canvas deberian ser lo que muestra la app
    real, para poder asi detenerme a analizar la informacion que muestra».
 
-   Este archivo NO es una maqueta: son los valores que la app calcula de
-   verdad, leidos con `getComputedStyle` sobre http://127.0.0.1:8765 en
-   390x844 y 844x390. Si la app cambia, se vuelve a medir y se actualiza
-   aqui. Copiar a ojo es lo que hacia que canvas y dispositivo no
-   coincidieran.
+   Cada regla de este archivo tiene su original en `styles.css`. No hay
+   valores inventados ni medidos a ojo: se copian del CSS de la app y se
+   convierten las variables (`--t-base`, `--radio`...) a su valor resuelto.
 
-   MEDIDO (menu, #/join, #/host, #/tv, #/config):
-     raiz 16px · texto 21.3333px (16 pt) · interlineado 32px
-     titulo de pantalla 32px / 35.2px / 800
-     titulo del menu    25.3333px / 27.8667px / 800 / ls 1.52px
-     tarjeta            relleno 14.93px 19.2px · radio 14px
-     nombre de juego    21.3333px / 800
-     descripcion        21.3333px / 700 / #a9c6ca
-     insignia           16px / 800 / relleno 4.48px 9.6px / radio 999px
-     boton grande       21.3333px / 700 / relleno 21.3333px 34.1333px / radio 12px
-     campo              21.3333px / relleno 17.0662px 21.3328px / radio 12px
-     pie                16px / interlineado 24px / relleno arriba 16px
-     portada            radio 18px
-     lienzo del menu    relleno 16.88px 11.7px · hueco 13.5px
+   VALORES RESUELTOS (1rem = 16px, raiz fija):
+     --t-xs  1.3333rem = 21.3333px   --t-sm  = 21.3333px   --t-base = 21.3333px
+     --t-lg  1.5rem    = 24px        --t-xl  = 28px        --t-2xl  = 32px
+     --t-3xl 2rem      = 32px
+     --radio 18px   --radio-sm 12px
+     --tinta #fff   --tinta-suave #a9c6ca   --raya #d2ffff
+     --tu-100 #6fe3ee  --tu-300 #2ec4d4  --tu-500 #0090a0  --tu-700 #007080
+     --amarillo #fcd116  --ok #1fbf75
    ===================================================================== */
 
 :root {
-  /* colores de la app */
   --fondo:#0b1a1d; --fondo-2:#102a2f; --tinta:#fff; --tinta-suave:#a9c6ca; --raya:#d2ffff;
-  --tu-100:#6fe3ee; --tu-300:#2ec4d4; --tu-400:#00a0b0; --tu-600:#008090;
-  --tu-800:#00525e; --tu-900:#0a2e33;
+  --tu-100:#6fe3ee; --tu-300:#2ec4d4; --tu-500:#0090a0; --tu-600:#008090;
+  --tu-700:#007080; --tu-800:#00525e; --tu-900:#0a2e33;
   --amarillo:#fcd116; --rojo:#cf2123; --ok:#1fbf75; --espera:#f0a33a; --error:#e0483c;
+  --radio:18px; --radio-sm:12px;
+  --sombra:0 10px 30px rgba(0,0,0,.45);
   --fondo-juego:radial-gradient(120% 90% at 50% 0%, #1b6f4a 0%, #0f5a63 42%, #07222b 72%, #04151b 100%);
-
-  /* escala tipografica MEDIDA */
-  --app-texto: 21.3333px;      /* 16 pt */
-  --app-lh: 32px;
-  --app-titulo: 32px;
-  --app-titulo-lh: 35.2px;
-  --app-titulo-menu: 25.3333px;
-  --app-titulo-menu-lh: 27.8667px;
-  --app-insignia: 16px;
-  --app-insignia-lh: 24px;
-  --app-pie: 16px;
-  --app-pie-lh: 24px;
+  --app:21.3333px;
+  --t-xs:21.3333px; --t-sm:21.3333px; --t-base:21.3333px;
+  --t-lg:24px; --t-xl:28px; --t-2xl:32px; --t-3xl:32px;
 }
 
-/* la placa: fondo y tipografia de la app */
-.placa-app {
-  background: var(--fondo);
-  color: var(--tinta);
-  font-family: "Nunito", "Segoe UI", system-ui, -apple-system, sans-serif;
-  font-size: var(--app-texto);
-  line-height: var(--app-lh);
-  -webkit-font-smoothing: antialiased;
-}
+* { box-sizing: border-box; }
 
-/* la pantalla: lo que se ve dentro del marco */
+/* ---------- el marco de cada pantalla ---------- */
 .tela {
   position: relative;
   overflow: hidden;
   border-radius: 20px;
   border: 1px solid rgba(110,227,238,.3);
-  background: var(--fondo);
   box-shadow: 0 14px 40px rgba(0,0,0,.5);
   display: flex;
   flex-direction: column;
-  font-size: var(--app-texto);
-  line-height: var(--app-lh);
-  color: var(--tinta);
   font-family: "Nunito","Segoe UI",system-ui,-apple-system,sans-serif;
+  font-size: var(--t-base);
+  line-height: 1.5;
+  color: var(--tinta);
+  background: var(--fondo-juego);
 }
 .tela.v { width: 390px; height: 844px; }
 .tela.h { width: 844px; height: 390px; }
 .tela.tv { width: 844px; height: 475px; }
 
-/* ---------- menu ---------- */
-.app-lienzo {
+/* ---------- menu ----------
+   `.menu-lienzo`: flex columna, relleno y hueco fluidos (a 390x844 resuelven
+   a 16.88 x 11.7 y 13.5). */
+.menu-lienzo {
   display: flex; flex-direction: column; min-height: 0;
   padding: 16.88px 11.7px;
   gap: 13.5px;
 }
-.tela.h .app-lienzo { flex-direction: row; align-items: stretch; gap: 13.5px; }
+.tela.h .menu-lienzo { flex-direction: row; align-items: stretch; gap: 13.5px; }
 
-.app-portada {
-  position: relative; width: 100%; border-radius: 18px; overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0,0,0,.45);
-  background: linear-gradient(135deg,#1a5c66,#0a2e33);
+.menu-cabecera { width: 100%; margin-inline: auto; max-width: 720px; flex: 0 0 auto; }
+.tela.h .menu-cabecera { flex: 0 0 clamp(9rem, 32%, 20rem); max-width: none; display: flex; min-width: 0; }
+
+/* `.portada`: radio 18px, sombra, `line-height: 0` */
+.portada {
+  position: relative; width: 100%; border-radius: var(--radio);
+  overflow: hidden; box-shadow: var(--sombra); line-height: 0;
 }
-.tela.h .app-portada { flex: 0 0 32%; display: flex; align-items: center; }
-.app-portada .arte {
+.tela.h .portada { width: 100%; display: flex; align-items: center; }
+/* la imagen real es una foto; aqui un bloque con el texto de la portada */
+.portada .arte {
   width: 100%; aspect-ratio: 16/9; display: grid; place-items: center;
+  background: linear-gradient(135deg,#1a5c66,#0a2e33);
   color: #9fe9f1; font-weight: 800; font-size: 13px; letter-spacing: .06em;
-  text-align: center; padding: 8px;
+  text-align: center; padding: 8px; line-height: 1.3;
 }
-.tela.h .app-portada .arte { aspect-ratio: auto; height: 100%; }
+.tela.h .portada .arte { aspect-ratio: auto; height: 100%; }
 
-.app-cuerpo { display: flex; flex-direction: column; min-height: 0; gap: 13.5px; }
-.tela.h .app-cuerpo { flex: 1 1 auto; min-width: 0; }
+/* `.menu-cuerpo`: columna, hueco fluido, sin scroll propio */
+.menu-cuerpo { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; gap: 13.5px; }
+.tela.h .menu-cuerpo { flex: 1 1 auto; min-width: 0; }
 
-.app-titulo {
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  font-size: var(--app-titulo-menu);
-  line-height: var(--app-titulo-menu-lh);
-  font-weight: 800;
-  letter-spacing: 1.52px;
-  text-align: center;
+/* `.menu-titulo`: flex centrado, `font-size: var(--t-2xl)` = 32px */
+.menu-titulo {
+  display: flex; align-items: center; justify-content: center; gap: .5rem;
+  font-size: var(--t-2xl); font-weight: 800; line-height: 1.1;
 }
 
-.app-juegos { display: flex; flex-direction: column; gap: 8px; }
-.tela.h .app-juegos { flex-direction: row; flex-wrap: wrap; }
+/* `.menu-juego-actual`: centrado, envuelve, gap .45rem, `--t-sm` */
+.menu-juego-actual {
+  margin: .2rem 0 .6rem;
+  display: flex; align-items: baseline; justify-content: center;
+  flex-wrap: wrap; gap: .45rem;
+  font-size: var(--t-sm); line-height: 1.5; text-align: center;
+}
+.menu-juego-actual .rotulo {
+  color: var(--tinta-suave); font-weight: 700;
+  letter-spacing: .04em; text-transform: uppercase;
+}
+.menu-juego-actual .valor { color: var(--amarillo); font-weight: 800; }
 
-.app-tarjeta {
+/* `.menu-seccion`: MAYUSCULAS, cian, centrada */
+.menu-seccion {
+  margin: .3rem 0 -.1rem;
+  font-size: var(--t-sm); font-weight: 800;
+  letter-spacing: .04em; text-transform: uppercase;
+  color: var(--tu-100); text-align: center;
+}
+
+/* `.menu-acciones`: columna, gap .55rem, max-width 480px centrado */
+.menu-acciones {
+  display: flex; flex-direction: column; gap: .55rem;
+  width: 100%; max-width: 480px; margin-inline: auto;
+}
+.tela.h .menu-acciones { flex-direction: row; flex-wrap: wrap; max-width: none; }
+
+/* `.menu-juegos`: columna, gap .5rem, max-width 480px centrado */
+.menu-juegos {
+  display: flex; flex-direction: column; gap: .5rem;
+  width: 100%; max-width: 480px; margin-inline: auto;
+}
+.tela.h .menu-juegos { flex-direction: row; flex-wrap: wrap; max-width: none; }
+
+/* `.juego-tarjeta`: flex con envoltura, relleno .7em .9em, radio 14px */
+.juego-tarjeta {
   display: flex; flex-wrap: wrap; align-items: center;
-  gap: 8px 13px;
-  padding: 14.93px 19.2px;
-  border-radius: 14px;
+  gap: .5rem .75rem;
+  padding: .7em .9em; border-radius: 14px;
   border: 1px solid rgba(110,227,238,.22);
   background: rgba(255,255,255,.05);
-  color: var(--tinta);
-  width: 100%;
-  font: inherit;
-  text-align: left;
+  color: var(--tinta); text-align: left;
+  width: 100%; font: inherit; cursor: pointer;
 }
-.tela.h .app-tarjeta { flex: 1 1 240px; min-width: 0; width: auto; padding: 10.67px 14.93px; }
-.app-tarjeta.elegido { border-color: var(--tu-300); background: rgba(46,196,212,.12); }
-.app-tarjeta .ico {
-  width: 44px; height: 44px; display: grid; place-items: center; border-radius: 12px;
-  background: rgba(46,196,212,.16); font-size: 20px; flex: 0 0 auto;
+.tela.h .juego-tarjeta { flex: 1 1 clamp(11rem, 30%, 20rem); min-width: 0; width: auto; padding: .5em .7em; }
+.juego-tarjeta.elegido {
+  border-color: var(--amarillo);
+  background: linear-gradient(135deg, rgba(252,209,22,.12), rgba(0,160,176,.10));
+  box-shadow: 0 0 22px rgba(252,209,22,.12);
 }
-.app-tarjeta .txt { display: flex; flex-direction: column; flex: 1 1 200px; min-width: 0; }
-.app-tarjeta .nom {
-  font-size: var(--app-texto); font-weight: 800; line-height: var(--app-lh);
+.juego-tarjeta .icono {
+  width: 2.4em; height: 2.4em; display: grid; place-items: center;
+  border-radius: 12px; background: rgba(46,196,212,.16);
+  font-size: .9rem; flex: 0 0 auto;
+}
+.juego-tarjeta .texto {
+  display: flex; flex-direction: column; gap: .1rem;
+  min-width: 0; flex: 1 1 12rem;
+}
+.juego-tarjeta .nombre {
+  font-weight: 800; font-size: var(--t-sm); line-height: 1.5;
   white-space: normal; overflow-wrap: break-word;
 }
-.app-tarjeta .des {
-  font-size: var(--app-texto); font-weight: 700; line-height: var(--app-lh);
-  color: var(--tinta-suave);
+.juego-tarjeta .desc {
+  font-size: var(--t-xs); line-height: 1.5; color: var(--tinta-suave);
   white-space: normal; overflow-wrap: break-word;
 }
-.app-insignia {
-  flex: 0 0 auto; margin-left: auto;
-  font-size: var(--app-insignia); font-weight: 800; line-height: var(--app-insignia-lh);
-  padding: 4.48px 9.6px; border-radius: 999px; white-space: nowrap;
-  background: rgba(31,191,117,.2); color: #9df0c4; border: 1px solid rgba(31,191,117,.45);
+.juego-tarjeta .insignia {
+  font-size: .75rem; font-weight: 800; line-height: 1.5;
+  padding: .28em .6em; border-radius: 999px;
+  background: rgba(31,191,117,.2); color: #9df0c4;
+  border: 1px solid rgba(31,191,117,.45);
+  white-space: nowrap; flex: 0 0 auto; margin-left: auto;
 }
-.app-insignia.sel { background: var(--amarillo); color: #3a2c00; border-color: rgba(252,209,22,.9); }
-.app-insignia.pronto {
+.juego-tarjeta .insignia.sel {
+  background: var(--amarillo); color: #3a2c00; border-color: rgba(252,209,22,.9);
+}
+.juego-tarjeta .insignia.pronto {
   background: rgba(255,255,255,.08); color: #b9ccd0; border-color: rgba(255,255,255,.2);
 }
 
-.app-acciones { display: flex; flex-direction: column; gap: 9px; }
-.tela.h .app-acciones { flex-direction: row; flex-wrap: wrap; }
-
-/* botones: MEDIDOS */
-.boton-grande {
-  display: block; width: 100%; text-align: center;
-  padding: 21.3333px 34.1333px;
-  border-radius: 12px; border: 0;
-  font-family: inherit; font-size: var(--app-texto); font-weight: 700; line-height: var(--app-lh);
-  cursor: pointer;
-}
-.tela.h .boton-grande { padding: 11.733px 34.1333px; }
-.boton-grande.oro { background: linear-gradient(180deg,#ffe066,#fcd116); color: #2a1f00; }
-.boton-grande.contorno {
-  background: transparent; border: 1px solid rgba(110,227,238,.45); color: var(--tu-100);
-}
-
-.app-pie {
-  display: flex; justify-content: space-between; align-items: center;
-  padding-top: 16px;
-  font-size: var(--app-pie); line-height: var(--app-pie-lh);
-  color: var(--tinta-suave);
+/* `.menu-pie`: linea arriba, empujado al fondo */
+.menu-pie {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  margin-top: auto; padding-top: 1rem;
+  border-top: 1px solid rgba(110,227,238,.22);
+  font-size: var(--t-sm); line-height: 1.5; color: var(--tinta-suave);
 }
 .punto-vivo {
-  width: 8px; height: 8px; border-radius: 50%; background: var(--ok);
-  display: inline-block; margin-right: 5px;
+  width: .6em; height: .6em; border-radius: 50%; background: var(--ok);
+  display: inline-block; box-shadow: 0 0 10px var(--ok); margin-right: .35em;
+}
+.punto-vivo.apagado { background: #6d8b90; box-shadow: none; }
+
+/* ---------- botones ----------
+   Base `button, .boton`: relleno .85em 1.4em, radio 12px, texto `--t-base`.
+   `.boton-grande`: relleno 1em 1.6em, ancho 100%. */
+button, .boton {
+  font: inherit; font-weight: 700; cursor: pointer;
+  border: 0; border-radius: var(--radio-sm);
+  padding: .85em 1.4em;
+  color: var(--tu-900);
+  background: linear-gradient(180deg, var(--tu-300), var(--tu-500));
+  box-shadow: 0 4px 0 var(--tu-700), var(--sombra);
+  touch-action: manipulation;
+}
+.boton-grande {
+  font-size: var(--t-base); padding: 1em 1.6em; width: 100%;
+}
+.boton-oro {
+  background: linear-gradient(180deg, #f7d95e, #d9a520);
+  color: #2a1f00;
+  box-shadow: 0 4px 0 #8a6a0f, var(--sombra);
+}
+.boton-contorno {
+  background: transparent; color: var(--tu-100);
+  border: 2px solid rgba(110,227,238,.55);
+  box-shadow: none; width: 100%;
+}
+
+/* ---------- tipografia de contenido ---------- */
+.tenue { color: var(--tinta-suave); }
+.chico { font-size: var(--t-sm); }
+.mini  { font-size: var(--t-xs); }
+.centro { text-align: center; }
+
+/* `.codigo-sala`: mono, `--t-3xl`, espaciado .18em, color raya */
+.codigo-sala {
+  font-family: "Courier New", monospace;
+  font-size: var(--t-3xl); font-weight: 800;
+  letter-spacing: .18em; color: var(--raya); text-align: center;
+  margin: 0;
 }
 
 /* ---------- formularios ---------- */
-.app-centro {
-  flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center;
-  gap: 16px; min-height: 0; min-width: 0;
-}
-.app-campo { display: flex; flex-direction: column; gap: 4px; min-width: 0; width: 100%; }
-.app-campo label {
-  font-size: var(--app-texto); line-height: var(--app-lh); font-weight: 700; color: var(--tu-100);
-}
-.app-campo input {
-  width: 100%;
-  padding: 17.0662px 21.3328px;
-  border-radius: 12px;
+.campo { display: flex; flex-direction: column; gap: .4rem; min-width: 0; width: 100%; }
+.campo label { font-size: var(--t-sm); font-weight: 700; color: var(--tu-100); line-height: 1.4; }
+input, textarea, select {
+  font: inherit; width: 100%;
+  padding: .8em 1em;
+  border-radius: var(--radio-sm);
   border: 2px solid rgba(110,227,238,.28);
   background: rgba(0,0,0,.28);
   color: var(--tinta);
-  font-family: inherit; font-size: var(--app-texto); line-height: var(--app-lh);
 }
-.tela.h .app-campo input { padding: 8.5331px 21.3328px; }
-.app-campo input::placeholder { color: #6d8b90; }
+input::placeholder { color: #6d8b90; }
 
-.app-aviso {
-  border-radius: 12px; padding: 10px 16px;
-  font-size: var(--app-texto); line-height: var(--app-lh);
-  text-align: center;
+/* `.aviso`: relleno .8em 1.1em, radio 12px, `--t-sm`, peso 700 */
+.aviso {
+  padding: .8em 1.1em; border-radius: var(--radio-sm);
+  font-weight: 700; font-size: var(--t-sm); line-height: 1.4;
 }
-.app-aviso.espera { background: rgba(240,163,58,.14); border: 1px solid rgba(240,163,58,.5); color: #ffd39b; }
-.app-aviso.err { background: rgba(224,72,60,.14); border: 1px solid rgba(224,72,60,.5); color: #ffc9c4; }
-.app-aviso.info { background: rgba(111,227,238,.12); border: 1px solid rgba(111,227,238,.4); color: var(--tu-100); }
+.aviso.espera { background: rgba(240,163,58,.14); border: 1px solid rgba(240,163,58,.5); color: #ffd39b; }
+.aviso.err    { background: rgba(224,72,60,.14);  border: 1px solid rgba(224,72,60,.5);  color: #ffc9c4; }
+.aviso.info   { background: rgba(111,227,238,.12); border: 1px solid rgba(111,227,238,.4); color: var(--tu-100); }
 
-.app-volver {
-  align-self: flex-start;
-  font-size: var(--app-texto); font-weight: 700;
-  padding: 8px 16px; border-radius: 10px;
-  border: 1px solid rgba(110,227,238,.45); color: var(--tu-100); background: transparent;
-  font-family: inherit;
-}
-
-/* ---------- rotulo del juego ---------- */
-.app-rotulo-juego {
-  display: flex; flex-direction: column; align-items: flex-end; gap: 2px; margin-left: auto;
-}
-.app-rotulo-juego .rot {
-  font-size: var(--app-insignia); line-height: var(--app-insignia-lh);
-  font-weight: 600; color: var(--tinta-suave);
-}
-.app-rotulo-juego .nom {
-  font-size: var(--app-texto); line-height: var(--app-lh);
-  font-weight: 800; text-align: right; max-width: 14ch;
+/* `.boton-salir`: arriba a la izquierda, pequeño, contorno cian */
+.boton-salir {
+  flex: 0 0 auto; align-self: flex-start;
+  font: inherit; font-size: var(--t-xs); font-weight: 700;
+  padding: .4em .7em; min-height: 2.2em;
+  border: 2px solid rgba(110,227,238,.45);
+  border-radius: var(--radio-sm);
+  background: transparent; color: var(--tu-100);
+  box-shadow: none; cursor: pointer;
 }
 
 /* ---------- sala de espera ---------- */
-.app-jugadores { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
-.tela.h .app-jugadores { justify-content: flex-start; align-content: flex-start; }
-.app-jug {
-  display: flex; align-items: center; gap: 6px;
-  padding: 6px 14px; border-radius: 999px;
-  background: rgba(255,255,255,.07); border: 1px solid rgba(110,227,238,.22);
-  font-size: var(--app-texto); line-height: var(--app-lh); font-weight: 700; white-space: nowrap;
-}
-.app-jug.yo { border-color: var(--tu-300); background: rgba(46,196,212,.15); }
-.app-jug .pt { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); flex: 0 0 auto; }
-
-.orbe-espera { display: flex; flex-direction: column; align-items: center; gap: 4px; padding-top: 5px; }
-@media (min-aspect-ratio: 1/1) { .orbe-espera { align-items: flex-start; } }
+.orbe-espera { display: flex; flex-direction: column; align-items: center; gap: .25rem; padding-top: .3rem; }
 .orbe-espera canvas { display: block; }
 .orbe-espera .orbe-txt {
-  font-size: var(--app-insignia); line-height: var(--app-insignia-lh);
-  color: var(--tinta-suave); text-align: center; max-width: 26ch;
+  font-size: var(--t-xs); line-height: 1.3; color: var(--tinta-suave);
+  text-align: center; max-width: 26ch;
 }
 
-/* ---------- ronda ---------- */
-.jug { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; padding: 10px 13px 11px; gap: 6px; }
-.barra { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex: 0 0 auto; }
-.barra .nom { font-weight: 800; font-size: var(--app-texto); line-height: var(--app-lh); }
-.barra .pts {
-  background: rgba(252,209,22,.18); border: 1px solid rgba(252,209,22,.45); color: #ffe58a;
-  border-radius: 999px; padding: 2px 10px; font-weight: 800;
-  font-size: var(--app-insignia); line-height: var(--app-insignia-lh);
+/* ---------- ronda del participante ---------- */
+.barra-jugador {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: .75rem; font-size: var(--t-sm); color: var(--tinta-suave); flex: 0 0 auto;
 }
-.salir {
-  font-size: var(--app-insignia); line-height: var(--app-insignia-lh); font-weight: 700;
-  padding: 6px 11px; border-radius: 9px;
-  border: 1px solid rgba(110,227,238,.4); color: var(--tu-100); background: transparent;
-  font-family: inherit;
+.nombre-barra {
+  flex: 1 1 auto; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-weight: 700;
 }
-.cuerpo { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; gap: 5px; }
-.tela.h .cuerpo { flex-direction: row; align-items: stretch; gap: 11px; }
-.zona { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: 3px; overflow: hidden; }
-.tela.h .zona { min-width: 0; }
-.ref { font-size: var(--app-texto); line-height: var(--app-lh); font-weight: 800; color: var(--tinta-suave); flex: 0 0 auto; }
-.versiculo {
-  font-size: 32px; line-height: 41px; font-weight: 600; margin: 0;
-  flex: 1 1 auto; display: flex; align-items: center;
-}
-.hueco { color: var(--raya); border-bottom: 3px solid var(--raya); padding: 0 2px; }
-.pie-j { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 6px; min-height: 0; }
-.tela.h .pie-j { flex: 0 0 34%; justify-content: center; }
+.puntos { font-weight: 800; font-variant-numeric: tabular-nums; color: var(--raya); }
 
-.reloj { display: flex; align-items: center; gap: 10px; width: 100%; justify-content: center; }
-.reloj .t { font-family: ui-monospace,monospace; font-size: var(--app-texto); font-weight: 800; color: var(--amarillo); }
-.barra-t { flex: 1 1 auto; max-width: 144px; height: 7px; border-radius: 999px; background: rgba(255,255,255,.14); overflow: hidden; }
-.barra-t i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg,#ffe066,#fcd116); }
+.cuerpo-jugador {
+  flex: 1 1 auto; min-height: 0;
+  display: flex; flex-direction: column; gap: .6rem;
+}
+.tela.h .cuerpo-jugador { flex-direction: row; align-items: stretch; gap: .8rem; }
+.zona-versiculo {
+  flex: 1 1 auto; min-height: 0;
+  display: flex; flex-direction: column; gap: .35rem;
+}
+.tela.h .zona-versiculo { min-width: 0; }
+.pie-jugador { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: .5rem; min-height: 0; }
+.tela.h .pie-jugador { flex: 0 0 clamp(9rem, 26%, 16rem); min-width: 0; justify-content: center; width: auto; }
 
+/* `.jugador-versiculo .ref`: `--t-xs`, peso 800, tenue, SIN mayusculas */
+.ref {
+  display: block; font-size: var(--t-xs); font-weight: 800;
+  color: var(--tinta-suave); text-transform: none; flex: 0 0 auto;
+}
+
+/* reloj: barra elastica + segundos a la derecha */
+.reloj-ronda { display: flex; align-items: center; gap: .6rem; width: 100%; }
+.barra-tiempo {
+  flex: 1 1 auto; height: .5rem; border-radius: 999px;
+  background: rgba(255,255,255,.14); overflow: hidden;
+}
+.barra-tiempo i { display: block; height: 100%; border-radius: 999px;
+  background: linear-gradient(90deg,#ffe066,#fcd116); }
+.reloj-ronda .reloj {
+  flex: 0 0 auto; font-variant-numeric: tabular-nums;
+  font-weight: 800; min-width: 3.2ch; text-align: right;
+  font-family: ui-monospace, monospace; color: var(--amarillo);
+}
+
+/* `.boton-ok`: TECLA. Circulo por aspect-ratio, negro, texto blanco en
+   MAYUSCULAS. Medido en styles.css linea 2157. */
 .boton-ok {
-  display: grid; place-items: center; width: 100%;
-  max-width: min(100%, 248px); aspect-ratio: 1/1; margin-inline: auto; border-radius: 50%;
-  font-family: inherit; font-weight: 800; font-size: 26px; line-height: 27px; text-align: center; padding: 10px;
-  background: radial-gradient(circle at 35% 30%, rgba(255,224,102,.30), rgba(252,209,22,.18) 60%, rgba(217,169,0,.12));
-  color: #ffe9a3; border: 2px solid rgba(252,209,22,.55);
-  box-shadow: 0 8px 24px rgba(252,209,22,.18);
+  flex: 1 1 auto; min-height: 0; align-self: center;
+  width: auto; max-width: 100%; max-height: min(58vh, 22rem);
+  aspect-ratio: 1; border-radius: 50%; margin-inline: auto;
+  border: 3px solid rgba(255,255,255,.22); padding: .6em;
+  font: inherit; font-size: var(--t-lg); font-weight: 800;
+  letter-spacing: .06em; text-transform: uppercase;
+  color: #fff;
+  background: linear-gradient(180deg, #242424 0%, #000 62%, #000 100%);
+  box-shadow: inset 0 2px 0 rgba(255,255,255,.18),
+              0 9px 0 #000, 0 16px 34px rgba(0,0,0,.65);
+  display: grid; place-items: center; text-align: center; cursor: pointer;
 }
-.tela.h .boton-ok { max-width: 100%; max-height: 100%; height: 100%; aspect-ratio: auto; border-radius: 22px; font-size: 24px; }
-.boton-ok.bloq {
-  background: rgba(255,255,255,.06); color: #9fb7bb;
-  border: 2px solid rgba(255,255,255,.16); box-shadow: none; font-size: 18px;
+.tela.h .boton-ok { max-height: 100%; max-width: 100%; }
+.boton-ok.bloqueado, .boton-ok:disabled {
+  cursor: default; opacity: .5;
+  background: linear-gradient(180deg, #1a1a1a, #0d0d0d);
+  border-color: rgba(255,255,255,.1);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 2px 0 #000;
 }
-.turno { text-align: center; font-size: var(--app-insignia); line-height: var(--app-insignia-lh); color: #ffe58a; font-weight: 800; }
+
+/* `.turno`: aviso cian con brillo */
+.turno {
+  background: rgba(111,227,238,.2); border: 1px solid var(--tu-100);
+  color: #eafdff; font-size: var(--t-base);
+  box-shadow: 0 0 22px rgba(111,227,238,.25);
+  border-radius: var(--radio-sm); padding: .6em 1em; text-align: center;
+}
 
 /* ---------- televisor ---------- */
-.tv-in { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; padding: 14px 21px 16px; gap: 8px; }
-.tv-top { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex: 0 0 auto; }
-.tv-cuerpo { flex: 1 1 auto; display: flex; align-items: center; min-height: 0; overflow: hidden; }
-.tv-verso { font-size: 48px; line-height: 60px; font-weight: 700; margin: 0; flex: 1 1 auto; display: flex; align-items: center; }
-.tv-pie { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex: 0 0 auto; }
-.tv-codigo {
-  font-family: ui-monospace,monospace; font-size: 42px; font-weight: 900; letter-spacing: .2em;
-  color: var(--amarillo); text-align: center; line-height: 1;
+.tv-top {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem; flex: 0 0 auto; width: 100%;
 }
+.tv-top .ref { text-align: left; min-width: 0; color: var(--tinta-suave); }
+.cuerpo-tv {
+  flex: 1 1 auto; display: flex; align-items: center; justify-content: center;
+  min-height: 0; text-align: center;
+}
+.pie-tv {
+  flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: .5rem;
+}
+
+/* `.qr-caja`: blanca, relleno .5rem, radio 14px, sombra */
 .qr-caja {
-  width: 96px; height: 96px; background: #fff; border-radius: 8px; display: grid; place-items: center;
-  font-family: ui-monospace,monospace; font-weight: 800; color: #000; font-size: 9px;
-  text-align: center; line-height: 1.1; padding: 6px; margin: 0 auto;
+  background: #fff; padding: .5rem; border-radius: 14px;
+  line-height: 0; box-shadow: var(--sombra);
+  max-width: 190px; margin-inline: auto;
 }
+.qr-caja .dibujo {
+  width: 110px; height: 110px; display: grid; place-items: center;
+  font-family: ui-monospace, monospace; font-weight: 800; color: #000;
+  font-size: 10px; line-height: 1.15; text-align: center; padding: 6px;
+}
+
+/* `.sala-cabecera`: rejilla de dos columnas, QR a la izquierda */
+.sala-cabecera {
+  display: grid; grid-template-columns: clamp(96px, 30%, 340px) minmax(0, 1fr);
+  align-items: center; gap: .8rem;
+}
+
+/* `.lista-jugadores`: la lista del presentador */
+.lista-jugadores {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-wrap: wrap; gap: .4rem;
+}
+.lista-jugadores li {
+  display: flex; align-items: center; gap: .4rem;
+  padding: .28em .7em; border-radius: 999px;
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(110,227,238,.22);
+  font-size: var(--t-sm); font-weight: 700; white-space: nowrap;
+}
+
+/* =====================================================================
+   Ayudas de composicion de los artboards
+   ---------------------------------------------------------------------
+   NO son clases de la app: son envoltorios para dibujar la pantalla dentro
+   del marco del canvas. Los valores vienen de las clases reales que
+   sustituyen (`.crecer`, `.columna`, `.centro`, `.campo`, `.rotulo-juego`).
+   ===================================================================== */
+
+.app-centro {
+  flex: 1 1 auto; display: flex; flex-direction: column;
+  justify-content: center; min-height: 0; min-width: 0; gap: 1rem;
+}
+.app-campo { display: flex; flex-direction: column; gap: .4rem; min-width: 0; width: 100%; }
+.app-campo label { font-size: var(--t-sm); font-weight: 700; color: var(--tu-100); }
+
+/* el rotulo «Juego:» + nombre, arriba a la derecha */
+.app-rotulo-juego {
+  display: flex; flex-direction: column; align-items: flex-end;
+  gap: .1em; margin-left: auto; min-width: 0; text-align: right;
+}
+.app-rotulo-juego .rot {
+  font-size: var(--t-xs); font-weight: 600; color: var(--tinta-suave); line-height: 1.1;
+}
+.app-rotulo-juego .nom {
+  font-size: var(--t-sm); font-weight: 800; line-height: 1.2;
+  max-width: 14ch; white-space: normal; overflow-wrap: break-word;
+}
+
+/* la columna de la sala de espera del participante */
+.esp-main {
+  flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center;
+  gap: 1rem; min-height: 0; padding: 1rem; text-align: center;
+}
+.esp-titulo { font-size: var(--t-xl); line-height: 1.1; font-weight: 800; margin: 0; }
+.esp-nombre {
+  font-family: "Courier New", monospace; font-size: var(--t-3xl); font-weight: 800;
+  letter-spacing: .18em; color: var(--raya); margin: 0;
+}
+.esp-puntos { font-size: var(--t-xs); line-height: 1.5; color: var(--tinta-suave); margin: 0; }
+
+/* las fichas de participante de la lista */
+.jug-yo {
+  display: flex; align-items: center; gap: .4rem;
+  padding: .28em .7em; border-radius: 999px;
+  background: rgba(46,196,212,.15);
+  border: 1px solid var(--tu-300);
+  font-size: var(--t-sm); font-weight: 700; white-space: nowrap;
+}
+.jug-yo .pt { width: .45rem; height: .45rem; border-radius: 50%; background: var(--ok); }
+.jug .pt { width: .45rem; height: .45rem; border-radius: 50%; background: var(--ok); }
+
+/* ---------- piezas de la ronda y del televisor ---------- */
+
+/* el versiculo y sus huecos */
+.versiculo {
+  flex: 1 1 auto; min-height: 0; margin: 0;
+  display: flex; align-items: center;
+  font-size: 32px; line-height: 1.28; font-weight: 600;
+}
+.hueco {
+  color: var(--raya); border-bottom: .1em solid var(--raya); padding: 0 .08em;
+}
+
+/* la cifra del reloj dentro de `.reloj-ronda` */
+.reloj-ronda .t, .reloj .t {
+  font-family: ui-monospace, monospace; font-weight: 800;
+  color: var(--amarillo); font-variant-numeric: tabular-nums;
+}
+.reloj { display: flex; align-items: center; gap: .6rem; width: 100%; }
+
+/* Aviso neutro: el turno de otro, sin gritar */
+.aviso-neutro {
+  border-radius: var(--radio-sm); padding: .5em 1em; text-align: center;
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14);
+  font-size: var(--t-sm); font-weight: 700; color: var(--tinta-suave);
+}
+
+/* el televisor: columna, con el texto grande y el pie aparte */
+.tv-in {
+  flex: 1 1 auto; display: flex; flex-direction: column;
+  min-height: 0; padding: 14px 21px 16px; gap: .6rem; width: 100%;
+}
+.tv-cuerpo {
+  flex: 1 1 auto; display: flex; align-items: center; justify-content: center;
+  min-height: 0; text-align: center; overflow: hidden;
+}
+.tv-verso {
+  flex: 1 1 auto; margin: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 44px; line-height: 1.24; font-weight: 700; text-align: center;
+}
+.tv-pie {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem; width: 100%;
+}
+.tv-codigo {
+  font-family: "Courier New", monospace; font-size: 42px; font-weight: 800;
+  letter-spacing: .18em; color: var(--raya); text-align: center; line-height: 1;
+}
+
+/* modificadores que los artboards usan junto a `.boton-grande` */
+.boton-grande.oro {
+  background: linear-gradient(180deg, #f7d95e, #d9a520);
+  color: #2a1f00;
+  box-shadow: 0 4px 0 #8a6a0f, var(--sombra);
+}
+.boton-grande.contorno {
+  background: transparent; color: var(--tu-100);
+  border: 2px solid rgba(110,227,238,.55); box-shadow: none;
+}
+
+/* la placa del artboard: fondo de la app */
+.placa-app { background: var(--fondo); color: var(--tinta); }

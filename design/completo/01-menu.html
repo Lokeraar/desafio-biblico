@@ -25,24 +25,23 @@
   .nota.bien{border-left:4px solid #1fbf75}
   .nota.mal{border-left:4px solid #e0483c}
   .nota.duda{border-left:4px solid #f0a33a}
+  /* EL MARCO MUESTRA LA PAGINA ENTERA, no un recorte.
+     Christian: «ni siquiera deberia haber un primer pantallazo sino
+     directamente mostrar la pagina cargada». El marco crece con el contenido:
+     se ve todo lo que tiene el menu, y el texto dice cuanto mide de verdad
+     frente a la ventana del telefono. */
+  .tela-larga{
+    width:390px; min-height:844px; height:auto;
+    border-radius:20px; border:1px solid rgba(110,227,238,.3);
+    background:#0b1a1d; box-shadow:0 14px 40px rgba(0,0,0,.5);
+    font-size:var(--app-texto); line-height:var(--app-lh); color:var(--tinta);
+    font-family:"Nunito","Segoe UI",system-ui,-apple-system,sans-serif;
+    display:flex; flex-direction:column; overflow:hidden;
+  }
+  .tela-larga .app-lienzo{flex-direction:column}
   code{font-family:ui-monospace,monospace;font-size:.9em;background:rgba(111,227,238,.12);
     padding:.08em .35em;border-radius:5px;color:#6fe3ee}
 
-  /* .menu-juego-actual y .menu-seccion, como en la app */
-  .menu-juego-actual{
-    display:flex;align-items:baseline;justify-content:center;gap:.4em;
-    margin:0;font-size:var(--app-texto);line-height:var(--app-lh);
-  }
-  .menu-juego-actual .rotulo{
-    font-size:var(--app-insignia);line-height:var(--app-insignia-lh);
-    font-weight:800;letter-spacing:.06em;color:var(--tu-100);
-    font-family:inherit;margin:0;text-transform:none;
-  }
-  .menu-juego-actual .valor{font-weight:800;color:var(--amarillo)}
-  .menu-seccion{
-    margin:8px 0 0;font-size:var(--app-insignia);line-height:var(--app-insignia-lh);
-    font-weight:800;letter-spacing:.08em;color:#a9c6ca;text-transform:none;
-  }
 </style>
 </head>
 <body>
@@ -55,90 +54,60 @@
     botones después de las tarjetas: estaban mal colocados.</p>
   </header>
 
-  <div class="h2">Vertical — 390 × 844, lo que se ve al abrir
-    <small>Orden real: la portada, el título y los botones. Las tarjetas quedan más abajo.</small>
+  <div class="h2">Vertical — 390 × 844
+    <small>La página cargada completa, con la línea marcando dónde termina la ventana del teléfono.
+    Lo que queda por debajo se alcanza deslizando.</small>
   </div>
 
   <div class="fila">
     <div class="marco">
-      <div class="rotulo">390×844 · primer pantallazo</div>
-      <div class="tela v">
-        <div class="app-lienzo">
-          <div class="app-portada">
+      <div class="rotulo">390×844 · la página cargada entera</div>
+      <div class="tela-larga" style="position:relative">
+        <div class="menu-lienzo">
+          <div class="portada">
             <div class="arte">DESAFÍO BÍBLICO 2026 · 2 CORINTIOS</div>
           </div>
-          <div class="app-cuerpo">
-            <div class="app-titulo">🏆 DESAFÍO BÍBLICO ⭐</div>
+          <div class="menu-cuerpo">
+            <div class="menu-titulo">🏆 DESAFÍO BÍBLICO ⭐</div>
             <div style="text-align:center;color:#a9c6ca">2 Corintios · Concurso de preguntas</div>
             <p class="menu-juego-actual">
               <span class="rotulo">JUEGO:</span>
               <span class="valor">Completar el versículo</span>
             </p>
-            <div class="app-acciones">
-              <button class="boton-grande oro">🎤 Soy presentador</button>
-              <button class="boton-grande contorno">🙋 Jugar como participante</button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div style="max-width:390px;margin-top:.6rem">
-        <div class="nota bien" style="margin:0">
-          <h3>Así se ve en el teléfono</h3>
-          <p>Es la captura real: la portada, el título, el lema, «JUEGO: Completar el versículo» y
-          los dos primeros botones. «Pantalla para el televisor» y «Configuraciones» quedan por
-          debajo del borde, y se llega deslizando.</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="marco">
-      <div class="rotulo">390×844 · completo, con las tres tarjetas</div>
-      <div class="tela v">
-        <div class="app-lienzo">
-          <div class="app-portada">
-            <div class="arte">DESAFÍO BÍBLICO 2026 · 2 CORINTIOS</div>
-          </div>
-          <div class="app-cuerpo">
-            <div class="app-titulo">🏆 DESAFÍO BÍBLICO ⭐</div>
-            <div style="text-align:center;color:#a9c6ca">2 Corintios · Concurso de preguntas</div>
-            <p class="menu-juego-actual">
-              <span class="rotulo">JUEGO:</span>
-              <span class="valor">Completar el versículo</span>
-            </p>
-            <div class="app-acciones">
+            <div class="menu-acciones">
               <button class="boton-grande oro">🎤 Soy presentador</button>
               <button class="boton-grande contorno">🙋 Jugar como participante</button>
               <button class="boton-grande contorno">📺 Pantalla para el televisor</button>
               <button class="boton-grande contorno">⚙️ Configuraciones</button>
             </div>
             <h2 class="menu-seccion">2 JUEGOS DISPONIBLES</h2>
-            <div class="app-juegos">
-              <button class="app-tarjeta">
-                <span class="ico">🎯</span>
-                <span class="txt">
-                  <span class="nom">Selección simple</span>
-                  <span class="des">Una pregunta, 4 opciones y una sola correcta.</span>
+            <div class="menu-juegos">
+              <button class="juego-tarjeta">
+                <span class="icono">🎯</span>
+                <span class="texto">
+                  <span class="nombre">Selección simple</span>
+                  <span class="desc">Una pregunta, 4 opciones y una sola correcta.</span>
                 </span>
-                <span class="app-insignia">Elegible</span>
+                <span class="insignia">Elegible</span>
               </button>
-              <button class="app-tarjeta elegido">
-                <span class="ico">📖</span>
-                <span class="txt">
-                  <span class="nom">Completar el versículo</span>
-                  <span class="des">Un versículo con palabras tapadas. Pulsa para tomar el turno.</span>
+              <button class="juego-tarjeta elegido">
+                <span class="icono">📖</span>
+                <span class="texto">
+                  <span class="nombre">Completar el versículo</span>
+                  <span class="desc">Un versículo con palabras tapadas. Pulsa para tomar el turno.</span>
                 </span>
-                <span class="app-insignia sel">Seleccionado</span>
+                <span class="insignia sel">Seleccionado</span>
               </button>
-              <button class="app-tarjeta">
-                <span class="ico">💬</span>
-                <span class="txt">
-                  <span class="nom">Respuesta abierta</span>
-                  <span class="des">El presentador lee y cada quien escribe.</span>
+              <button class="juego-tarjeta">
+                <span class="icono">💬</span>
+                <span class="texto">
+                  <span class="nombre">Respuesta abierta</span>
+                  <span class="desc">El presentador lee y cada quien escribe.</span>
                 </span>
-                <span class="app-insignia pronto">Pronto</span>
+                <span class="insignia pronto">Pronto</span>
               </button>
             </div>
-            <div class="app-pie"><span>v1.0</span><span><span class="punto-vivo"></span>Con conexión</span></div>
+            <div class="menu-pie"><span>v1.0</span><span><span class="punto-vivo"></span>Con conexión</span></div>
           </div>
         </div>
       </div>
@@ -188,47 +157,47 @@
     <div class="marco">
       <div class="rotulo">844×390 · completo</div>
       <div class="tela h">
-        <div class="app-lienzo">
-          <div class="app-portada">
+        <div class="menu-lienzo">
+          <div class="portada">
             <div class="arte">DESAFÍO BÍBLICO<br>2026<br>2 CORINTIOS</div>
           </div>
-          <div class="app-cuerpo">
-            <div class="app-titulo">🏆 DESAFÍO BÍBLICO ⭐</div>
+          <div class="menu-cuerpo">
+            <div class="menu-titulo">🏆 DESAFÍO BÍBLICO ⭐</div>
             <p class="menu-juego-actual">
               <span class="rotulo">JUEGO:</span>
               <span class="valor">Completar el versículo</span>
             </p>
-            <div class="app-acciones">
+            <div class="menu-acciones">
               <button class="boton-grande oro">🎤 Soy presentador</button>
               <button class="boton-grande contorno">🙋 Jugar como participante</button>
               <button class="boton-grande contorno">📺 Pantalla para el televisor</button>
               <button class="boton-grande contorno">⚙️ Configuraciones</button>
             </div>
             <h2 class="menu-seccion">2 JUEGOS DISPONIBLES</h2>
-            <div class="app-juegos">
-              <button class="app-tarjeta">
-                <span class="ico">🎯</span>
-                <span class="txt">
-                  <span class="nom">Selección simple</span>
-                  <span class="des">Una pregunta, 4 opciones y una sola correcta.</span>
+            <div class="menu-juegos">
+              <button class="juego-tarjeta">
+                <span class="icono">🎯</span>
+                <span class="texto">
+                  <span class="nombre">Selección simple</span>
+                  <span class="desc">Una pregunta, 4 opciones y una sola correcta.</span>
                 </span>
-                <span class="app-insignia">Elegible</span>
+                <span class="insignia">Elegible</span>
               </button>
-              <button class="app-tarjeta elegido">
-                <span class="ico">📖</span>
-                <span class="txt">
-                  <span class="nom">Completar el versículo</span>
-                  <span class="des">Un versículo con palabras tapadas. Pulsa para tomar el turno.</span>
+              <button class="juego-tarjeta elegido">
+                <span class="icono">📖</span>
+                <span class="texto">
+                  <span class="nombre">Completar el versículo</span>
+                  <span class="desc">Un versículo con palabras tapadas. Pulsa para tomar el turno.</span>
                 </span>
-                <span class="app-insignia sel">Seleccionado</span>
+                <span class="insignia sel">Seleccionado</span>
               </button>
-              <button class="app-tarjeta">
-                <span class="ico">💬</span>
-                <span class="txt">
-                  <span class="nom">Respuesta abierta</span>
-                  <span class="des">El presentador lee y cada quien escribe.</span>
+              <button class="juego-tarjeta">
+                <span class="icono">💬</span>
+                <span class="texto">
+                  <span class="nombre">Respuesta abierta</span>
+                  <span class="desc">El presentador lee y cada quien escribe.</span>
                 </span>
-                <span class="app-insignia pronto">Pronto</span>
+                <span class="insignia pronto">Pronto</span>
               </button>
             </div>
           </div>
@@ -260,24 +229,24 @@
     <div class="marco">
       <div class="rotulo">390×844 · sin red, con lo guardado</div>
       <div class="tela v">
-        <div class="app-lienzo">
-          <div class="app-portada">
+        <div class="menu-lienzo">
+          <div class="portada">
             <div class="arte">DESAFÍO BÍBLICO 2026 · 2 CORINTIOS</div>
           </div>
-          <div class="app-cuerpo">
-            <div class="app-titulo">🏆 DESAFÍO BÍBLICO ⭐</div>
+          <div class="menu-cuerpo">
+            <div class="menu-titulo">🏆 DESAFÍO BÍBLICO ⭐</div>
             <p class="menu-juego-actual">
               <span class="rotulo">JUEGO:</span>
               <span class="valor">Selección simple</span>
             </p>
-            <div class="app-aviso info">
+            <div class="aviso info">
               Sin conexión. Puedes jugar con lo que hay guardado: 1 juego y 25 preguntas.
             </div>
-            <div class="app-acciones">
+            <div class="menu-acciones">
               <button class="boton-grande oro">🎤 Soy presentador</button>
               <button class="boton-grande contorno">🙋 Jugar como participante</button>
             </div>
-            <div class="app-pie"><span>v1.0</span><span>Sin conexión</span></div>
+            <div class="menu-pie"><span>v1.0</span><span>Sin conexión</span></div>
           </div>
         </div>
       </div>
