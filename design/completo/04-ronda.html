@@ -54,6 +54,16 @@
   /* Acostado el pie tiene ancho propio y el boton no pide mas alto: es el
      recurso escaso (`styles.css:2008`). */
   .tela.h .pie-jugador{flex:0 0 auto;width:34%;justify-content:center}
+  /* EL RELOJ DEL TELEVISOR NECESITA SU BARRA VISIBLE.
+     Mismo defecto que tenia `05-presentador`: `base-app.css:487` trae
+     `.reloj { width: 100% }`, y dentro de `.reloj-ronda` ese 100 % se come todo
+     el ancho, asi que la barra —que va con `flex: 1 1 auto`— colapsa a CERO.
+     Aqui se veia el «9 s» solo, como si la barra no existiera. Un elemento de
+     ancho cero no se distingue de uno ausente.
+     En la app real `.reloj` no lleva `width` (styles.css:360) y dentro del reloj
+     de ronda va con `flex: 0 0 auto` (styles.css:3129). Se copia ese valor. */
+  .tela.tv .reloj-ronda .reloj{width:auto;flex:0 0 auto}
+  .tela.tv .reloj-ronda .barra-tiempo{flex:1 1 auto;min-width:0}
   .aviso-neutro{
     border-radius:12px;padding:6px 14px;text-align:center;
     background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);
