@@ -169,6 +169,26 @@ Detalle completo de la metodología: skill `text-fitting`.
 
 ---
 
+## Sin scroll: cuándo sí y cuándo no
+
+**Regla dura, declarada por Christian el 21/11/2026.** La prohibición de scroll
+no es absoluta. Él lo dijo así: «la limitación de no usar scroll va para textos
+que podrían fácilmente caber en las dimensiones acordadas, pero si el contenido
+ya de verdad es muy largo, entonces sí tiene permitido usar scroll».
+
+Dicho de otro modo, la pregunta no es «¿hay scroll?» sino **«¿este contenido
+podría haber cabido y no cabe por cómo lo maqueté?»**:
+
+| Contenido | Scroll | Qué se hace |
+|---|---|---|
+| Fijo y corto: un versículo, un formulario, un botón, un aviso | **No** | Se ajusta la letra, se aprieta el relleno, se reparte en columnas. Si aun así no cabe, es un defecto de maquetación. |
+| Crece con los datos: lista de temas, de preguntas, de versículos | **Sí** | La lista se desplaza **dentro de su caja**. Lo incorrecto aquí es que el contenedor crezca y empuje el resto. |
+
+Un cero de scroll conseguido escondiendo texto (`display: none`) o recortándolo
+no cuenta: es peor que el scroll, porque pierde información en silencio.
+
+---
+
 ## Supabase
 
 La API de administración se usa con `POST

@@ -2480,6 +2480,22 @@ body.tv .opciones { grid-template-columns: 1fr; }
     overscroll-behavior: contain;
   }
 
+  /* La lista de administracion toma todo el alto que le deje el modal, en vez
+     de quedarse en 52vh (52vh de 390 son 203 px: con dos preguntas ya pedia
+     scroll interno). Y SIEMPRE con scroll propio: la lista de TEMAS es un
+     `<ul>` sin overflow, asi que al quitarle el tope de alto se derramaba
+     fuera de su caja y tapaba «Cerrar». Medido: contenido de 338 px en una
+     caja de 153, con tres temas y el modal entero en 382.
+     Toma el alto que sobra y lo que no entra se desplaza DENTRO de la lista. */
+  .modal { display: flex; flex-direction: column; }
+  .modal > .lista-admin {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none !important;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
   .modal h2 { font-size: var(--t-lg); margin: 0; }
   .modal p  { margin: 0; }
   .modal .campo label { font-size: var(--t-xs); }
