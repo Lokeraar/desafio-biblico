@@ -751,6 +751,43 @@ export const admin = {
   },
 
   /**
+   * Las salas abiertas ahora mismo, para poder cerrarlas desde el escritorio.
+   *
+   * Se pide con la clave maestra porque la lista trae los codigos de sala de
+   * otras personas: con un codigo se entra a una partida. No es publica.
+   */
+  async salasAbiertas(clave) {
+    const { dato, error } = await rpc('admin_rooms_open', { p_key: clave });
+    return error ? { error } : { salas: Array.isArray(dato) ? dato : [] };
+  },
+
+  /**
+   * Cierra UNA sala por su codigo.
+   *
+   * La clave va primero a proposito: el servidor la comprueba antes de tocar
+   * nada. Si se cerrara y despues se validara, una clave equivocada ya habria
+   * cortado la partida de otra persona.
+   */
+  async cerrarSalaPorCodigo(clave, codigo) {
+    const { dato, error } = await rpc('admin_close_room_by_code', {
+      p_key: clave,
+      p_code: codigo
+    });
+    return error ? { error } : { resultado: dato ?? null };
+  },
+
+  /**
+   * Cierra TODAS las salas abiertas de una vez.
+   *
+   * Devuelve cuantas cerro de verdad. Cero es una respuesta valida y
+   * distinta de un error: dice «no habia ninguna», que es informacion util.
+   */
+  async cerrarTodasLasSalas(clave) {
+    const { dato, error } = await rpc('admin_close_all_rooms', { p_key: clave });
+    return error ? { error } : { resultado: dato ?? null };
+  },
+
+  /**
    * El lema y la portada del menú. Público: se lee sin clave.
    *
    * Cualquier campo en `null` significa «todavía no se cambió», y la app usa

@@ -170,8 +170,13 @@ t(/if\s*\(\s*hayNube\s*&&\s*!\s*app\.clavePreguntada\s*\)/.test(codigo),
 
 // 10. Configuraciones recibe si hay CLAVE, no si hay nube. Pasaba `hayNube`,
 //     y la pantalla ofrecia «Establecer» donde debia decir «Cambiar».
-t(/vistaConfig\(\s*\{\s*hayClave:\s*app\.claveConfigurada\s*===\s*true\s*\}\s*\)/.test(codigo),
-  'vistaConfig recibe hayClave del servidor, no hayNube');
+/* La llamada se parte en varias lineas para pasar tambien las salas, asi que
+   no se exige que este en una sola: se busca `hayClave:` con el dato del
+   servidor, y que NO venga de `hayNube`. */
+t(/hayClave:\s*app\.claveConfigurada\s*===\s*true/.test(codigo),
+  'vistaConfig recibe hayClave del servidor');
+t(!/hayClave:\s*hayNube/.test(codigo),
+  'y no recibe hayNube, que era el defecto');
 
 /* 11. CERRAR LA PUERTA TIENE QUE DEJAR SALIR.
     Si se llego con `#/host` escrito a mano, el hash sigue siendo `#/host`
@@ -195,6 +200,29 @@ t(/\bacceso:\s*\{/.test(ui),
     local. La clave vive en el servidor; sin servidor, manda el modo local. */
 t(/function\s+puedeIrA[\s\S]{0,700}?if\s*\(\s*!\s*hayNube\s*\)\s*return\s+true/.test(codigo),
   'sin nube la puerta no se aplica: el modo local conserva su panel');
+
+/* 14. LAS SALAS: TRES ESTADOS, NO DOS.
+    Si una consulta fallida dejara `salasAbiertas` en una lista vacia, la
+    pantalla diria «no hay ninguna sala abierta» cuando la verdad es «no se
+    pudo preguntar». Una sala olvidada se quedaria viva toda la noche y nadie
+    se enteraria. El fallo tiene que dejar `null`, que se pinta distinto. */
+/* OJO CON COMO SE ESCRIBE ESTA COMPROBACION.
+   La primera version era `cargarSalas[...]{0,900}?if (error) {...} = null` y
+   NO detectaba el defecto: el cuantificador se deslizaba hasta el `if (error)`
+   de otra funcion, donde si hay un `= null` cerca, y daba verde con el fallo
+   inyectado. Lo delata el ancla `} else {` seguida de `= salas`, que solo
+   existe en la buena. */
+t(/if \(error\) \{[\s\S]{0,160}?app\.salasAbiertas = null[\s\S]{0,160}?\} else \{[\s\S]{0,160}?app\.salasAbiertas = salas/.test(codigo),
+  'si la consulta de salas falla, salasAbiertas queda en null (no en lista vacia)');
+
+/* Y se piden al entrar, o la seccion se queda en «Consultando…» para siempre:
+   el texto prometeria una consulta que nadie lanza. */
+t(/if \(vista === 'config' && app\.adminClave[\s\S]{0,200}?cargarSalas\(\)/.test(codigo),
+  'al entrar a configuraciones se piden las salas');
+
+/* Cerrar una sala no se deshace: se pregunta antes. */
+t(/case 'cerrar-todas-salas':[\s\S]{0,120}?app\.confirmar = 'salas-todas'/.test(codigo),
+  'cerrar todas pide confirmacion antes de hacer nada');
 
 console.log(`\nRESULTADO: ${ok} correctas, ${fail} fallas`);
 if (fail) process.exit(1);

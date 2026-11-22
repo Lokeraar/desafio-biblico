@@ -8,6 +8,7 @@
 // llamado `<script>` no debe ejecutar nada.
 
 import { esc } from './util.js';
+import { estadoSalas, puedeCerrarTodas } from './salas.js';
 
 /* ------------------------------------------------------------------ */
 /* Validación de una pregunta                                          */
@@ -647,7 +648,7 @@ export function modalFormPregunta({ temaId, pregunta = null, error = null } = {}
 /* Vista de configuraciones (menú principal)                           */
 /* ------------------------------------------------------------------ */
 
-export function vistaConfig({ hayClave = false } = {}) {
+export function vistaConfig({ hayClave = false, salas = null, cargando = false, errorSalas = null } = {}) {
   return `
     <div class="fila-entre">
       <button class="boton boton-secundario" data-ir="menu">← Volver</button>
@@ -670,5 +671,74 @@ export function vistaConfig({ hayClave = false } = {}) {
           ${hayClave ? 'Cambiar la clave maestra' : 'Establecer la clave maestra'}
         </button>
       </div>
+
+      ${tarjetaSalas({ salas, cargando, errorSalas, hayClave })}
     </main>`;
+}
+
+/**
+ * Las salas abiertas, con su boton de cerrar.
+ *
+ * TRES ESTADOS, NO DOS, y la diferencia importa:
+ *   `salas === null` y sin error  -> todavia no se sabe. Se dice «Consultando…».
+ *   `salas` es una lista vacia    -> se sabe, y no hay ninguna.
+ *   `salas` trae elementos        -> se listan.
+ *
+ * Pintar «no hay salas abiertas» mientras la consulta va en camino es mentir:
+ * quien lo lee cierra la pantalla creyendo que no queda nada vivo, y una sala
+ * olvidada se queda abierta toda la noche. Es el defecto de render prematuro
+ * que ya aparecio en otras pantallas de este proyecto.
+ */
+function tarjetaSalas({ salas, cargando, errorSalas, hayClave }) {
+  /* Sin clave configurada no hay nada que cerrar, y ademas pedir la lista
+     fallaria: el servidor exige la clave maestra para devolverla. */
+  if (!hayClave) return '';
+
+  /* La decision de QUE se pinta vive en `salas.js`, con pruebas. Aqui solo se
+     traduce a marcado. */
+  const estado = estadoSalas({ salas, cargando, error: errorSalas });
+
+  let cuerpo;
+  if (estado === 'error') {
+    cuerpo = `<p class="chico" style="color:var(--peligro); margin:0">
+        No se pudieron consultar las salas: ${esc(errorSalas)}
+      </p>
+      <button class="boton boton-secundario" data-accion="cargar-salas" style="width:100%; margin-top:.6rem">
+        Reintentar
+      </button>`;
+  } else if (estado === 'consultando') {
+    cuerpo = `<p class="chico tenue" style="margin:0">Consultando las salas abiertas…</p>`;
+  } else if (estado === 'vacio') {
+    cuerpo = `<p class="chico tenue" style="margin:0">No hay ninguna sala abierta ahora mismo.</p>
+      <button class="boton boton-secundario" data-accion="cargar-salas" style="width:100%; margin-top:.6rem">
+        Volver a consultar
+      </button>`;
+  } else {
+    const filas = salas.map(s => `
+      <li class="fila-entre" style="gap:.5rem; padding:.45rem 0; border-top:1px solid var(--borde)">
+        <span>
+          <strong>${esc(s.code ?? '')}</strong>
+          <span class="chico tenue"> · ${esc(String(s.jugadores ?? 0))} jugador${Number(s.jugadores) === 1 ? '' : 'es'}</span>
+        </span>
+        <button class="boton boton-secundario" data-accion="cerrar-sala-codigo" data-codigo="${esc(s.code ?? '')}">
+          Cerrar
+        </button>
+      </li>`).join('');
+    cuerpo = `
+      <ul style="list-style:none; margin:0; padding:0">${filas}</ul>
+      ${puedeCerrarTodas(estado, salas) ? `
+        <button class="boton boton-secundario" data-accion="cerrar-todas-salas"
+                style="width:100%; margin-top:.7rem">
+          Cerrar las ${salas.length}
+        </button>` : ''}`;
+  }
+
+  return `
+    <div class="tarjeta-config" style="max-width:var(--ancho-form); width:100%">
+      <h2 style="font-size:var(--t-md); margin:0 0 .3rem">Salas abiertas</h2>
+      <p class="chico tenue" style="margin:0 0 .9rem">
+        Una sala olvidada deja el código vivo y ocupa la base.
+      </p>
+      ${cuerpo}
+    </div>`;
 }

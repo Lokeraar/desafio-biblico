@@ -308,6 +308,14 @@ const app = {
    * esto dejaria la app sin ninguna puerta de entrada. */
   claveConfigurada: null,
   clavePreguntada: false, // la consulta se hace una sola vez
+  /* Salas abiertas para la pantalla de configuraciones.
+   * `null` = todavia no se sabe. Es distinto de una lista vacia, que si dice
+   * «no hay ninguna». Confundirlos pinta «no hay salas» mientras la consulta
+   * va en camino, y una sala olvidada se queda abierta toda la noche. */
+  salasAbiertas: null,
+  cargandoSalas: false,
+  errorSalas: null,
+  salaPorCerrar: null,   // codigo de la sala que espera confirmacion
   /* A que vista se queria entrar cuando se pidio la clave. Se guarda para
    * llevarla alli despues de acertar, en vez de dejar a la persona en el menu
    * teniendo que acordarse de donde iba. */
@@ -1436,6 +1444,108 @@ function modalConfirmarCierre() {
  * el puntaje de quienes iban ganando, y eso no se puede decir con la misma
  * frase que una sala recién creada.
  */
+/**
+ * Consulta las salas abiertas con la clave maestra.
+ *
+ * `salasAbiertas` vuelve a `null` si falla, NUNCA a una lista vacia: una lista
+ * vacia significa «se consulto y no hay ninguna», y decir eso cuando en
+ * realidad fallo la consulta deja salas vivas sin que nadie lo sepa.
+ */
+async function cargarSalas() {
+  if (!app.adminClave) { app.salasAbiertas = null; app.cargandoSalas = false; return; }
+  app.cargandoSalas = true;
+  app.errorSalas = null;
+  render();
+  const { salas, error } = await admin.salasAbiertas(app.adminClave);
+  app.cargandoSalas = false;
+  if (error) {
+    app.errorSalas = traducirError(error);
+    app.salasAbiertas = null;
+  } else {
+    app.salasAbiertas = salas;
+  }
+  render();
+}
+
+/** Cierra UNA sala y vuelve a pedir la lista, porque el mundo cambio. */
+async function cerrarUnaSala(codigo) {
+  app.confirmar = null;
+  app.salaPorCerrar = null;
+  if (!codigo) { render(); return; }
+  const { error } = await admin.cerrarSalaPorCodigo(app.adminClave, codigo);
+  if (error) {
+    ponerAviso('error', traducirError(error));
+  } else {
+    ponerAviso('ok', `La sala ${codigo} quedo cerrada.`);
+  }
+  app.salasAbiertas = null;
+  await cargarSalas();
+}
+
+/** Cierra TODAS las salas abiertas. */
+async function cerrarTodasLasSalasAhora() {
+  app.confirmar = null;
+  const { resultado, error } = await admin.cerrarTodasLasSalas(app.adminClave);
+  if (error) {
+    ponerAviso('error', traducirError(error));
+  } else {
+    /* Cero es una respuesta valida, no un error: dice que no habia ninguna. */
+    const n = Number(resultado?.cerradas ?? 0);
+    ponerAviso('ok', n === 0
+      ? 'No habia ninguna sala abierta.'
+      : `${n} sala${n === 1 ? '' : 's'} cerrada${n === 1 ? '' : 's'}.`);
+  }
+  app.salasAbiertas = null;
+  await cargarSalas();
+}
+
+/** Confirmacion antes de cerrar UNA sala desde configuraciones. */
+function modalCerrarSalaConfig(codigo) {
+  const n = Array.isArray(app.salasAbiertas) ? app.salasAbiertas.length : 0;
+  return `
+    <div class="modal-fondo" data-accion="cancelar-confirmar" data-solo-fondo="1">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="t-cerrar-cfg">
+        <h2 id="t-cerrar-cfg" style="font-size:var(--t-lg)">¿Cerrar la sala ${esc(codigo ?? '')}?</h2>
+        <p class="chico tenue">
+          Los participantes que esten dentro dejan de poder jugar y la partida
+          no se puede retomar. No se puede deshacer.
+        </p>
+        <div class="fila" style="gap:.6rem">
+          <button class="boton boton-secundario" data-accion="cancelar-confirmar" style="flex:1">
+            Seguir aquí
+          </button>
+          <button class="boton boton-peligro" data-accion="confirmar-cerrar-sala-config" style="flex:1">
+            Sí, cerrar
+          </button>
+        </div>
+      </div>
+    </div>`;
+}
+
+/** Confirmacion antes de cerrar TODAS. */
+function modalCerrarTodasLasSalas(salas) {
+  const n = Array.isArray(salas) ? salas.length : 0;
+  return `
+    <div class="modal-fondo" data-accion="cancelar-confirmar" data-solo-fondo="1">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="t-cerrar-todas">
+        <h2 id="t-cerrar-todas" style="font-size:var(--t-lg)">¿Cerrar las ${n} salas?</h2>
+        <p class="chico tenue">
+          Se cierran TODAS las salas abiertas a la vez. Cualquier participante
+          que este jugando en este momento pierde la partida. No se puede
+          deshacer.
+        </p>
+        <div class="fila" style="gap:.6rem">
+          <button class="boton boton-secundario" data-accion="cancelar-confirmar" style="flex:1">
+            Seguir aquí
+          </button>
+          <button class="boton boton-peligro" data-accion="confirmar-cerrar-todas-salas" style="flex:1">
+            Sí, cerrar todas
+          </button>
+        </div>
+      </div>
+    </div>`;
+}
+
 function modalCerrarSala() {
   const s = app.estado;
   const n = (s?.players ?? []).filter(p => !p.kicked).length;
@@ -2540,7 +2650,14 @@ function render() {
     case 'join':
     case 'play':  html = vistaJugador(vista); break;
     case 'tv':    html = vistaTV(); break;
-    case 'config': html = vistaConfig({ hayClave: app.claveConfigurada === true }); break;
+    case 'config':
+      html = vistaConfig({
+        hayClave: app.claveConfigurada === true,
+        salas: app.salasAbiertas,
+        cargando: app.cargandoSalas,
+        errorSalas: app.errorSalas
+      });
+      break;
     default:      html = vistaMenu();
   }
 
@@ -2559,6 +2676,8 @@ function render() {
    */
   if (app.confirmar === 'terminar') html += modalConfirmarCierre();
   if (app.confirmar === 'sala') html += modalCerrarSala();
+  if (app.confirmar === 'sala-config') html += modalCerrarSalaConfig(app.salaPorCerrar);
+  if (app.confirmar === 'salas-todas') html += modalCerrarTodasLasSalas(app.salasAbiertas);
 
   /*
    * Solo se reescribe el DOM si el HTML cambió.
@@ -2639,6 +2758,14 @@ function render() {
   if (hayNube && !app.clavePreguntada) {
     app.clavePreguntada = true;
     cargarEstadoClave();
+  }
+
+  /* Las salas abiertas se piden al ENTRAR a configuraciones, una vez por
+     visita. Sin esto la seccion se quedaria en «Consultando…» para siempre:
+     el texto prometeria una consulta que nadie lanza. */
+  if (vista === 'config' && app.adminClave && !app.cargandoSalas && app.salasAbiertas === null
+      && !app.errorSalas) {
+    cargarSalas();
   }
 
   /*
@@ -3234,9 +3361,41 @@ document.addEventListener('click', async ev => {
     case 'deshacer': await accionHost('deshacer'); break;
     case 'expulsar': await accionHost('expulsar', el.dataset.id); break;
     case 'admitir': await accionHost('admitir', el.dataset.id); break;
+    /* --- salas abiertas, desde configuraciones ---
+       Cerrar una sala es destructivo y no se deshace: se pregunta antes. La
+       confirmacion reusa `app.confirmar`, que ya se dibuja encima de cualquier
+       vista; inventar un segundo mecanismo habria dejado dos sitios que
+       recordar. */
+    case 'cargar-salas': {
+      app.salasAbiertas = null;
+      app.errorSalas = null;
+      render();
+      await cargarSalas();
+      break;
+    }
+    case 'cerrar-sala-codigo':
+      app.confirmar = 'sala-config';
+      app.salaPorCerrar = el.dataset.codigo || null;
+      render();
+      break;
+    case 'cerrar-todas-salas':
+      app.confirmar = 'salas-todas';
+      render();
+      break;
+    case 'confirmar-cerrar-sala-config':
+      await cerrarUnaSala(app.salaPorCerrar);
+      break;
+    case 'confirmar-cerrar-todas-salas':
+      await cerrarTodasLasSalasAhora();
+      break;
+
     case 'pedir-terminar': app.confirmar = 'terminar'; render(); break;
     case 'pedir-cerrar-sala': app.confirmar = 'sala'; render(); break;
-    case 'cancelar-confirmar': app.confirmar = null; render(); break;
+    case 'cancelar-confirmar':
+      app.confirmar = null;
+      app.salaPorCerrar = null;
+      render();
+      break;
     case 'confirmar-terminar': {
       app.confirmar = null;
       app.podioPaso = 0;
