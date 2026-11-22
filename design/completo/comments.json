@@ -660,6 +660,113 @@
       "sentAt": "2026-11-21T22:11:35.178Z",
       "resolvedAt": "2026-11-21T22:19:28.102Z",
       "resolution": "Añadido el estado «crear sala pide la clave» en la sección de configuración: modal de clave encima, con el error visible y sin cerrarse al fallar, y los botones Cancelar / Crear sala. Con la clave mal, la sala no se crea. Nota añadida explicando que en la app hay un solo crear-sala (app.js:1088) común a los dos juegos, y que hoy ese botón no consulta la clave (verificado con grep)."
+    },
+    {
+      "id": "27olm4lp",
+      "file": "04-ronda.html",
+      "selector": "body > div > div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(2) > div > div:nth-of-type(2) > div:nth-of-type(2) > button",
+      "excerpt": "PRESIONAR",
+      "comment": "Agranda los botones de pulsar a lo más grande que se pueda, deja únicamente 1 espacio de margen superior e inferior ante las cajas limítrofes a los botones.",
+      "createdAt": "2026-11-22T11:35:54.344Z",
+      "status": "resolved",
+      "sentAt": "2026-11-22T11:35:54.509Z",
+      "resolvedAt": "2026-11-22T12:22:58.609Z",
+      "resolution": "Botón de pulsar de 180 → 388 px (286 acostado), circular siempre (cqw/cqh), con 8 y 9 px de margen arriba y abajo. El techo 58vh de base-app.css impedía crecer."
+    },
+    {
+      "id": "k8hgoli4",
+      "file": "06-ceremonia.html",
+      "selector": "body > div > div:nth-of-type(6) > div:nth-of-type(2) > div > div:nth-of-type(3) > p",
+      "excerpt": "Con muchos jugadores, acostado caben dos o tres filas. ¿Se reduce el alto de cada fila, o se deja el scroll? Hoy hace scroll.",
+      "comment": "Sí, redúcele el alto para que quedan más posiciones en el mismo espacio.",
+      "createdAt": "2026-11-22T11:40:15.823Z",
+      "status": "resolved",
+      "sentAt": "2026-11-22T11:40:15.876Z",
+      "resolvedAt": "2026-11-22T12:32:41.637Z",
+      "resolution": "Filas de 66 a 31 px en las tablas horizontales (.tela.h y .tela.tv): caben 4 enteras. Letra intacta en 21,3 px; se apretó relleno e interlineado. Scroll arranca aunque el toque empiece en una fila (touch-action: pan-y)."
+    },
+    {
+      "id": "bgifvj37",
+      "file": "07-modales.html",
+      "selector": "body > div",
+      "excerpt": "Modales — la app real Los nueve diálogos, sacados de src/lib/admin-ui.js y modalJuicioHTML. Todos comparten el mismo armazón: un fondo que oscurece y un .modal que se centra si cabe y arranca desde arriba si no. El armazón, una sola vez Fondo y modal. Lo demás es contenido. 390×844 · fondo y modal d",
+      "comment": "A todos los que son botones, aplícale text-fitting de 1+1.",
+      "createdAt": "2026-11-22T11:55:44.964Z",
+      "status": "resolved",
+      "sentAt": "2026-11-22T11:55:45.025Z",
+      "resolvedAt": "2026-11-22T12:52:06.334Z",
+      "resolution": "Text-fitting 2+1 en los 32 botones de modales: todos a 16 pt (29 en un renglón, 3 en dos llenando el espacio). El relleno en em impedía el ajuste; ahora va en rem."
+    },
+    {
+      "id": "1s1qfqgz",
+      "file": "07-modales.html",
+      "selector": "body > div > div:nth-of-type(4) > div:nth-of-type(3) > div:nth-of-type(2) > div > div > div:nth-of-type(1) > div > p",
+      "excerpt": "Nuestras cartas sois, escritas en nuestro corazón…",
+      "comment": "Aprovecha al máximo el ancho de su caja",
+      "createdAt": "2026-11-22T11:56:57.484Z",
+      "status": "resolved",
+      "sentAt": "2026-11-22T11:56:57.538Z",
+      "resolvedAt": "2026-11-22T12:54:01.128Z",
+      "resolution": "Relleno horizontal de .pregunta-fila de 16 a 8,5 px: el contenido pasa de 270 a 285 px de una caja de 304."
+    },
+    {
+      "id": "042g78pb",
+      "file": "07-modales.html",
+      "selector": "body > div > div:nth-of-type(4) > div:nth-of-type(3) > div:nth-of-type(2) > div > div > div:nth-of-type(1) > div > div",
+      "excerpt": "2 Corintios 3:2 Editar Borrar",
+      "comment": "Aprovecha al máximo el ancho de su caja",
+      "createdAt": "2026-11-22T11:57:09.256Z",
+      "status": "resolved",
+      "sentAt": "2026-11-22T11:57:09.311Z",
+      "resolvedAt": "2026-11-22T12:54:01.128Z",
+      "resolution": "Relleno horizontal de .pregunta-fila de 16 a 8,5 px: el contenido pasa de 270 a 285 px de una caja de 304."
+    },
+    {
+      "id": "zh8cil77",
+      "file": "08-configuraciones.html",
+      "selector": "body > div > div:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(2) > div > div:nth-of-type(2)",
+      "excerpt": "⚙️ Configuraciones La clave maestra protege los temas y las preguntas del juego. Solo el presentador la conoce. Clave maestra La clave está configurada. Puedes cambiarla cuando quieras. Cambiar la clave maestra",
+      "comment": "No aparece la opción de cerrar sala, añádela para poder llegar a la pantalla de cerrar sala y/o cerrar todas.",
+      "createdAt": "2026-11-22T12:02:14.940Z",
+      "status": "open",
+      "sentAt": "2026-11-22T12:02:14.983Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "xu3vocel",
+      "file": "03-sala-espera.html",
+      "selector": "body > div > div:nth-of-type(4) > div:nth-of-type(1) > div:nth-of-type(2) > div > div:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(1) > div",
+      "excerpt": "",
+      "comment": "Alínealo al centro de la columna",
+      "createdAt": "2026-11-22T12:10:06.787Z",
+      "status": "resolved",
+      "sentAt": "2026-11-22T12:10:07.193Z",
+      "resolvedAt": "2026-11-22T12:56:46.772Z",
+      "resolution": "El orbe del estado «conectando» se salía 52 px de su columna (200 en 148). Ahora toma el ancho disponible: 148×148, cuadrado y centrado."
+    },
+    {
+      "id": "xz5rd625",
+      "file": "04-ronda.html",
+      "selector": "body > div > div:nth-of-type(6) > div:nth-of-type(1) > div:nth-of-type(2) > div > div:nth-of-type(2) > div:nth-of-type(3) > span:nth-of-type(2)",
+      "excerpt": "Carlos Ruiz",
+      "comment": "Cada participante entrante debe separarse con 2 espacios de distancia y distinguirse con una tarjeta, ya que si no, se ven apretados y parecen en conjunto cada uno como si fuera un solo nombre (estado actual)",
+      "createdAt": "2026-11-22T12:16:39.429Z",
+      "status": "resolved",
+      "sentAt": "2026-11-22T12:16:39.489Z",
+      "resolvedAt": "2026-11-22T13:05:09.257Z",
+      "resolution": "Participantes en columna, 16 px entre tarjetas (2 espacios de 8), cada uno con su fondo, borde y radio. La lista tiene scroll propio; la HUD no se desplaza."
+    },
+    {
+      "id": "ynmsl2or",
+      "file": "04-ronda.html",
+      "selector": "body > div > div:nth-of-type(6) > div:nth-of-type(1) > div:nth-of-type(2) > div > div:nth-of-type(2) > div:nth-of-type(1)",
+      "excerpt": "QR de la sala #/join?c=B73WS",
+      "comment": "El Qr debe estar alineado al centro de su columna y extenderse hasta alcanzar un máximo de 1 espacio superior e inferior antes de sus cajas limítrofes, debe conservar su forma cuadrada, no volverse rectángulo.",
+      "createdAt": "2026-11-22T12:18:31.122Z",
+      "status": "resolved",
+      "sentAt": "2026-11-22T12:18:31.247Z",
+      "resolvedAt": "2026-11-22T12:59:32.456Z",
+      "resolution": "El QR era un rectángulo de 175×16. Ahora 161×161, cuadrado por aspect-ratio desde el alto, centrado, con 8 px arriba y abajo. Sin scroll en la HUD."
     }
   ]
 }

@@ -33,6 +33,23 @@
     border:1px solid rgba(110,227,238,.18);
     text-align:left;
   }
+  /* EL CENTRO DE CONFIGURACIONES SE DESPLAZA CUANDO NO CABE.
+     Medido tras anadir la tarjeta de salas: en vertical el contenido pedia
+     850 px en una tela de 842 (8 de mas) y acostada 522 en 388 (134 de mas).
+     Con `justify-content: center` y desborde, lo que se corta es ARRIBA, y
+     entonces la tarjeta de la clave queda fuera de alcance: peor que el
+     scroll.
+
+     Christian: «a veces habra muchos participantes, entonces esta lista debe
+     tener scroll». La lista de salas crece con los datos, asi que el scroll va
+     DENTRO de esta caja, no en la pantalla entera. Se alinea arriba para que el
+     corte sea siempre por abajo, que es donde esta el final de la lista. */
+  .app-centro{
+    justify-content:flex-start;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+  }
+
 </style>
 </head>
 <body>
@@ -92,6 +109,38 @@
                 La clave está configurada. Puedes cambiarla cuando quieras.</p>
               <button class="boton-grande boton-oro">Cambiar la clave maestra</button>
             </div>
+            <!-- SALAS ABIERTAS, copiada del marcado real de `tarjetaSalas` en
+                 src/lib/admin-ui.js. Christian: «No aparece la opcion de cerrar
+                 sala, anadela para poder llegar a la pantalla de cerrar sala
+                 y/o cerrar todas».
+                 No es una pantalla nueva: es la tarjeta que la app ya tiene en
+                 configuraciones y que el canvas no dibujaba, asi que no habia
+                 forma de llegar a las dos pantallas de cierre que si existen
+                 mas abajo. -->
+            <div class="tarjeta-config">
+              <h2 style="font-size:var(--t-lg);margin:0 0 .3rem">Salas abiertas</h2>
+              <p class="chico tenue" style="margin:0 0 .9rem">
+                Una sala olvidada deja el código vivo y ocupa la base.</p>
+              <ul style="list-style:none;margin:0;padding:0">
+                <li class="fila-entre" style="gap:.5rem;padding:.45rem 0;border-top:1px solid var(--raya)">
+                  <span>
+                    <strong>B73WS</strong>
+                    <span class="chico tenue"> · 4 jugadores</span>
+                  </span>
+                  <button class="boton boton-secundario boton-mini">Cerrar</button>
+                </li>
+                <li class="fila-entre" style="gap:.5rem;padding:.45rem 0;border-top:1px solid var(--raya)">
+                  <span>
+                    <strong>EUNSV</strong>
+                    <span class="chico tenue"> · 1 jugador</span>
+                  </span>
+                  <button class="boton boton-secundario boton-mini">Cerrar</button>
+                </li>
+              </ul>
+              <button class="boton boton-secundario" style="width:100%;margin-top:.7rem">
+                Cerrar las 2
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -114,6 +163,38 @@
               <p class="chico tenue" style="margin:0 0 .6rem">
                 La clave está configurada. Puedes cambiarla cuando quieras.</p>
               <button class="boton-grande boton-oro">Cambiar la clave maestra</button>
+            </div>
+            <!-- SALAS ABIERTAS, copiada del marcado real de `tarjetaSalas` en
+                 src/lib/admin-ui.js. Christian: «No aparece la opcion de cerrar
+                 sala, anadela para poder llegar a la pantalla de cerrar sala
+                 y/o cerrar todas».
+                 No es una pantalla nueva: es la tarjeta que la app ya tiene en
+                 configuraciones y que el canvas no dibujaba, asi que no habia
+                 forma de llegar a las dos pantallas de cierre que si existen
+                 mas abajo. -->
+            <div class="tarjeta-config">
+              <h2 style="font-size:var(--t-lg);margin:0 0 .3rem">Salas abiertas</h2>
+              <p class="chico tenue" style="margin:0 0 .9rem">
+                Una sala olvidada deja el código vivo y ocupa la base.</p>
+              <ul style="list-style:none;margin:0;padding:0">
+                <li class="fila-entre" style="gap:.5rem;padding:.45rem 0;border-top:1px solid var(--raya)">
+                  <span>
+                    <strong>B73WS</strong>
+                    <span class="chico tenue"> · 4 jugadores</span>
+                  </span>
+                  <button class="boton boton-secundario boton-mini">Cerrar</button>
+                </li>
+                <li class="fila-entre" style="gap:.5rem;padding:.45rem 0;border-top:1px solid var(--raya)">
+                  <span>
+                    <strong>EUNSV</strong>
+                    <span class="chico tenue"> · 1 jugador</span>
+                  </span>
+                  <button class="boton boton-secundario boton-mini">Cerrar</button>
+                </li>
+              </ul>
+              <button class="boton boton-secundario" style="width:100%;margin-top:.7rem">
+                Cerrar las 2
+              </button>
             </div>
           </div>
         </div>

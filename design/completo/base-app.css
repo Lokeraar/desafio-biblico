@@ -315,10 +315,13 @@ input::placeholder { color: #6d8b90; }
 }
 .barra-tiempo i { display: block; height: 100%; border-radius: 999px;
   background: linear-gradient(90deg,#ffe066,#fcd116); }
+/* El reloj: `tabular-nums` ya da digitos de ancho fijo. `monospace` sobraba.
+   Con `font-variant-numeric: tabular-nums` el «14 s» no baila al cambiar de
+   cifra, que es lo unico que se pedia; la tipografia es la de la app. */
 .reloj-ronda .reloj {
   flex: 0 0 auto; font-variant-numeric: tabular-nums;
   font-weight: 800; min-width: 3.2ch; text-align: right;
-  font-family: ui-monospace, monospace; color: var(--amarillo);
+  color: var(--amarillo);
 }
 
 /* `.boton-ok`: TECLA. Circulo por aspect-ratio, negro, texto blanco en
@@ -442,9 +445,17 @@ input::placeholder { color: #6d8b90; }
   gap: 1rem; min-height: 0; padding: 1rem; text-align: center;
 }
 .esp-titulo { font-size: var(--t-xl); line-height: 1.1; font-weight: 800; margin: 0; }
+/* EL NOMBRE DE UNA PERSONA NO VA EN MONOSPACE.
+   Christian: «quita el estilo de fuente monospace, no se requiere en ese
+   lugar».
+   `monospace` se justifica en un CODIGO de sala -donde cada caracter tiene que
+   alinearse y no confundirse con otro-, no en un nombre: «Ana Perez» en
+   Courier se lee como un dato tecnico y ademas ocupa el doble, que es lo que
+   obligaba a bajar la letra. La app real solo lo usa en `.codigo-sala`
+   (styles.css:299); el canvas lo habia copiado a seis sitios. */
 .esp-nombre {
-  font-family: "Courier New", monospace; font-size: var(--t-3xl); font-weight: 800;
-  letter-spacing: .18em; color: var(--raya); margin: 0;
+  font-size: var(--t-3xl); font-weight: 800;
+  color: var(--raya); margin: 0;
 }
 .esp-puntos { font-size: var(--t-xs); line-height: 1.5; color: var(--tinta-suave); margin: 0; }
 
@@ -481,7 +492,7 @@ input::placeholder { color: #6d8b90; }
 
 /* la cifra del reloj dentro de `.reloj-ronda` */
 .reloj-ronda .t, .reloj .t {
-  font-family: ui-monospace, monospace; font-weight: 800;
+  font-weight: 800;
   color: var(--amarillo); font-variant-numeric: tabular-nums;
 }
 .reloj { display: flex; align-items: center; gap: .6rem; width: 100%; }

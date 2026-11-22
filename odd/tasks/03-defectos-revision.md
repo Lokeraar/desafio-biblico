@@ -90,3 +90,27 @@ Cada uno con su descripción está en el mensaje de Christian del 2026-11-21.
 Hay que sacar la lógica a módulos puros como se hizo con `liberar.js`:
 qué pregunta se muestra, quién puede pulsar, qué se destapa y cuándo, y qué ve
 el presentador de lo que respondió cada uno.
+
+## Prueba intermitente: `partida.test.mjs`
+
+**Medido, no supuesto.** 8 corridas seguidas: 1 fallo de 8, con 8 comprobaciones
+en rojo de golpe. Repetido en otra tanda: 1 fallo en 12.
+
+Cuando falla, cae la primera respuesta (`Beto responde primero`) y arrastra
+todo lo que depende del orden.
+
+**No es carga del sistema**, que fue lo que dije antes sin medirlo.
+
+Datos:
+- la suite usa temporizadores reales: 15 `await esperar()`, 3720 ms en total;
+- `engine.js` cierra la respuesta si `restanteMs(round, t) <= 0`, y la ronda
+  dura 15 s; la prueba gasta ~1.3 s, asi que el reloj no es la causa obvia;
+- `head -1` mostro `date: Mon Nov 24 2026` y despues un salto a `viernes, 21
+  de noviembre de 2026` en la misma tanda: **el reloj del aparato salta**.
+
+Sospecha principal: el reloj del aparato no es monotono y `Date.now()`
+retrocede entre respuestas, asi que dos respuestas quedan con la misma marca o
+fuera de orden.
+
+Pendiente: decidir si se arregla la prueba (tiempos inyectados en vez de
+reales) o el reloj del aparato.

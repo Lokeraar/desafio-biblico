@@ -60,6 +60,52 @@
      Esa es LA razon de que no tape los nombres: un elemento posicionado se
      pinta por encima de los que estan en el flujo normal, sin importar el orden
      del DOM, asi que el contenido se posiciona y sube de capa. */
+  /* TABLAS HORIZONTALES: FILAS MAS BAJAS, 4 PUESTOS A LA VISTA.
+     Christian: «Si, reducele el alto para que quedan mas posiciones en el mismo
+     espacio» y «en todas las tablas de clasificacion horizontales tambien
+     aplica lo mismo; con que quepan 4 participantes es suficiente».
+
+     Medido antes: cada fila pedia 66 px (16+16 de relleno, 32 de texto, 2 de
+     borde) y en la tela de 844x390 solo cabian 2.3: hacia scroll con espacio
+     mal repartido.
+
+     Se aplica a `.tela.h` (acostado) y `.tela.tv` (televisor), que son las dos
+     horizontales. NO a `.tela.v`: ahi sobra alto y no hay por que apretar.
+
+     LO QUE SE APRIETA Y LO QUE NO:
+       - se recorta el relleno vertical y el interlineado: es aire, no letra;
+       - la LETRA se queda en 21.3 px, que es lo que se lee;
+       - el `.puesto` tambien baja su interlineado: mantenia 32 px dentro de
+         una caja de 22 y era el que recortaba el texto por abajo. */
+  .tela.h .fila-clasif,
+  .tela.tv .fila-clasif{padding:.1em .75em}
+  .tela.h .fila-clasif .nombre,
+  .tela.h .fila-clasif .puntos,
+  .tela.h .fila-clasif .puesto,
+  .tela.tv .fila-clasif .nombre,
+  .tela.tv .fila-clasif .puntos,
+  .tela.tv .fila-clasif .puesto{line-height:1.2}
+  /* `height: auto`: con `1.4rem` la caja medía 22.4 px y el emoji pide 25.6 con
+     su interlineado, así que la medalla se recortaba por abajo (medido: caja 22,
+     contenido 26). Sin alto fijo la caja la pone el propio contenido. */
+  .tela.h .fila-clasif .puesto,
+  .tela.tv .fila-clasif .puesto{height:auto;min-width:2.25rem}
+  .tela.h .lista-ceremonia,
+  .tela.tv .lista-ceremonia{gap:.12rem}
+
+  /* EL SCROLL ARRANCA AUNQUE EL TOQUE EMPIECE EN UNA FILA.
+     Christian: «permite que se puede hacer scroll si el punto de inicio fue
+     tocando alguno de los participantes en la tabla».
+     `touch-action: pan-y` en la lista y en sus filas: el gesto vertical se
+     queda para desplazar, no se lo lleva el manejador de toque de la
+     ceremonia. Sin esto, arrastrar desde una fila se interpretaba como un
+     toque y revelaba la tabla en vez de moverla.
+     `pan-y` y no `none`: `none` mataria el scroll; y no `auto` a secas, para
+     dejar claro que lo unico permitido es el desplazamiento vertical. */
+  .tela.h .lista-ceremonia,
+  .tela.tv .lista-ceremonia,
+  .tela.h .fila-clasif,
+  .tela.tv .fila-clasif{touch-action:pan-y}
   .marco-oro > .titulo-ceremonia,
   .marco-oro > .felicitacion,
   .marco-oro > .lista-ceremonia,

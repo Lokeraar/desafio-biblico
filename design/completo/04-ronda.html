@@ -36,7 +36,15 @@
     font-size:var(--app-insignia);line-height:var(--app-insignia-lh);white-space:nowrap;
   }
   /* cuerpo-jugador */
-  .cuerpo-jugador{flex:1 1 auto;display:flex;flex-direction:column;min-height:0;gap:8px}
+  /* EL ENVOLTORIO TIENE QUE LLENAR LA TELA.
+     `.jug` no tenia ninguna regla: era un div suelto, y medido daba 537 px en
+     una tela de 844. El pie recibia lo que sobraba del contenido, no lo que
+     sobraba de la pantalla, asi que el boton crecia sobre migajas y dejaba
+     314 px sin usar debajo. Con `height:100%` y columna, el cuerpo se queda
+     con el alto real y el pie puede darle la tecla a lo grande. */
+  .jug{height:100%;display:flex;flex-direction:column;min-height:0}
+  .cuerpo-jugador{flex:1 1 auto;display:flex;flex-direction:column;min-height:0;gap:8px;
+    container-type:size}
   .tela.h .cuerpo-jugador{flex-direction:row;align-items:stretch;gap:12px}
   /* zona-versiculo: el texto ARRANCA ARRIBA.
      Christian: «El texto debe comenzar de arriba hacia abajo, de izquierda a
@@ -50,10 +58,45 @@
   /* El pie CRECE para que la tecla tenga sitio, igual que la app real
      (`styles.css:2090`: `flex: 1 1 auto`). Aqui decia `0 0 auto`, y por eso el
      boton de las verticales salia chico: el defecto era del canvas. */
-  .pie-jugador{flex:1 1 auto;display:flex;flex-direction:column;align-items:center;gap:8px;min-height:0}
+  /* El pie toma el alto que sobra y CENTRA la tecla.
+     `flex: 0 0 auto` no sirve aqui: con `container-type: size` el alto del pie
+     dependeria de su contenido y el contenido del alto del pie — dependencia
+     circular, y el navegador lo resuelve colapsando la caja.
+     La tecla ya es lo mas grande posible: 388 px, que es el ancho de la tela.
+     Un cuadrado no puede pasar de ahi, asi que el aire vertical que sobra se
+     reparte con `justify-content: center` en vez de acumularse abajo. */
+  /* Un espacio arriba y otro abajo, y NADA mas.
+     El `gap: 8px` del cuerpo ya separa el versiculo del pie; sumarle un
+     `padding-top` daba 16 arriba contra 9 abajo. Se deja el gap como margen
+     superior y el pie solo aporta el inferior. */
+  .pie-jugador{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;gap:0;min-height:0;padding:0 0 8px}
+  /* EL BOTON DE PULSAR, LO MAS GRANDE QUE SE PUEDA Y SIEMPRE CIRCULAR.
+     Christian: «Agranda los botones de pulsar a lo mas grande que se pueda,
+     deja unicamente 1 espacio de margen superior e inferior ante las cajas
+     limitrofes a los botones»... «que no pierda su forma circular (no se
+     vuelva ovalo)».
+
+     `base-app.css:328` trae `max-height: min(58vh, 22rem)`: en 844 px de alto
+     eso lo dejaba en 352 px con el pie sobrando. Se retira el techo.
+
+     POR QUE CON UNIDADES DE CONTENEDOR Y NO CON `aspect-ratio` SOLO.
+     En una columna flex, `flex: 1 1 auto` FIJA el alto y entonces
+     `aspect-ratio` no tiene nada que calcular: medido, el boton salia
+     388 x 493, un ovalo. Poner `height:100%` y `width:auto` da el mismo
+     resultado, porque `max-width:100%` recorta el ancho y el alto no baja.
+     `cqw` y `cqh` son el ancho y el alto DEL PIE, ya resueltos. `min()` de los
+     dos es el lado del cuadrado mas grande que cabe: circular por
+     construccion, no por confianza. */
+  .pie-jugador .boton-ok{width:min(100cqw,100cqh);height:min(100cqw,100cqh);
+    flex:0 0 auto;max-height:none;max-width:none;margin:0}
   /* Acostado el pie tiene ancho propio y el boton no pide mas alto: es el
      recurso escaso (`styles.css:2008`). */
-  .tela.h .pie-jugador{flex:0 0 auto;width:34%;justify-content:center}
+  /* Acostado el pie tiene su PROPIO contenedor de consulta: su alto viene de la
+     fila (no de su contenido), asi que no hay dependencia circular y `cqh` mide
+     lo que de verdad hay. Sin esto el boton tomaba las medidas del cuerpo
+     —que en horizontal ocupa todo el ancho— y salia 286 x 336, ovalado. */
+  .tela.h .pie-jugador{flex:0 0 auto;width:34%;justify-content:center;container-type:size}
   /* EL RELOJ DEL TELEVISOR NECESITA SU BARRA VISIBLE.
      Mismo defecto que tenia `05-presentador`: `base-app.css:487` trae
      `.reloj { width: 100% }`, y dentro de `.reloj-ronda` ese 100 % se come todo
@@ -69,6 +112,74 @@
     background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);
     font-size:var(--app-insignia);line-height:var(--app-insignia-lh);color:var(--tinta-suave);
   }
+  /* EL QR: CUADRADO, CENTRADO EN SU COLUMNA, Y LO MAS GRANDE QUE SE PUEDA.
+     Christian: «El Qr debe estar alineado al centro de su columna y extenderse
+     hasta alcanzar un maximo de 1 espacio superior e inferior antes de sus
+     cajas limitrofes, debe conservar su forma cuadrada, no volverse
+     rectangulo».
+     Antes medía 175x16: era un rectangulo de texto, no un QR.
+     EL ALTO MANDA Y EL ANCHO SALE DE EL. `flex: 1 1 auto` reparte el alto que
+     sobra entre los hijos del cuerpo del televisor, `min-height: 0` le permite
+     encogerse, y `aspect-ratio: 1` calcula el ANCHO a partir de ese alto: con
+     una sola dimension definida el cuadrado sale solo. Con las dos definidas
+     -lo que se probo primero- `aspect-ratio` no hace nada y vuelve el
+     rectangulo.
+     `margin: auto` lo centra en la columna, y el `gap: 8px` del cuerpo es el
+     UN espacio que queda contra las cajas de arriba y de abajo.
+     No hay scroll: el cuerpo del televisor tiene alto fijo y el QR se ajusta a
+     lo que queda, no al reves. */
+  .tela.tv .qr-caja{
+    flex:1 1 auto;min-height:0;height:auto;
+    aspect-ratio:1;width:auto;max-width:100%;max-height:100%;
+    /* `margin-block: 8px` es lo que deja el espacio de ARRIBA: el QR es el
+       primer hijo del cuerpo, y el `gap` del flex solo separa hijos entre si,
+       nunca del borde. Sin esto quedaba pegado arriba (0 px) y con 8 abajo.
+       Como el margen se resta del espacio que reparte flex, el QR encoge esos
+       16 px y no se desborda: la fila sigue sin scroll. */
+    /* Solo ARRIBA: abajo ya lo pone el `gap: 8px` del cuerpo, que separa el QR
+       del texto siguiente. Con margen en los dos lados salian 16 abajo (8 del
+       margen + 8 del gap) contra 8 arriba, y el pedido es uno en cada lado. */
+    margin:8px auto 0;max-width:none;
+    display:grid;place-items:center;
+  }
+
+  /* CADA PARTICIPANTE ENTRANTE, UNA TARJETA Y DOS ESPACIOS DE SEPARACION.
+     Christian: «Cada participante entrante debe separarse con 2 espacios de
+     distancia y distinguirse con una tarjeta, ya que si no, se ven apretados y
+     parecen en conjunto cada uno como si fuera un solo nombre».
+     Medido antes: la lista era `flex` en fila con `gap: 6px`, y el `.jug` NO
+     tenia ninguna regla -no existe en `base-app.css`-, asi que "Ana Perez" y
+     "Carlos Ruiz" salian pegados, en una sola linea y sin nada que los
+     separara: se leian como un nombre larguisimo.
+     Ahora: columna, cada uno su tarjeta con fondo y borde, y entre tarjetas
+     DOS espacios. El espacio base es .5rem (8 px), asi que la separacion es
+     1rem. Se usa `gap` y no margenes: el gap solo separa los que existen, no
+     deja hueco al final de la lista. */
+  .tela.tv .lista-jugadores{
+    flex-direction:column;
+    gap:1rem;
+    align-items:flex-start;
+    /* `flex-wrap: wrap` en COLUMNA no envuelve hacia abajo: crea COLUMNAS
+       nuevas. Con el `wrap` que traia `base-app.css`, los dos participantes
+       seguian uno al lado del otro aunque la direccion fuera columna -medido:
+       los dos con el mismo `top`-. En columna el wrap se quita.
+       Y SCROLL PROPIO: Christian, «a veces habra muchos participantes, entonces
+       esta lista debe tener scroll, porque no siempre van a caber». El scroll
+       va DENTRO de la lista; lo que no puede desplazarse es la HUD entera. */
+    flex-wrap:nowrap;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    min-height:0;
+    max-height:100%;
+  }
+  .tela.tv .lista-jugadores .jug{
+    display:inline-flex;align-items:center;
+    padding:.35em .9em;border-radius:999px;
+    background:rgba(255,255,255,.08);
+    border:1px solid rgba(110,227,238,.28);
+    font-weight:700;
+  }
+
 </style>
 </head>
 <body>
