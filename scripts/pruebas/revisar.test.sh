@@ -89,6 +89,40 @@ bash scripts/revisar.sh >/dev/null 2>&1
 tf "$?" "al dia pero con cambios sin commitear: sale 1"
 git checkout -q -- archivo.txt
 
+# --- caso 5b: --probar en la ruta PRINCIPAL (con commits pendientes) ---
+# La revision lo marco: el unico caso de --probar estaba en la rama «al dia»,
+# que no es la ruta normal. Aqui se prueba donde de verdad se usa.
+echo tres >> archivo.txt
+git commit -qam "tercero"
+rm -f .probar-corrio
+bash scripts/revisar.sh --probar >/dev/null 2>&1
+t "$?" "con commits pendientes y --probar: sale 0"
+t "$([ -f .probar-corrio ] && echo 0 || echo 1)" "con commits pendientes y --probar: la verificacion corre"
+rm -f .probar-corrio
+
+# --- caso 5c: si la autoverificacion FALLA, revisar.sh corta ---
+# Un `probar.sh` que falla no puede dejar pasar la revision como si nada.
+cat > scripts/probar.sh <<'PROBAR'
+#!/usr/bin/env bash
+echo "fallo a proposito"
+exit 1
+PROBAR
+bash scripts/revisar.sh --probar >/dev/null 2>&1
+tf "$?" "si probar.sh falla: sale 1 y no manda a revisar"
+
+# --- caso 5d: imprime la base y la cabeza exactas ---
+cat > scripts/probar.sh <<'PROBAR'
+#!/usr/bin/env bash
+exit 0
+PROBAR
+salida="$(bash scripts/revisar.sh 2>&1)"
+base_esperada="$(git rev-parse origin/main)"
+cabeza_esperada="$(git rev-parse HEAD)"
+t "$(printf '%s' "$salida" | grep -q "$base_esperada" && echo 0 || echo 1)" \
+  "imprime la base exacta del rango"
+t "$(printf '%s' "$salida" | grep -q "$cabeza_esperada" && echo 0 || echo 1)" \
+  "imprime la cabeza exacta del rango"
+
 # --- caso 6: sin remoto no puede saber el rango ---
 git remote remove origin
 bash scripts/revisar.sh >/dev/null 2>&1

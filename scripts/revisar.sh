@@ -38,6 +38,15 @@ cuantos="$(git rev-list --count "$BASE_REMOTA..HEAD" 2>/dev/null)"
 # Sin estas tres, un fallo de git deja el conteo vacio y el script sigue como
 # si supiera el rango: imprimiria instrucciones de revision para un rango que
 # no pudo calcular, y saldria con exito.
+# Si las ramas divergieron, el rango NO es lo que falta publicar: incluiria
+# como reversiones los commits ajenos. Se exige que la base sea ancestro.
+if ! git merge-base --is-ancestor "$base" "$cabeza" 2>/dev/null; then
+  echo "  La rama local y $BASE_REMOTA DIVERGIERON."
+  echo "  Revisar este rango incluiria como reversiones commits que no son tuyos."
+  echo "  Resuelvelo primero: git pull --rebase origin main"
+  exit 1
+fi
+
 if [ -z "$base" ] || [ -z "$cabeza" ] || [ -z "$cuantos" ]; then
   echo "  No se pudo calcular el rango (base='$base' cabeza='$cabeza' commits='$cuantos')."
   echo "  Revisa que el repositorio este sano: git status && git fetch origin"
@@ -64,7 +73,12 @@ if [ "$cuantos" = "0" ]; then
   # Decir «al dia» con el arbol sucio es la mentira mas cara de todas: se lee
   # como «no hay nada que hacer» cuando en realidad hay trabajo que ni se
   # reviso ni se publico.
-  suelto="$(git status --porcelain)"
+  # Mismo cuidado que arriba: sin comprobar el codigo, un fallo se leia como
+  # «no hay nada».
+  if ! suelto="$(git status --porcelain 2>&1)"; then
+    echo "  git status FALLO: $(printf '%s' "$suelto" | head -1)"
+    exit 1
+  fi
   if [ -n "$suelto" ]; then
     echo
     echo "  PERO hay cambios sin commitear, y esos no estan publicados:"
@@ -84,7 +98,14 @@ echo
 # --- lo que invalida una revision en curso ---
 # Un cambio sin commitear NO esta en el rango: se revisa algo y se publica
 # otra cosa. Es la trampa mas silenciosa de todas.
-sucio="$(git status --porcelain)"
+# Se mira el CODIGO de git status, no solo su salida. Si falla -un lock del
+# indice, por ejemplo- la salida queda vacia y eso se leia como «arbol
+# limpio»: el script imprimia instrucciones de revision y salia 0.
+if ! sucio="$(git status --porcelain 2>&1)"; then
+  echo "  git status FALLO, no se puede saber si el arbol esta limpio:"
+  printf '%s\n' "$sucio" | sed 's/^/       /'
+  exit 1
+fi
 if [ -n "$sucio" ]; then
   echo "  ALTO: hay cambios sin commitear y NO entran en la revision."
   printf '%s\n' "$sucio" | sed 's/^/       /'
