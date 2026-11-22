@@ -102,19 +102,28 @@ rm -f .probar-corrio
 
 # --- caso 5c: si la autoverificacion FALLA, revisar.sh corta ---
 # Un `probar.sh` que falla no puede dejar pasar la revision como si nada.
+# Y se COMMITEA el cambio: si queda suelto, el guardia de arbol sucio corta
+# primero y este caso pasaria por el motivo equivocado. La revision lo marco:
+# asi estaba, y el caso no probaba nada de lo que decia.
 cat > scripts/probar.sh <<'PROBAR'
 #!/usr/bin/env bash
 echo "fallo a proposito"
 exit 1
 PROBAR
+git add scripts/probar.sh && git commit -qm "probar.sh que falla"
 bash scripts/revisar.sh --probar >/dev/null 2>&1
 tf "$?" "si probar.sh falla: sale 1 y no manda a revisar"
+# Se comprueba que corto POR LA RAZON correcta, no por otra casualidad.
+salida_fallo="$(bash scripts/revisar.sh --probar 2>&1)"
+t "$(printf '%s' "$salida_fallo" | grep -q 'La autoverificacion FALLO' && echo 0 || echo 1)" \
+  "y corta diciendo que fallo la autoverificacion, no otra cosa"
 
 # --- caso 5d: imprime la base y la cabeza exactas ---
 cat > scripts/probar.sh <<'PROBAR'
 #!/usr/bin/env bash
 exit 0
 PROBAR
+git add scripts/probar.sh && git commit -qm "probar.sh que pasa"
 salida="$(bash scripts/revisar.sh 2>&1)"
 base_esperada="$(git rev-parse origin/main)"
 cabeza_esperada="$(git rev-parse HEAD)"

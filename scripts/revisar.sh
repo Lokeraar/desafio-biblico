@@ -116,10 +116,30 @@ if [ -n "$sucio" ]; then
 fi
 
 echo "  commits del rango:"
-git log --oneline "$BASE_REMOTA..HEAD" | sed 's/^/       /'
+# Sin comprobar el codigo, un fallo de git log dejaba el script saliendo 0 sin
+# imprimir el rango que promete. Se comprueba.
+if ! lista="$(git log --oneline "$BASE_REMOTA..HEAD" 2>&1)"; then
+  echo "  git log FALLO, no se puede listar el rango:"
+  printf '%s\n' "$lista" | head -3 | sed 's/^/       /'
+  exit 1
+fi
+printf '%s\n' "$lista" | sed 's/^/       /'
 echo
 echo "  archivos que entran:"
-git diff --stat "$BASE_REMOTA..HEAD" | tail -20 | sed 's/^/       /'
+if ! est="$(git diff --stat "$BASE_REMOTA..HEAD" 2>&1)"; then
+  echo "  git diff FALLO, no se pueden listar los archivos:"
+  printf '%s\n' "$est" | head -3 | sed 's/^/       /'
+  exit 1
+fi
+# Se DICE cuando se recorta. Antes ponia «los archivos que entran» y cortaba a
+# 20 lineas en silencio: en un rango grande faltaban archivos sin avisar.
+lineas_est="$(printf '%s\n' "$est" | wc -l)"
+if [ "$lineas_est" -gt 20 ]; then
+  printf '%s\n' "$est" | head -19 | sed 's/^/       /'
+  echo "       ... y $((lineas_est - 19)) lineas mas (recortado a proposito)"
+else
+  printf '%s\n' "$est" | sed 's/^/       /'
+fi
 echo
 
 autoverificar || exit 1
