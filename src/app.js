@@ -386,7 +386,17 @@ function arrancarOrbes(raiz) {
   const canvas = caja.querySelector('canvas');
   if (!canvas) return;
   if (app.orbe) { app.orbe.parar(); app.orbe = null; }
-  app.orbe = animar(canvas, { estado: caja.dataset.orbe || 'working', tamano: 64 });
+  /* EL TAMANO SALE DE LA CAJA, no de un 64 fijo.
+     Christian: «agrandalo de tamano que abarque esa caja». Se mide el globo ya
+     escrito en el DOM y se pinta a ese lado. Se fija en PIXELES DEL CANVAS y no
+     por CSS: escalar por CSS deja los puntos borrosos.
+     El minimo y el maximo evitan dos extremos: un canvas de 0 px no se ve, y
+     uno gigante cuesta memoria en un aparato de 2 GiB. */
+  const globo = caja.querySelector('.orbe-globo') || caja;
+  const cajaMedida = globo.getBoundingClientRect();
+  const lado = Math.round(Math.min(cajaMedida.width || 0, cajaMedida.height || 0));
+  const tamano = lado >= 48 ? Math.min(lado, 320) : 64;
+  app.orbe = animar(canvas, { estado: caja.dataset.orbe || 'working', tamano });
 }
 
 function marcarFormaPortada(raiz) {
@@ -1837,7 +1847,7 @@ function vistaJugador(vista = 'play') {
         ${/* El orbe dice «la app sigue trabajando», para que la espera no se lea
              como un cuelgue. El estado sale de `lib/orbe.js`, no se elige aqui. */''}
         <div class="orbe-espera" data-orbe="${estadoDeSala('esperando')}">
-          <canvas aria-hidden="true"></canvas>
+          <div class="orbe-globo"><canvas aria-hidden="true"></canvas></div>
           <span class="orbe-txt">Esperando al presentador</span>
         </div>
       </main>`;
