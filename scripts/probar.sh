@@ -36,6 +36,37 @@ SUITES_OMITIDAS=()
 # --- Pruebas de JavaScript -------------------------------------------
 if [ "$solo_sql" = false ]; then
   echo "=== Pruebas de JavaScript ==="
+
+  # --- sintaxis de los modulos ---
+  #
+  # ESTO FALTABA, y costo un BLOCKER que llego a un commit: `src/app.js` tenia
+  # un objeto sin coma, el modulo no cargaba y la app entera quedaba muerta.
+  # Las 1136 pruebas dieron verde igual, porque ninguna importa `app.js`: las
+  # suites prueban los modulos de `src/lib/`, no el ensamblado.
+  #
+  # La forma de comprobarlo importa, y por eso se escribe aqui:
+  # `node --check archivo.js` NO sirve. Sin `package.json`, Node analiza el
+  # .js como CommonJS y no ve los errores de un modulo ES: sobre el archivo
+  # roto devolvio codigo 0. Con `--input-type=module` y el archivo por stdin
+  # si devuelve codigo 1, sin renombrar nada.
+  fallas_sintaxis=0
+  for modulo in "$RAIZ"/src/*.js "$RAIZ"/src/lib/*.js; do
+    [ -e "$modulo" ] || continue
+    # Los .test.mjs se prueban solos, mas abajo.
+    case "$modulo" in *.mjs) continue ;; esac
+    if ! node --input-type=module --check < "$modulo" >/dev/null 2>&1; then
+      echo "  sintaxis: FALLÓ en ${modulo#$RAIZ/}"
+      node --input-type=module --check < "$modulo" 2>&1 | head -4 | sed 's/^/      /'
+      SUITES_FALLIDAS+=("sintaxis (${modulo#$RAIZ/})")
+      TOTAL_FALLAS=$((TOTAL_FALLAS + 1))
+      fallas_sintaxis=$((fallas_sintaxis + 1))
+    fi
+  done
+  # Se mira SU contador, no el total: si otra suite ya fallo, la sintaxis puede
+  # estar bien y decir lo contrario seria mentir en el otro sentido.
+  if [ "$fallas_sintaxis" = "0" ]; then
+    echo "  sintaxis: todos los modulos parsean"
+  fi
   # La lista se DESCUBRE, no se escribe a mano.
   #
   # Estaba escrita a mano y `liberar.test.mjs` no figuraba: la prueba existia,

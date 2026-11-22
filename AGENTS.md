@@ -53,6 +53,28 @@ Sale con código 0 **solo si todo pasó**, y cuando una suite falla nombra cuál
 y muestra sus líneas `FALLA`. No hay que correr las ocho suites a mano ni
 interpretar ocho salidas distintas.
 
+### Trampa: `node --check` no ve los errores de un módulo ES
+
+Sin `package.json`, `node --check src/app.js` analiza el archivo como
+**CommonJS** y no ve los errores propios de un módulo ES. Sobre un `app.js` con
+un objeto sin coma **devolvió código 0** y lo dimos por bueno: el módulo no
+cargaba y la app entera quedaba muerta. Llegó a un commit.
+
+Las formas que sí funcionan, sin renombrar nada:
+
+```bash
+node --input-type=module --check < src/app.js     # exit 1 si está roto
+node --input-type=module -e "import('./src/app.js')"   # lo evalúa de verdad
+```
+
+`probar.sh` ya recorre `src/*.js` y `src/lib/*.js` con la primera y falla si
+alguno no parsea. Esa comprobación se probó quitando la coma a propósito: sin
+ella el veredicto era verde con la app rota.
+
+Y el motivo de fondo: **ninguna suite importa `app.js`**. Las 1136 pruebas
+cubren los módulos de `src/lib/`, no el ensamblado. Un error al unirlos no lo ve
+ninguna.
+
 ### Trampa: `--sql` NO reaplica las migraciones
 
 `probar.sh --sql` corre `smoke.sql` contra la base `limpia` **tal como está**.
