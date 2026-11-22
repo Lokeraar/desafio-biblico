@@ -93,6 +93,20 @@ else
   fallas=$((fallas+1))
   echo "  FALLA no se pudo montar el escenario de rama detras"
 fi
+# R3-001 de la revision: DETRAS con el arbol SUCIO tiene que cortar.
+# Esta rama era la unica de las tres salidas buenas que no miraba el arbol:
+# decia «no hay nada que publicar» y salia con 0 aunque hubiera cambios sin
+# commitear. Se comprueba aqui, que es cuando la rama esta de verdad detras.
+echo sucio >> archivo.txt
+bash scripts/revisar.sh >/dev/null 2>&1
+tf "$?" "DETRAS con cambios sin commitear: sale 1, no dice que no hay nada"
+salida_sucio="$(bash scripts/revisar.sh 2>&1)"
+t "$(printf '%s' "$salida_sucio" | grep -q 'cambios sin commitear' && echo 0 || echo 1)" \
+  "y lo dice con la palabra «cambios sin commitear»"
+git update-ref refs/heads/main "$(git rev-parse HEAD)" 2>/dev/null
+git stash -q 2>/dev/null || true
+git stash drop -q 2>/dev/null || true
+
 # Se vuelve al punto de partida para el caso 3.
 git reset -q --hard origin/main
 

@@ -69,6 +69,28 @@ autoverificar() {
   fi
 }
 
+# ¿El arbol esta limpio? Se usa en TODAS las salidas buenas: si hay cambios sin
+# commitear, no entran en el rango y se revisaria una cosa para publicar otra.
+# Se comprueba el CODIGO de `git status`, no solo su salida: si falla, la salida
+# queda vacia y eso se leeria como «arbol limpio».
+arbol_limpio() {
+  local suelto
+  if ! suelto="$(git status --porcelain --untracked-files=normal 2>&1)"; then
+    echo "  git status FALLO, no se puede saber si el arbol esta limpio:"
+    printf '%s\n' "$suelto" | sed 's/^/       /'
+    return 1
+  fi
+  if [ -n "$suelto" ]; then
+    echo "  ALTO: hay cambios sin commitear y NO entran en la revision."
+    printf '%s\n' "$suelto" | sed 's/^/       /'
+    echo
+    echo "  Revisar ahora seria revisar una cosa y publicar otra. Commitealos"
+    echo "  primero."
+    return 1
+  fi
+  return 0
+}
+
 # DIVERGIR no es lo mismo que estar DETRAS.
 #   - HEAD por detras: no hay nada que publicar, es un estado valido.
 #   - Divergieron: el rango incluiria como reversiones commits ajenos.
@@ -77,6 +99,10 @@ if ! git merge-base --is-ancestor "$base" "$cabeza" 2>/dev/null; then
   if git merge-base --is-ancestor "$cabeza" "$base" 2>/dev/null; then
     echo "  La rama local esta DETRAS de $BASE_REMOTA: no hay nada que publicar."
     echo "  Para ponerte al dia: git pull --ff-only origin main"
+    # La comprobacion del arbol se hace TAMBIEN aqui. Faltaba: esta rama salia
+    # con 0 sin mirar si habia cambios sin commitear, y era la unica de las tres
+    # salidas buenas que se lo saltaba. Lo destapo la revision nativa.
+    arbol_limpio || exit 1
     autoverificar || exit 1
     exit 0
   fi
