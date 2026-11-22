@@ -38,15 +38,6 @@ cuantos="$(git rev-list --count "$BASE_REMOTA..HEAD" 2>/dev/null)"
 # Sin estas tres, un fallo de git deja el conteo vacio y el script sigue como
 # si supiera el rango: imprimiria instrucciones de revision para un rango que
 # no pudo calcular, y saldria con exito.
-# Si las ramas divergieron, el rango NO es lo que falta publicar: incluiria
-# como reversiones los commits ajenos. Se exige que la base sea ancestro.
-if ! git merge-base --is-ancestor "$base" "$cabeza" 2>/dev/null; then
-  echo "  La rama local y $BASE_REMOTA DIVERGIERON."
-  echo "  Revisar este rango incluiria como reversiones commits que no son tuyos."
-  echo "  Resuelvelo primero: git pull --rebase origin main"
-  exit 1
-fi
-
 if [ -z "$base" ] || [ -z "$cabeza" ] || [ -z "$cuantos" ]; then
   echo "  No se pudo calcular el rango (base='$base' cabeza='$cabeza' commits='$cuantos')."
   echo "  Revisa que el repositorio este sano: git status && git fetch origin"
@@ -65,7 +56,35 @@ autoverificar() {
     return 1
   fi
   echo
+  # La verificacion puede dejar archivos. Si el arbol quedo sucio, el rango
+  # cambió y lo revisado no seria lo que hay.
+  local despues
+  if ! despues="$(git status --porcelain --untracked-files=normal 2>&1)"; then
+    echo "  git status fallo tras la verificacion"; return 1
+  fi
+  if [ -n "$despues" ]; then
+    echo "  La verificacion dejo cambios en el arbol; no entran en la revision:"
+    printf '%s\n' "$despues" | sed 's/^/       /'
+    return 1
+  fi
 }
+
+# DIVERGIR no es lo mismo que estar DETRAS.
+#   - HEAD por detras: no hay nada que publicar, es un estado valido.
+#   - Divergieron: el rango incluiria como reversiones commits ajenos.
+# Antes se trataban igual y «detras» se reportaba como divergencia.
+if ! git merge-base --is-ancestor "$base" "$cabeza" 2>/dev/null; then
+  if git merge-base --is-ancestor "$cabeza" "$base" 2>/dev/null; then
+    echo "  La rama local esta DETRAS de $BASE_REMOTA: no hay nada que publicar."
+    echo "  Para ponerte al dia: git pull --ff-only origin main"
+    autoverificar || exit 1
+    exit 0
+  fi
+  echo "  La rama local y $BASE_REMOTA DIVERGIERON."
+  echo "  Revisar este rango incluiria como reversiones commits que no son tuyos."
+  echo "  Resuelvelo primero: git pull --rebase origin main"
+  exit 1
+fi
 
 if [ "$cuantos" = "0" ]; then
   echo "  No hay nada sin publicar: $BASE_REMOTA esta al dia con HEAD."
@@ -75,7 +94,7 @@ if [ "$cuantos" = "0" ]; then
   # reviso ni se publico.
   # Mismo cuidado que arriba: sin comprobar el codigo, un fallo se leia como
   # «no hay nada».
-  if ! suelto="$(git status --porcelain 2>&1)"; then
+  if ! suelto="$(git status --porcelain --untracked-files=normal 2>&1)"; then
     echo "  git status FALLO: $(printf '%s' "$suelto" | head -1)"
     exit 1
   fi
@@ -101,7 +120,7 @@ echo
 # Se mira el CODIGO de git status, no solo su salida. Si falla -un lock del
 # indice, por ejemplo- la salida queda vacia y eso se leia como «arbol
 # limpio»: el script imprimia instrucciones de revision y salia 0.
-if ! sucio="$(git status --porcelain 2>&1)"; then
+if ! sucio="$(git status --porcelain --untracked-files=normal 2>&1)"; then
   echo "  git status FALLO, no se puede saber si el arbol esta limpio:"
   printf '%s\n' "$sucio" | sed 's/^/       /'
   exit 1

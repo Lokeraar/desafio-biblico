@@ -47,28 +47,76 @@ mkdir -p scripts
 cp "$SCRIPT" scripts/revisar.sh
 cat > scripts/probar.sh <<'PROBAR'
 #!/usr/bin/env bash
-echo "probar.sh ejecutado" > "$(dirname "$0")/../.probar-corrio"
+echo PROBAR_OK > /dev/null
 exit 0
 PROBAR
+# CONTENIDO EXACTO DEL STUB, en una variable.
+# Los casos lo reescriben. Para dejarlo limpio despues se vuelve a escribir
+# ESTE MISMO texto: asi el archivo coincide con el commit y el arbol queda
+# limpio sin borrar nada ni usar comandos destructivos. Antes se restauraba
+# una version PARECIDA (sin la linea del echo) y por eso el arbol seguia sucio.
+restaurar_stub() {
+  cat > scripts/probar.sh <<'PROBAR'
+#!/usr/bin/env bash
+echo PROBAR_OK > /dev/null
+exit 0
+PROBAR
+}
 
 echo listo > archivo.txt
 git add -A && git commit -qm "primero"
 git branch -M main
 git push -q origin main 2>/dev/null
 
+# --- caso 2b: la rama DETRAS no es divergir (R3-002) ---
+# Va PRIMERO, recien empujado: el arbol esta limpio y al dia. Mas adelante ya
+# hay commits locales y el estado seria «divergido», que es otro caso. Ponerlo
+# al final lo dejaba en «omitido», y un omitido se contaba como ok: otra prueba
+# que no probaba nada.
+git clone -q -b main "$CAJA/remoto.git" "$CAJA/otro" 2>/dev/null
+(
+  cd "$CAJA/otro" || exit 1
+  git config user.email o@ejemplo.com
+  git config user.name Otro
+  echo ajeno >> archivo.txt
+  git commit -qam "de otro"
+  git push -q origin main
+) 2>/dev/null
+git fetch -q origin
+if git merge-base --is-ancestor HEAD origin/main 2>/dev/null; then
+  bash scripts/revisar.sh >/dev/null 2>&1
+  t "$?" "con la rama DETRAS: sale 0, no es un error"
+  salida_detras="$(bash scripts/revisar.sh 2>&1)"
+  t "$(printf '%s' "$salida_detras" | grep -q 'DETRAS' && echo 0 || echo 1)" \
+    "y lo dice con la palabra DETRAS, no «divergieron»"
+else
+  fallas=$((fallas+1))
+  echo "  FALLA no se pudo montar el escenario de rama detras"
+fi
+# Se vuelve al punto de partida para el caso 3.
+git reset -q --hard origin/main
+
 # --- caso 1: al dia, arbol limpio, sin --probar ---
 bash scripts/revisar.sh >/dev/null 2>&1
 t "$?" "al dia y limpio: sale 0"
 
 # --- caso 2: al dia con --probar (el defecto R3-001) ---
-rm -f .probar-corrio
-bash scripts/revisar.sh --probar >/dev/null 2>&1
+salida_probar="$(bash scripts/revisar.sh --probar 2>&1)"
 t "$?" "al dia con --probar: sale 0"
-t "$([ -f .probar-corrio ] && echo 0 || echo 1)" "al dia con --probar: la verificacion SI corre"
-# La marca que deja probar.sh es un archivo NUEVO en el arbol. Si no se limpia,
-# ensucia el repo de prueba y los casos siguientes fallan por un motivo que no
-# tiene que ver con lo que estan midiendo. Paso de verdad: asi se rompio.
-rm -f .probar-corrio
+t "$(printf '%s' "$salida_probar" | grep -q 'Autoverificacion' && echo 0 || echo 1)" \
+  "al dia con --probar: la verificacion SI corre"
+
+# R3-001: si la verificacion deja archivos, el script tiene que negarse a
+# mandar a revisar: ese cambio no esta en el rango.
+cat > scripts/probar.sh <<'PROBAR'
+#!/usr/bin/env bash
+echo basura > "$(dirname "$0")/../.dejo-basura"
+exit 0
+PROBAR
+bash scripts/revisar.sh --probar >/dev/null 2>&1
+tf "$?" "si la verificacion deja archivos sueltos: sale 1"
+rm -f .dejo-basura
+restaurar_stub
 
 # --- caso 3: un commit sin publicar, arbol limpio ---
 echo dos >> archivo.txt
@@ -94,11 +142,10 @@ git checkout -q -- archivo.txt
 # que no es la ruta normal. Aqui se prueba donde de verdad se usa.
 echo tres >> archivo.txt
 git commit -qam "tercero"
-rm -f .probar-corrio
-bash scripts/revisar.sh --probar >/dev/null 2>&1
+salida_pend="$(bash scripts/revisar.sh --probar 2>&1)"
 t "$?" "con commits pendientes y --probar: sale 0"
-t "$([ -f .probar-corrio ] && echo 0 || echo 1)" "con commits pendientes y --probar: la verificacion corre"
-rm -f .probar-corrio
+t "$(printf '%s' "$salida_pend" | grep -q 'Autoverificacion' && echo 0 || echo 1)" \
+  "con commits pendientes y --probar: la verificacion corre"
 
 # --- caso 5c: si la autoverificacion FALLA, revisar.sh corta ---
 # Un `probar.sh` que falla no puede dejar pasar la revision como si nada.
