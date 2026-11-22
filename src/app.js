@@ -311,7 +311,7 @@ const app = {
   /* A que vista se queria entrar cuando se pidio la clave. Se guarda para
    * llevarla alli despues de acertar, en vez de dejar a la persona en el menu
    * teniendo que acordarse de donde iba. */
-  vistaPendiente: null
+  vistaPendiente: null,
   // El lema se edita EN EL MENÚ. `editandoLema` es el texto que se está
   // escribiendo; `null` significa que se ve como texto normal.
   editandoLema: null,
