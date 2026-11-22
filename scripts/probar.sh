@@ -157,6 +157,20 @@ if [ "$solo_js" = false ]; then
       SUITES_FALLIDAS+=("candado (SQL)")
     fi
 
+    # El contrato de scripts/revisar.sh: que se niegue cuando debe y que
+    # --probar corra de verdad. Nace de tres vueltas de revision.
+    salida_revisar="$(bash "$RAIZ/scripts/pruebas/revisar.test.sh" 2>&1)"
+    ok_revisar="$(printf '%s\n' "$salida_revisar" | rg -o 'revisar: [0-9]+ correctas' | rg -o '[0-9]+' | tail -1)"
+    if printf '%s\n' "$salida_revisar" | rg -q 'revisar: [0-9]+ correctas, 0 fallas'; then
+      echo "  revisar: ${ok_revisar:-0} correctas, 0 fallas"
+      TOTAL_OK=$((TOTAL_OK + ${ok_revisar:-0}))
+    else
+      echo "  revisar: FALLÓ"
+      printf '%s\n' "$salida_revisar" | rg 'FALLA' | head -5 | sed 's/^/      /'
+      TOTAL_FALLAS=$((TOTAL_FALLAS + 1))
+      SUITES_FALLIDAS+=("revisar.sh")
+    fi
+
     # Cerrar salas. Va aparte por la misma razon que el candado: necesita sus
     # propias salas, su propia clave y su propio ciclo de vida. Antes no la
     # corria nadie y sus comprobaciones no contaban en ningun total.

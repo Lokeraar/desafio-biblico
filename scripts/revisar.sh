@@ -31,9 +31,32 @@ if ! git rev-parse --verify --quiet "$BASE_REMOTA" >/dev/null; then
   exit 1
 fi
 
-base="$(git rev-parse "$BASE_REMOTA")"
-cabeza="$(git rev-parse HEAD)"
-cuantos="$(git rev-list --count "$BASE_REMOTA..HEAD")"
+base="$(git rev-parse "$BASE_REMOTA" 2>/dev/null)"
+cabeza="$(git rev-parse HEAD 2>/dev/null)"
+cuantos="$(git rev-list --count "$BASE_REMOTA..HEAD" 2>/dev/null)"
+
+# Sin estas tres, un fallo de git deja el conteo vacio y el script sigue como
+# si supiera el rango: imprimiria instrucciones de revision para un rango que
+# no pudo calcular, y saldria con exito.
+if [ -z "$base" ] || [ -z "$cabeza" ] || [ -z "$cuantos" ]; then
+  echo "  No se pudo calcular el rango (base='$base' cabeza='$cabeza' commits='$cuantos')."
+  echo "  Revisa que el repositorio este sano: git status && git fetch origin"
+  exit 1
+fi
+
+# Corre la autoverificacion si se pidio. Se llama en LOS DOS caminos: antes
+# se salia por «al dia» sin mirar --probar, y el que lo pedia recibia un exito
+# sin la comprobacion que habia pedido.
+autoverificar() {
+  [ "$Probar" = true ] || return 0
+  echo "=== Autoverificacion (probar.sh) ==="
+  if ! bash "$RAIZ/scripts/probar.sh"; then
+    echo
+    echo "  La autoverificacion FALLO. No se revisa todavia: primero se arregla."
+    return 1
+  fi
+  echo
+}
 
 if [ "$cuantos" = "0" ]; then
   echo "  No hay nada sin publicar: $BASE_REMOTA esta al dia con HEAD."
@@ -49,6 +72,7 @@ if [ "$cuantos" = "0" ]; then
     echo "       Se pierden si se recarga la maquina. Commitealos."
     exit 1
   fi
+  autoverificar || exit 1
   exit 0
 fi
 
@@ -62,10 +86,12 @@ echo
 # otra cosa. Es la trampa mas silenciosa de todas.
 sucio="$(git status --porcelain)"
 if [ -n "$sucio" ]; then
-  echo "  OJO: hay cambios sin commitear y NO entran en la revision."
+  echo "  ALTO: hay cambios sin commitear y NO entran en la revision."
   printf '%s\n' "$sucio" | sed 's/^/       /'
-  echo "       Commitea primero, o la revision no estara mirando lo que publicas."
   echo
+  echo "  Revisar ahora seria revisar una cosa y publicar otra. Commitealos"
+  echo "  primero. (El refuter dijo que este aviso bastaba; medido: salia 0.)"
+  exit 1
 fi
 
 echo "  commits del rango:"
@@ -75,15 +101,7 @@ echo "  archivos que entran:"
 git diff --stat "$BASE_REMOTA..HEAD" | tail -20 | sed 's/^/       /'
 echo
 
-if [ "$Probar" = true ]; then
-  echo "=== Autoverificacion (probar.sh) ==="
-  if ! bash "$RAIZ/scripts/probar.sh"; then
-    echo
-    echo "  La autoverificacion FALLO. No se revisa todavia: primero se arregla."
-    exit 1
-  fi
-  echo
-fi
+autoverificar || exit 1
 
 cat <<FIN
 === Lo que hay que hacer ahora, sin dar vueltas ===
