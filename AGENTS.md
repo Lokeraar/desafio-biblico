@@ -125,6 +125,55 @@ retrocede datos de salas vivas.
 
 ---
 
+## «Implementa esto» = llevar el artboard a la app, no crear pantallas
+
+**Regla dura, declarada por Christian el 21/11/2026.** Cuando pide implementar
+un artboard, quiere que **las pantallas que ya existen se vean como el
+artboard**. No quiere pantallas nuevas ni otra app: las seis rutas ya están
+(`menu`, `host`, `join`/`play`, `tv`, `config`, y la ceremonia dentro de
+`host`).
+
+La confusión ya ocurrió: se respondió ofreciendo «¿termino el juego que falta
+o alineo la app con los artboards?» cuando el pedido era lo segundo desde el
+principio. Preguntar eso no era prudencia, era no haber leído el encargo.
+
+Cómo se hace:
+
+1. **Comparar** el artboard con la vista real de `src/app.js` (la función
+   `vistaXxx`) y con `styles.css`. El artboard manda en aspecto; la app manda
+   en clases reales.
+2. **Editar el bloque que falla**, no reescribir el archivo ni el componente.
+3. Si falta una clase en `styles.css`, se añade ahí. `design/*/base-app.css` es
+   un **subconjunto** convertido a valores fijos para que el canvas se vea
+   solo: no es la app y no se toca para cambiar el producto.
+4. Lo que **sí** falta de verdad es el juego «Respuesta abierta» (`listo:
+   false` en `app.js:727`, y `leerJuego()` solo acepta dos slugs). Eso es
+   trabajo aparte, no «implementar los artboards».
+
+## Revisión nativa: una sola por rango, no una por commit
+
+**Regla dura.** El guardia de entrega revisa **el rango completo sin
+publicar** (`origin/main..HEAD`), no cada commit por separado.
+
+El error que costó tres revisiones seguidas: se commiteó, se revisó, se
+commiteó otra vez, se volvió a revisar… y cada commit invalidaba la revisión
+anterior. Con 1100 líneas de rango, el guardia pedía `assess` sobre el rango
+entero y volvía a empezar.
+
+La forma que va directo al grano:
+
+1. Terminar **todos** los commits del bloque. No revisar entre uno y otro.
+2. `gentle_review` con `{"operation":"assess"}` y el `baseRef` del remoto
+   (`origin/main`). Devuelve `reviewDue` y el `baseRef` **exacto** que quiere.
+   Suena el que él diga, no el que uno suponga.
+3. **Una** llamada a `gentle_review_run` con ese `baseRef`, `committedOnly:
+   true` y las lentes. Esa hace todo el ciclo: assess, inspect, start,
+   capturas y cierre.
+4. No llamar a mano `inspect`/`start`/`status`/`capture` en secuencia: eso es
+   lo que produjo las vueltas. `gentle_review_run` ya lo encadena.
+5. Si la revisión devuelve hallazgos, corregirlos **y volver a commitear antes**
+   de esperar otra revisión: un cambio sin commitear no entra en el rango.
+
 ## NUNCA pedirle al usuario que compruebe visualmente
 
 **Regla dura, declarada por Christian el 20/11/2026.** Ningún cambio visual se
