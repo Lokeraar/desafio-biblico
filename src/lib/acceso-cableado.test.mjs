@@ -113,11 +113,16 @@ t(/function\s+puedeIrA\s*\(\s*vista\s*\)\s*\{[\s\S]*?\n\}/.test(codigo)
 
 // 3. El guardia esta en render(), que es por donde pasan TODAS las vistas,
 //    incluidas las que llegan por URL escrita a mano.
-t(/if\s*\(\s*!\s*puedeIrA\s*\(\s*vista\s*\)/.test(codigo),
-  'render() baja a menu cuando la vista no se puede abrir');
+/* El guardia ya no es un `if` suelto: delega en resolverPuerta(), que se puede
+   probar de comportamiento en acceso.test.mjs. Se comprueba que se LLAMA y que
+   su resultado se aplica, no que exista un if con cierta forma. */
+t(/resolverPuerta\s*\(\s*\{/.test(codigo),
+  'render() delega la puerta en resolverPuerta()');
+t(/if\s*\(\s*!\s*puerta\.permite\s*\)\s*\{[\s\S]{0,300}?vista\s*=\s*puerta\.vista/.test(codigo),
+  'render() baja a menu cuando la puerta no deja pasar');
 
 // 4. La vista pedida se recuerda para llevarla alli despues de acertar.
-t(/app\.vistaPendiente\s*=\s*vista/.test(codigo),
+t(/app\.vistaPendiente\s*=\s*puerta\.vistaPendiente/.test(codigo),
   'el guardia recuerda a donde se queria ir');
 
 // 5. Y despues de acertar la clave, se navega de verdad.

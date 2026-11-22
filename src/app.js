@@ -33,7 +33,7 @@ import {
 import { qrSVG } from './lib/qr.js';
 import { ceremoniaHTML, totalPasos } from './lib/render.js';
 import { decidirCrearSala, AL_CREAR } from './lib/crear-sala.js';
-import { puedeEntrar, requiereClave } from './lib/acceso.js';
+import { puedeEntrar, requiereClave, resolverPuerta } from './lib/acceso.js';
 import {
   pantallaParticipante, pantallaTV, listaTurnosHTML, modalJuicioHTML,
   sinReferenciaAlFinal, relojHTML,
@@ -2148,9 +2148,23 @@ let cerrando = false;
  */
 async function cargarEstadoClave() {
   const { estado, error } = await admin.estadoClave();
-  if (error || !estado) return;
+  if (error || !estado) {
+    /* Se suelta la marca para poder reintentar: dejarla puesta con la consulta
+       fallida dejaba `claveConfigurada` en null para siempre, y en una
+       instalacion nueva eso esconde «Crear la clave» y pide una clave que no
+       existe. Solo se recuperaba recargando. */
+    app.clavePreguntada = false;
+    return;
+  }
   app.claveConfigurada = estado.configurada === true;
-  if (app.claveConfigurada === false) render();
+  if (app.claveConfigurada === false) {
+    /* R3-003: si el guardia ya habia abierto el modal de acceso, hay que
+       cerrarlo. Sin esto quedaba pidiendo una clave que todavia no existe. */
+    if (app.modal && app.modal.tipo === 'clave' && app.modal.para === 'acceso') {
+      app.modal = null;
+    }
+    render();
+  }
 }
 
 async function cargarMarca() {
@@ -2503,13 +2517,21 @@ function render() {
    * se pinta el MENU con el modal de la clave encima: se ve de donde se
    * viene y que hace falta.
    */
-  if (!puedeIrA(vista) && vista !== 'menu') {
-    app.vistaPendiente = vista;
-    app.modal = app.modal && app.modal.tipo === 'clave'
-      ? app.modal
-      : { tipo: 'clave', para: 'acceso' };
-    app.adminError = null;
-    vista = 'menu';
+  /* La decision se toma en `acceso.js`, con pruebas de comportamiento:
+     ahi se puede probar que el error de clave incorrecta no se borre y que
+     no se reabra el modal, cosas que un `if` suelto aqui no deja medir. */
+  const puerta = resolverPuerta({
+    vista,
+    adminClave: app.adminClave,
+    claveConfigurada: app.claveConfigurada,
+    modal: app.modal,
+    hayNube
+  });
+  if (!puerta.permite) {
+    app.vistaPendiente = puerta.vistaPendiente;
+    app.modal = puerta.modal;
+    if (puerta.abreModal) app.adminError = null;
+    vista = puerta.vista;
   }
 
   let html;

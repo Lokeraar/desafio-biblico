@@ -49,6 +49,8 @@ if [ "$solo_sql" = false ]; then
   # .js como CommonJS y no ve los errores de un modulo ES: sobre el archivo
   # roto devolvio codigo 0. Con `--input-type=module` y el archivo por stdin
   # si devuelve codigo 1, sin renombrar nada.
+  # Tampoco sirve importar el modulo: `app.js` toca `window` y `document` al
+  # cargarse, asi que en Node falla con ReferenceError aunque este bien.
   fallas_sintaxis=0
   for modulo in "$RAIZ"/src/*.js "$RAIZ"/src/lib/*.js; do
     [ -e "$modulo" ] || continue

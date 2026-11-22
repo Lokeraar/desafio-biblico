@@ -79,3 +79,46 @@ export function puedeEntrar(vista, adminClave, { hayClaveConfigurada = true } = 
 function esVista(vista, esperada) {
   return String(vista ?? '').trim().toLowerCase() === esperada;
 }
+
+/**
+ * LA PUERTA, COMO CALCULO PURO.
+ *
+ * En `app.js` esta decision vive dentro de `render()`, que necesita navegador.
+ * Sacarla aqui permite probar el COMPORTAMIENTO —que el error de clave
+ * incorrecta no se borre, que no se reabra el modal, a donde se vuelve— sin
+ * DOM y sin red. La revision lo pidio: una prueba que solo busca texto en el
+ * fuente no distingue «esto esta escrito» de «esto hace lo correcto».
+ *
+ * @param {object} entrada
+ * @param {string} entrada.vista            la vista pedida
+ * @param {string|null} entrada.adminClave  la clave ya verificada, o null
+ * @param {boolean|null} entrada.claveConfigurada  null = todavia no se sabe
+ * @param {boolean} [entrada.hayNube]       sin Supabase no hay clave que valga
+ * @param {object|null} entrada.modal       el modal abierto, si hay
+ * @returns {{ permite: boolean, vista: string, modal: object|null,
+ *             vistaPendiente: string|null, abreModal: boolean }}
+ */
+export function resolverPuerta({ vista, adminClave, claveConfigurada, modal, hayNube = true }) {
+  /* Sin servidor no hay clave que comprobar: la clave vive alla. Cerrar el
+     paso en el modo local dejaria el panel inaccesible para siempre. */
+  const permite = !hayNube || puedeEntrar(vista, adminClave, {
+    hayClaveConfigurada: claveConfigurada !== false
+  });
+
+  // El menu siempre se puede ver: es donde vive la puerta.
+  if (permite || vista === 'menu') {
+    return { permite: true, vista, modal: modal ?? null, vistaPendiente: null, abreModal: false };
+  }
+
+  /* Si ya hay un modal de clave abierto NO se reemplaza. Reemplazarlo borraba
+     el error de «clave incorrecta» en cada vuelta de render, y quien fallaba
+     la clave veia el modal como si no hubiera pasado nada. */
+  const yaPideClave = Boolean(modal && modal.tipo === 'clave');
+  return {
+    permite: false,
+    vista: 'menu',
+    modal: yaPideClave ? modal : { tipo: 'clave', para: 'acceso' },
+    vistaPendiente: vista,
+    abreModal: !yaPideClave
+  };
+}

@@ -10,7 +10,7 @@
    La regla, en una linea: el panel del presentador y la configuracion NO se
    abren sin clave; el menu, la entrada del jugador y el televisor SI.
 */
-import { requiereClave, puedeEntrar, VISTAS_CON_CLAVE } from './acceso.js';
+import { requiereClave, puedeEntrar, resolverPuerta, VISTAS_CON_CLAVE } from './acceso.js';
 
 let ok = 0, fail = 0;
 const t = (c, m) => { if (c) { ok++; console.log('  ok   ' + m); } else { fail++; console.log('  FALLA ' + m); } };
@@ -79,6 +79,57 @@ t(Array.isArray(VISTAS_CON_CLAVE), 'VISTAS_CON_CLAVE es una lista');
 t(VISTAS_CON_CLAVE.length === 2, 'son exactamente dos: host y config');
 t(VISTAS_CON_CLAVE.includes('host') && VISTAS_CON_CLAVE.includes('config'),
   'y son host y config, no otras');
+
+/* ------------------------------------------------------------------ */
+/* La puerta como calculo puro: COMPORTAMIENTO, no texto del fuente.   */
+/* ------------------------------------------------------------------ */
+console.log('\n=== acceso: la puerta de render(), paso a paso ===');
+
+const MENU = { vista: 'menu', adminClave: null, claveConfigurada: null, modal: null };
+
+t(resolverPuerta(MENU).permite === false || resolverPuerta(MENU).vista === 'menu',
+  'el menu se ve siempre: es donde vive la puerta');
+t(resolverPuerta({ ...MENU, vista: 'join' }).permite === true,
+  'la entrada del jugador no pide clave');
+t(resolverPuerta({ ...MENU, vista: 'tv' }).permite === true,
+  'el televisor no pide clave');
+
+// host y config piden clave cuando no hay ninguna verificada
+const r1 = resolverPuerta({ ...MENU, vista: 'host' });
+t(r1.permite === false, 'host no se abre sin clave verificada');
+t(r1.vista === 'menu', 'y baja al menu en vez de dejar la pantalla en blanco');
+t(r1.modal && r1.modal.tipo === 'clave' && r1.modal.para === 'acceso',
+  'y abre el modal de la puerta');
+t(r1.vistaPendiente === 'host', 'y recuerda a donde se queria ir');
+
+// Con la clave ya verificada, pasa.
+t(resolverPuerta({ ...MENU, vista: 'host', adminClave: '4321' }).permite === true,
+  'con la clave verificada, host se abre');
+
+/* LA REGRESION QUE ENCONTRO LA REVISION (R3-001).
+   El guardia limpiaba el error en CADA render, asi que el mensaje de clave
+   incorrecta se borraba antes de verse. */
+const conError = { tipo: 'clave', para: 'acceso', error: 'Clave incorrecta' };
+const r2 = resolverPuerta({ ...MENU, vista: 'host', modal: conError });
+t(r2.modal === conError, 'el modal abierto NO se reemplaza: conserva su error');
+t(r2.modal.error === 'Clave incorrecta', 'y el mensaje de clave incorrecta sigue visible');
+t(r2.abreModal === false, 'y no se vuelve a abrir, para no borrar lo escrito');
+
+/* R3-003: una instalacion nueva sin clave. Config se abre para crear la
+   primera; host no, porque crear salas exige estar acreditado. */
+const sinClave = { ...MENU, claveConfigurada: false };
+t(resolverPuerta({ ...sinClave, vista: 'config' }).permite === true,
+  'sin clave configurada, configuraciones se abre: es donde se crea la primera');
+t(resolverPuerta({ ...sinClave, vista: 'host' }).permite === false,
+  'pero host sigue cerrado aunque no haya clave');
+
+// Mientras no se sepa, se pide: el lado seguro.
+t(resolverPuerta({ ...MENU, vista: 'host', claveConfigurada: null }).permite === false,
+  'con el estado sin saber, se pide clave');
+
+// Sin servidor no hay clave que comprobar.
+t(resolverPuerta({ ...MENU, vista: 'host', hayNube: false }).permite === true,
+  'sin nube la puerta no se aplica: el modo local conserva su panel');
 
 console.log(`\nRESULTADO: ${ok} correctas, ${fail} fallas`);
 if (fail) process.exit(1);

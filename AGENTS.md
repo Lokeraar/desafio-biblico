@@ -64,8 +64,12 @@ Las formas que sí funcionan, sin renombrar nada:
 
 ```bash
 node --input-type=module --check < src/app.js     # exit 1 si está roto
-node --input-type=module -e "import('./src/app.js')"   # lo evalúa de verdad
 ```
+
+**No sirve** `node --input-type=module -e "import('./src/app.js')"`: el módulo
+llama a `window.addEventListener` y a `document` en el nivel superior, así que
+en Node falla con `ReferenceError` aunque el código esté perfecto. Confunde
+«roto» con «es un módulo de navegador».
 
 `probar.sh` ya recorre `src/*.js` y `src/lib/*.js` con la primera y falla si
 alguno no parsea. Esa comprobación se probó quitando la coma a propósito: sin
